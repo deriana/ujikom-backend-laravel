@@ -19,51 +19,51 @@ class PermissionSeeder extends Seeder
         $modules = [
             'users' => [
                 'actions' => [
-                    'index'   => 'user.index',
-                    'create'  => 'user.create',
-                    'edit'    => 'user.edit',
+                    'index' => 'user.index',
+                    'create' => 'user.create',
+                    'edit' => 'user.edit',
                     'destroy' => 'user.destroy',
                     'forceDelete' => 'user.forceDelete',
                     'restore' => 'user.restore',
                 ],
                 'roles' => [
                     UserRole::SUPER_ADMIN->value => ['index', 'create', 'edit', 'destroy', 'forceDelete', 'restore'],
-                    UserRole::ADMIN->value       => ['index', 'create', 'edit', 'destroy', 'forceDelete', 'restore'],
-                    UserRole::HR->value          => ['index', 'create', 'edit'],
-                ]
+                    UserRole::ADMIN->value => ['index', 'create', 'edit', 'destroy', 'forceDelete', 'restore'],
+                    UserRole::HR->value => ['index', 'create', 'edit'],
+                ],
             ],
             'roles' => [
                 'actions' => [
-                    'index'   => 'role.index',
-                    'create'  => 'role.create',
-                    'edit'    => 'role.edit',
-                    'destroy' => 'role.destroy'
+                    'index' => 'role.index',
+                    'create' => 'role.create',
+                    'edit' => 'role.edit',
+                    'destroy' => 'role.destroy',
                 ],
                 'roles' => [
                     UserRole::SUPER_ADMIN->value => ['index', 'create', 'edit', 'destroy'],
-                    UserRole::ADMIN->value       => ['index', 'create', 'edit'],
+                    UserRole::ADMIN->value => ['index', 'create', 'edit'],
                 ],
             ],
             'pages' => [
                 'actions' => [
-                    'index'   => 'page.index',
-                    'create'  => 'page.create',
-                    'edit'    => 'page.edit',
+                    'index' => 'page.index',
+                    'create' => 'page.create',
+                    'edit' => 'page.edit',
                     'destroy' => 'page.destroy',
                 ],
                 'roles' => [
                     UserRole::SUPER_ADMIN->value => ['index', 'create', 'edit', 'destroy'],
-                    UserRole::ADMIN->value       => ['index', 'create', 'edit', 'destroy'],
-                ]
+                    UserRole::ADMIN->value => ['index', 'create', 'edit', 'destroy'],
+                ],
             ],
             'settings' => [
                 'actions' => [
                     'index' => 'setting.index',
-                    'edit'  => 'setting.edit',
+                    'edit' => 'setting.edit',
                 ],
                 'roles' => [
                     UserRole::SUPER_ADMIN->value => ['index', 'edit'],
-                    UserRole::ADMIN->value       => ['index', 'edit'],
+                    UserRole::ADMIN->value => ['index', 'edit'],
                 ],
             ],
         ];
@@ -71,10 +71,14 @@ class PermissionSeeder extends Seeder
         // 3. Buat Semua Role dari Enum jika belum ada
         foreach (UserRole::cases() as $roleEnum) {
             Role::firstOrCreate(
-                ['name' => $roleEnum->value],
                 [
                     'name' => $roleEnum->value,
-                    'system_reserve' => in_array($roleEnum, [UserRole::SUPER_ADMIN, UserRole::ADMIN])
+                    'guard_name' => 'api', // Tambahkan di kriteria pencarian
+                ],
+                [
+                    'name' => $roleEnum->value,
+                    'guard_name' => 'api', // Tambahkan di data yang dibuat
+                    'system_reserve' => in_array($roleEnum, [UserRole::SUPER_ADMIN, UserRole::ADMIN]),
                 ]
             );
         }
