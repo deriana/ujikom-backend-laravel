@@ -12,7 +12,7 @@ Route::middleware('throttle:api')->group(function () {
 });
 
 Route::group(['prefix' => 'auth', 'middleware' => 'throttle:api'], function () {
-    Route::post('/register', [AuthController::class, 'register']);
+    // Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
