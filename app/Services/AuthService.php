@@ -41,6 +41,10 @@ class AuthService
                 throw new Exception('The Email or Password is incorrect.');
             }
 
+            if (!$user->is_active) {
+                throw new Exception('Your account is inactive. Please contact support.');
+            }
+
             $token = $user->createToken('auth_token')->plainTextToken;
 
             return [$user, $token];
