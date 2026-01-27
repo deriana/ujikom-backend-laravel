@@ -60,6 +60,19 @@ class PermissionSeeder extends Seeder
                 'roles' => [
                     UserRole::ADMIN->value => ['index', 'edit'],
                 ],
+                'divisions' => [
+                    'actions' => [
+                        'index' => 'division.index',
+                        'create' => 'division.create',
+                        'edit' => 'division.edit',
+                        'destroy' => 'division.destroy',
+                        'restore' => 'division.restore',
+                        'forceDelete' => 'division.forceDelete',
+                    ],
+                    'roles' => [
+                        UserRole::ADMIN->value => ['index', 'create', 'edit', 'destroy', 'forceDelete', 'restore'],
+                    ],
+                ],
             ],
         ];
 

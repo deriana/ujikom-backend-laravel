@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\DivisionController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Http\Request;
@@ -27,5 +28,9 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
 
     Route::apiResource('users', UserController::class);
     Route::apiResource('roles', RoleController::class);
-
+    Route::prefix('divisions')->group(function () {
+        Route::post('/restore/{uuid}', [DivisionController::class, 'restore']);
+        Route::delete('/force-delete/{uuid}', [DivisionController::class, 'forceDelete']);
+    });
+    Route::apiResource('divisions', DivisionController::class);
 });
