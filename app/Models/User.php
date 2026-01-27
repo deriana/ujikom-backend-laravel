@@ -39,6 +39,8 @@ class User extends Authenticatable
         'id',
     ];
 
+    protected $guard_name = 'api';
+
     protected static function boot()
     {
         parent::boot();
