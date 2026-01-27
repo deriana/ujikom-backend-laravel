@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Symfony\Component\HttpFoundation\Request;
@@ -23,11 +24,15 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         RateLimiter::for('api', function (Request $request) {
-        return Limit::perMinute(60)->by($request->User()?->id ?: $request->ip())->response(function () {
-            return response()->json([
-                'message' => 'Too many requests. Please slow down your requests.',
-            ], 429);
+            return Limit::perMinute(60)->by($request->User()?->id ?: $request->ip())->response(function () {
+                return response()->json([
+                    'message' => 'Too many requests. Please slow down your requests.',
+                ], 429);
+            });
         });
-    });
+
+        Gate::before(function ($user, $ability) {
+            return $user->hasRole('super_admin') ? true : null;
+        });
     }
 }
