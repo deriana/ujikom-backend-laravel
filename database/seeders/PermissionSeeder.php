@@ -27,9 +27,7 @@ class PermissionSeeder extends Seeder
                     'restore' => 'user.restore',
                 ],
                 'roles' => [
-                    UserRole::SUPER_ADMIN->value => ['index', 'create', 'edit', 'destroy', 'forceDelete', 'restore'],
                     UserRole::ADMIN->value => ['index', 'create', 'edit', 'destroy', 'forceDelete', 'restore'],
-                    UserRole::HR->value => ['index', 'create', 'edit'],
                 ],
             ],
             'roles' => [
@@ -40,8 +38,7 @@ class PermissionSeeder extends Seeder
                     'destroy' => 'role.destroy',
                 ],
                 'roles' => [
-                    UserRole::SUPER_ADMIN->value => ['index', 'create', 'edit', 'destroy'],
-                    UserRole::ADMIN->value => ['index', 'create', 'edit'],
+                    UserRole::ADMIN->value => ['index', 'create', 'edit', 'destroy'],
                 ],
             ],
             'pages' => [
@@ -52,7 +49,6 @@ class PermissionSeeder extends Seeder
                     'destroy' => 'page.destroy',
                 ],
                 'roles' => [
-                    UserRole::SUPER_ADMIN->value => ['index', 'create', 'edit', 'destroy'],
                     UserRole::ADMIN->value => ['index', 'create', 'edit', 'destroy'],
                 ],
             ],
@@ -62,7 +58,6 @@ class PermissionSeeder extends Seeder
                     'edit' => 'setting.edit',
                 ],
                 'roles' => [
-                    UserRole::SUPER_ADMIN->value => ['index', 'edit'],
                     UserRole::ADMIN->value => ['index', 'edit'],
                 ],
             ],
@@ -78,7 +73,7 @@ class PermissionSeeder extends Seeder
                 [
                     'name' => $roleEnum->value,
                     'guard_name' => 'api', // Tambahkan di data yang dibuat
-                    'system_reserve' => in_array($roleEnum, [UserRole::SUPER_ADMIN, UserRole::ADMIN]),
+                    'system_reserve' => in_array($roleEnum, [UserRole::ADMIN]),
                 ]
             );
         }
@@ -107,8 +102,7 @@ class PermissionSeeder extends Seeder
             }
         }
 
-        // 5. Khusus Super Admin: Berikan SEMUA permission (Safety Net)
-        $superAdmin = Role::findByName(UserRole::SUPER_ADMIN->value);
-        $superAdmin->givePermissionTo(Permission::all());
+        $admin = Role::findByName(UserRole::ADMIN->value);
+        $admin->givePermissionTo(Permission::all());
     }
 }
