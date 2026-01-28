@@ -73,6 +73,32 @@ class PermissionSeeder extends Seeder
                         UserRole::ADMIN->value => ['index', 'create', 'edit', 'destroy', 'forceDelete', 'restore'],
                     ],
                 ],
+                'positions' => [
+                    'actions' => [
+                        'index' => 'position.index',
+                        'create' => 'position.create',
+                        'edit' => 'position.edit',
+                        'destroy' => 'position.destroy',
+                        'restore' => 'position.restore',
+                        'forceDelete' => 'position.forceDelete',
+                    ],
+                    'roles' => [
+                        UserRole::ADMIN->value => ['index', 'create', 'edit', 'destroy', 'forceDelete', 'restore'],
+                    ],
+                ],
+                'allowances' => [
+                    'actions' => [
+                        'index' => 'allowances.index',
+                        'create' => 'allowances.create',
+                        'edit' => 'allowances.edit',
+                        'destroy' => 'allowances.destroy',
+                        'restore' => 'allowances.restore',
+                        'forceDelete' => 'allowances.forceDelete',
+                    ],
+                    'roles' => [
+                        UserRole::ADMIN->value => ['index', 'create', 'edit', 'destroy', 'forceDelete', 'restore'],
+                    ],
+                ],
             ],
         ];
 

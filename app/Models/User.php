@@ -60,8 +60,6 @@ class User extends Authenticatable
         return $this->belongsTo(Team::class);
     }
 
-
-
     /**
      * Get the attributes that should be cast.
      *

@@ -10,7 +10,6 @@ use App\Models\Division;
 use App\Services\DivisionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 
 class DivisionController extends Controller
 {
@@ -23,6 +22,8 @@ class DivisionController extends Controller
 
     public function index(): JsonResponse
     {
+        $this->authorize('viewAny', Division::class);
+
         try {
             $divisions = $this->divisionService->index();
 
@@ -38,6 +39,8 @@ class DivisionController extends Controller
 
     public function store(CreateDivisionRequest $request): JsonResponse
     {
+        $this->authorize('create', Division::class);
+
         try {
             $division = $this->divisionService->store(
                 $request->validated(),
@@ -57,6 +60,8 @@ class DivisionController extends Controller
 
     public function show(Division $division): JsonResponse
     {
+        $this->authorize('view', Division::class);
+
         try {
             return $this->successResponse(
                 new DivisionResource($division->load('teams')),
@@ -70,6 +75,8 @@ class DivisionController extends Controller
 
     public function update(UpdateDivisionRequest $request, Division $division): JsonResponse
     {
+        $this->authorize('edit', Division::class);
+
         try {
             $updated = $this->divisionService->update($division, $request->validated(), Auth::id());
 
@@ -85,6 +92,8 @@ class DivisionController extends Controller
 
     public function destroy(Division $division): JsonResponse
     {
+        $this->authorize('destroy', Division::class);
+
         try {
             $this->divisionService->delete($division);
 
@@ -100,6 +109,8 @@ class DivisionController extends Controller
 
     public function restore(string $uuid): JsonResponse
     {
+        $this->authorize('restore', Division::class);
+
         try {
             $division = $this->divisionService->restore($uuid);
 
@@ -115,6 +126,8 @@ class DivisionController extends Controller
 
     public function forceDelete(string $uuid): JsonResponse
     {
+        $this->authorize('forceDelete', Division::class);
+
         try {
             $this->divisionService->forceDelete($uuid);
 

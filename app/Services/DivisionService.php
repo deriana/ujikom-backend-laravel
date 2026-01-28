@@ -127,16 +127,16 @@ class DivisionService
             throw new Exception('Cannot delete a deleted division');
         }
 
-               $blockedUsers = $division->teams()
-            ->with('users')
-            ->get()
-            ->pluck('users')
-            ->flatten()
-            ->where('cannot_be_deleted', true);
+        //     $blockedUsers = $division->teams()
+        //     ->with('users')
+        //     ->get()
+        //     ->pluck('users')
+        //     ->flatten()
+        //     ->where('cannot_be_deleted', true);
 
-        if ($blockedUsers->count() > 0) {
-            throw new Exception('Cannot delete division because it has users that cannot be deleted.');
-        }
+        // if ($blockedUsers->count() > 0) {
+        //     throw new Exception('Cannot delete division because it has users that cannot be deleted.');
+        // }
 
         try {
             if ($division->teams()->exists()) {

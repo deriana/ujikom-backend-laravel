@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AllowanceController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DivisionController;
 use App\Http\Controllers\Api\RoleController;
@@ -14,7 +15,7 @@ Route::middleware('throttle:api')->group(function () {
 });
 
 Route::group(['prefix' => 'auth', 'middleware' => 'throttle:api'], function () {
-    // Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
@@ -28,9 +29,14 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
 
     Route::apiResource('users', UserController::class);
     Route::apiResource('roles', RoleController::class);
+    Route::apiResource('divisions', DivisionController::class);
     Route::prefix('divisions')->group(function () {
         Route::post('/restore/{uuid}', [DivisionController::class, 'restore']);
         Route::delete('/force-delete/{uuid}', [DivisionController::class, 'forceDelete']);
     });
-    Route::apiResource('divisions', DivisionController::class);
+    Route::apiResource('allowances', AllowanceController::class);
+    Route::prefix('allowances')->group(function () {
+        Route::post('/restore/{uuid}', [AllowanceController::class, 'restore']);
+        Route::delete('/force-delete/{uuid}', [AllowanceController::class, 'forceDelete']);
+    });
 });
