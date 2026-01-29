@@ -24,120 +24,76 @@ class DivisionController extends Controller
     {
         $this->authorize('viewAny', Division::class);
 
-        try {
-            $divisions = $this->divisionService->index();
+        $divisions = $this->divisionService->index();
 
-            return $this->successResponse(
-                DivisionResource::collection($divisions),
-                'Divisions fetched successfully'
-            );
-
-        } catch (\Exception $e) {
-            return $this->errorResponse($e->getMessage(), 500);
-        }
+        return $this->successResponse(
+            DivisionResource::collection($divisions),
+            'Divisions fetched successfully'
+        );
     }
 
     public function store(CreateDivisionRequest $request): JsonResponse
     {
         $this->authorize('create', Division::class);
 
-        try {
-            $division = $this->divisionService->store(
-                $request->validated(),
-                Auth::id()
-            );
+        $division = $this->divisionService->store($request->validated(), Auth::id());
 
-            return $this->successResponse(
-                new DivisionResource($division->load('teams')),
-                'Division created successfully',
-                201
-            );
-
-        } catch (\Exception $e) {
-            return $this->errorResponse($e->getMessage(), 500);
-        }
+        return $this->successResponse(
+            new DivisionResource($division->load('teams')),
+            'Division created successfully',
+            201
+        );
     }
 
     public function show(Division $division): JsonResponse
     {
-        $this->authorize('view', Division::class);
+        $this->authorize('view', $division);
 
-        try {
-            return $this->successResponse(
-                new DivisionResource($division->load('teams')),
-                'Division fetched successfully'
-            );
-
-        } catch (\Exception $e) {
-            return $this->errorResponse($e->getMessage(), 500);
-        }
+        return $this->successResponse(
+            new DivisionResource($division->load('teams')),
+            'Division fetched successfully'
+        );
     }
 
     public function update(UpdateDivisionRequest $request, Division $division): JsonResponse
     {
-        $this->authorize('edit', Division::class);
+        $this->authorize('edit', $division);
 
-        try {
-            $updated = $this->divisionService->update($division, $request->validated(), Auth::id());
+        $updated = $this->divisionService->update($division, $request->validated(), Auth::id());
 
-            return $this->successResponse(
-                new DivisionResource($updated->load('teams')),
-                'Division updated successfully'
-            );
-
-        } catch (\Exception $e) {
-            return $this->errorResponse($e->getMessage(), 500);
-        }
+        return $this->successResponse(
+            new DivisionResource($updated->load('teams')),
+            'Division updated successfully'
+        );
     }
 
     public function destroy(Division $division): JsonResponse
     {
-        $this->authorize('destroy', Division::class);
+        $this->authorize('destroy', $division);
 
-        try {
-            $this->divisionService->delete($division);
+        $this->divisionService->delete($division);
 
-            return $this->successResponse(
-                null,
-                'Division deleted successfully'
-            );
-
-        } catch (\Exception $e) {
-            return $this->errorResponse($e->getMessage(), 400);
-        }
+        return $this->successResponse(null, 'Division deleted successfully');
     }
 
     public function restore(string $uuid): JsonResponse
     {
         $this->authorize('restore', Division::class);
 
-        try {
-            $division = $this->divisionService->restore($uuid);
+        $division = $this->divisionService->restore($uuid);
 
-            return $this->successResponse(
-                new DivisionResource($division->load('teams')),
-                'Division restored successfully'
-            );
-
-        } catch (\Exception $e) {
-            return $this->errorResponse($e->getMessage(), 400);
-        }
+        return $this->successResponse(
+            new DivisionResource($division->load('teams')),
+            'Division restored successfully'
+        );
     }
 
     public function forceDelete(string $uuid): JsonResponse
     {
         $this->authorize('forceDelete', Division::class);
 
-        try {
-            $this->divisionService->forceDelete($uuid);
+        $this->divisionService->forceDelete($uuid);
 
-            return $this->successResponse(
-                null,
-                'Division permanently deleted'
-            );
-
-        } catch (\Exception $e) {
-            return $this->errorResponse($e->getMessage(), 400);
-        }
+        return $this->successResponse(null, 'Division permanently deleted');
     }
 }

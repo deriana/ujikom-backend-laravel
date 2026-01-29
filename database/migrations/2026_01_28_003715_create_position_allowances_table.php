@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('position_allowances', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('position_id')->constrained();
-            $table->foreignId('allowance_id')->constrained();
-            $table->decimal('amount', 15,2);
+            $table->foreignId('position_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('allowance_id')->constrained()->cascadeOnDelete();
+            $table->decimal('amount', 15,2)->nullable();
             $table->timestamps();
         });
     }

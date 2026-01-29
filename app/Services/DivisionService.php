@@ -56,68 +56,27 @@ class DivisionService
         }
     }
 
-    public function update(Division $division, array $data, int $userId)
-    {
-        if ($division->trashed()) {
-            throw new Exception('Cannot update a deleted division');
-        }
-
-        DB::beginTransaction();
-
-        try {
-            $division->update([
-                'name' => $data['name'] ?? $division->name,
-                'code' => $data['code'] ?? $division->code,
-            ]);
-
-            if (! empty($data['teams']) && is_array($data['teams'])) {
-
-                $existingTeams = $division->teams()->get(['id', 'uuid', 'name']);
-                $existingTeamIds = $existingTeams->pluck('id')->toArray();
-                $existingTeamUUIDs = $existingTeams->pluck('uuid')->toArray();
-
-                $sentTeamIds = [];
-
-                foreach ($data['teams'] as $teamData) {
-
-                    if (! empty($teamData['uuid']) && in_array($teamData['uuid'], $existingTeamUUIDs)) {
-
-                        $team = $division->teams()->where('uuid', $teamData['uuid'])->first();
-
-                        if ($team) {
-                            $team->update([
-                                'name' => $teamData['name'],
-                            ]);
-                            $sentTeamIds[] = $team->id;
-                        }
-
-                    } else {
-                        $newTeam = $division->teams()->create([
-                            'uuid' => Str::uuid(),
-                            'name' => $teamData['name'],
-                            'division_id' => $division->id,
-                            'created_by_id' => $userId,
-                        ]);
-                        $sentTeamIds[] = $newTeam->id;
-                    }
-                }
-
-                $teamsToDelete = array_diff($existingTeamIds, $sentTeamIds);
-
-                if (! empty($teamsToDelete)) {
-                    $division->teams()->whereIn('id', $teamsToDelete)->delete();
-                }
-            }
-
-            DB::commit();
-
-            return $division->load('teams:id,division_id,name,uuid');
-
-        } catch (Exception $e) {
-            DB::rollBack();
-            throw new Exception('Failed to update division with teams: '.$e->getMessage());
-        }
+public function update(Division $division, array $data, int $userId)
+{
+    if ($division->trashed()) {
+        throw new Exception('Cannot update a deleted division');
     }
+
+    DB::transaction(function () use ($division, $data, $userId) {
+
+        $division->update([
+            'name' => $data['name'] ?? $division->name,
+            'code' => $data['code'] ?? $division->code,
+        ]);
+
+        if (isset($data['teams']) && is_array($data['teams'])) {
+            $this->syncTeams($division, $data['teams'], $userId);
+        }
+    });
+
+    return $division->load('teams:uuid,division_id,name');
+}
+
 
     public function delete(Division $division)
     {
@@ -202,4 +161,47 @@ class DivisionService
             throw new Exception('Failed to permanently delete division with teams: '.$e->getMessage());
         }
     }
+    
+    private function syncTeams(Division $division, array $teams, int $userId): void
+    {
+        // Ambil semua team existing, key by UUID (1 query saja)
+        $existingTeams = $division->teams()->get()->keyBy('uuid');
+
+        $sentUUIDs = collect();
+
+        foreach ($teams as $teamData) {
+
+            // ================= UPDATE =================
+            if (!empty($teamData['uuid']) && $existingTeams->has($teamData['uuid'])) {
+
+                $team = $existingTeams[$teamData['uuid']];
+                $team->update([
+                    'name' => $teamData['name'],
+                ]);
+
+                $sentUUIDs->push($team->uuid);
+
+            } else {
+
+                $newTeam = $division->teams()->create([
+                    'uuid' => (string) Str::uuid(),
+                    'name' => $teamData['name'],
+                    'created_by_id' => $userId,
+                ]);
+
+                $sentUUIDs->push($newTeam->uuid);
+            }
+        }
+
+        $existingUUIDs = $existingTeams->keys();
+
+        $uuidsToDelete = $existingUUIDs->diff($sentUUIDs);
+
+        if ($uuidsToDelete->isNotEmpty()) {
+            $division->teams()
+                ->whereIn('uuid', $uuidsToDelete)
+                ->delete();
+        }
+    }
 }
+

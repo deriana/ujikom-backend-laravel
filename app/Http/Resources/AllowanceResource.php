@@ -14,19 +14,9 @@ class AllowanceResource extends JsonResource
             'uuid' => $this->uuid,
             'name' => $this->name,
             'type' => $this->type,
-
-            // nominal default allowance
             'amount' => (float) $this->amount,
-
             'created_at' => $this->created_at?->format('Y-m-d H:i:s'),
             'updated_at' => $this->updated_at?->format('Y-m-d H:i:s'),
-
-            /*
-            |--------------------------------------------------------------------------
-            | RELATIONS (only if loaded)
-            |--------------------------------------------------------------------------
-            */
-
             'creator' => $this->whenLoaded('creator', function () {
                 return [
                     'uuid' => $this->creator->uuid,
@@ -34,14 +24,11 @@ class AllowanceResource extends JsonResource
                     'email' => $this->creator->email,
                 ];
             }),
-
             'positions' => $this->whenLoaded('positions', function () {
                 return $this->positions->map(function ($position) {
                     return [
                         'uuid' => $position->uuid,
                         'name' => $position->name,
-
-                        // jika ada nominal khusus per posisi dari pivot
                         'amount' => isset($position->pivot->amount)
                             ? (float) $position->pivot->amount
                             : (float) $this->amount,

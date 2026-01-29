@@ -3,131 +3,76 @@
 namespace App\Services;
 
 use App\Models\Allowance;
-use Exception;
 use Illuminate\Support\Facades\DB;
+use Exception;
 
 class AllowanceService
 {
     public function index()
     {
-        try {
-            return Allowance::with(['creator'])
-                ->latest()
-                ->get();
-
-        } catch (Exception $e) {
-            throw new Exception('Failed to fetch Allowance'.$e->getMessage());
-        }
+        return Allowance::with(['creator', 'positions'])
+            ->latest()
+            ->get();
     }
 
-    public function store(array $data, int $userId)
+    public function store(array $data, int $userId): Allowance
     {
-        DB::beginTransaction();
-
-        try {
-            $allowance = Allowance::create([
+        return DB::transaction(function () use ($data, $userId) {
+            return Allowance::create([
                 'name' => $data['name'],
                 'amount' => $data['amount'],
                 'type' => $data['type'],
                 'created_by_id' => $userId,
             ]);
-
-            DB::commit();
-
-            return $allowance;
-
-        } catch (Exception $e) {
-            DB::rollBack();
-            throw new Exception('Failed to create allowance: '.$e->getMessage());
-        }
+        });
     }
 
-    public function update(Allowance $allowance, array $data, int $userId)
+    public function update(Allowance $allowance, array $data, int $userId): Allowance
     {
         if ($allowance->trashed()) {
             throw new Exception('Cannot update a deleted allowance');
         }
 
-        DB::beginTransaction();
-
-        try {
+        return DB::transaction(function () use ($allowance, $data) {
             $allowance->update([
-                'name' => $data['name'] ?? $allowance->name,
+                'name'   => $data['name']   ?? $allowance->name,
                 'amount' => $data['amount'] ?? $allowance->amount,
-                'type' => $data['type'] ?? $allowance->type,
+                'type'   => $data['type']   ?? $allowance->type,
             ]);
-            DB::commit();
 
             return $allowance;
-
-        } catch (Exception $e) {
-            DB::rollBack();
-            throw new Exception('Failed to update allowance'.$e->getMessage());
-        }
+        });
     }
 
-    public function delete(Allowance $allowance)
+    public function delete(Allowance $allowance): bool
     {
-        DB::beginTransaction();
-
         if ($allowance->trashed()) {
             throw new Exception('Cannot delete a deleted allowance');
         }
 
-        try {
-            $allowance->delete();
-
-            DB::commit();
-
-            return true;
-
-        } catch (Exception $e) {
-            DB::rollBack();
-            throw new Exception('Failed to soft delete allowance with : '.$e->getMessage());
-        }
+        return DB::transaction(fn () => $allowance->delete());
     }
 
-    public function restore(string $uuid)
+    public function restore(string $uuid): Allowance
     {
-        try {
+        return DB::transaction(function () use ($uuid) {
             $allowance = Allowance::withTrashed()->whereUuid($uuid)->firstOrFail();
 
             if (! $allowance->trashed()) {
                 throw new Exception('Allowance is not deleted');
             }
 
-            DB::beginTransaction();
-
             $allowance->restore();
 
-            DB::commit();
-
             return $allowance;
-
-        } catch (Exception $e) {
-            DB::rollBack();
-            throw new Exception('Failed to restore allowance with : '.$e->getMessage());
-        }
+        });
     }
 
-    public function forceDelete(string $uuid)
+    public function forceDelete(string $uuid): bool
     {
-        DB::beginTransaction();
-
-        try {
+        return DB::transaction(function () use ($uuid) {
             $allowance = Allowance::withTrashed()->whereUuid($uuid)->firstOrFail();
-
-            $allowance->withTrashed()->forceDelete();
-
-            $allowance->forceDelete();
-
-            DB::commit();
-
-            return true;
-
-        } catch (Exception $e) {
-            DB::rollBack();
-            throw new Exception('Failed to permanently delete allowance with : '.$e->getMessage());
-        }
+            return (bool) $allowance->forceDelete();
+        });
     }
 }

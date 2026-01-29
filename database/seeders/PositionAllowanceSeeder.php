@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use App\Models\Position;
 use App\Models\Allowance;
+use App\Models\Position;
 use App\Models\User;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
 class PositionAllowanceSeeder extends Seeder
@@ -64,19 +64,19 @@ class PositionAllowanceSeeder extends Seeder
         // =========================
         $manager->allowances()->attach([
             $transport->id => ['amount' => 200000],
-            $meal->id      => ['amount' => null],
-            $jabatan->id   => ['amount' => 15],
+            $meal->id => ['amount' => null],
+            $jabatan->id => ['amount' => 15],
         ]);
 
         $staff->allowances()->attach([
             $transport->id => ['amount' => null],
-            $meal->id      => ['amount' => null],
-            $jabatan->id   => ['amount' => 5],
+            $meal->id => ['amount' => null],
+            $jabatan->id => ['amount' => 5],
         ]);
 
         $intern->allowances()->attach([
             $transport->id => ['amount' => 50000],
-            $meal->id      => ['amount' => null],
+            $meal->id => ['amount' => null],
         ]);
     }
 }

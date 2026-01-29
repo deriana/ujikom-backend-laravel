@@ -7,19 +7,22 @@ use App\Http\Requests\CreateRoleRequest;
 use App\Http\Requests\UpdateRoleRequest;
 use App\Http\Resources\RoleResource;
 use App\Services\RoleService;
-use Exception;
 use Spatie\Permission\Models\Role;
+use Illuminate\Http\JsonResponse;
 
 class RoleController extends Controller
 {
-    protected $roleService;
+    protected RoleService $roleService;
 
     public function __construct(RoleService $roleService)
     {
         $this->roleService = $roleService;
     }
 
-    public function index()
+    /**
+     * List all roles
+     */
+    public function index(): JsonResponse
     {
         $this->authorize('viewAny', Role::class);
 
@@ -31,42 +34,39 @@ class RoleController extends Controller
         );
     }
 
-    public function store(CreateRoleRequest $request)
+    /**
+     * Store a new role
+     */
+    public function store(CreateRoleRequest $request): JsonResponse
     {
         $this->authorize('create', Role::class);
 
-        try {
-            $role = $this->roleService->store($request->validated());
+        $role = $this->roleService->store($request->validated());
 
-            return $this->successResponse(new RoleResource($role), 'Role created successfully', 201);
-        } catch (Exception $e) {
-            return $this->errorResponse($e->getMessage(), 400);
-        }
+        return $this->successResponse(new RoleResource($role), 'Role created successfully', 201);
     }
 
-    public function update(UpdateRoleRequest $request, Role $role)
+    /**
+     * Update a role
+     */
+    public function update(UpdateRoleRequest $request, Role $role): JsonResponse
     {
         $this->authorize('update', $role);
 
-        try {
-            $updatedRole = $this->roleService->update($role, $request->validated());
+        $updatedRole = $this->roleService->update($role, $request->validated());
 
-            return $this->successResponse(new RoleResource($updatedRole), 'Role updated successfully');
-        } catch (Exception $e) {
-            return $this->errorResponse($e->getMessage(), 400);
-        }
+        return $this->successResponse(new RoleResource($updatedRole), 'Role updated successfully');
     }
 
-    public function destroy(Role $role)
+    /**
+     * Delete a role
+     */
+    public function destroy(Role $role): JsonResponse
     {
         $this->authorize('delete', $role);
 
-        try {
-            $this->roleService->delete($role);
+        $this->roleService->delete($role);
 
-            return $this->successResponse(null, 'Role deleted successfully');
-        } catch (Exception $e) {
-            return $this->errorResponse($e->getMessage(), 422);
-        }
+        return $this->successResponse(null, 'Role deleted successfully');
     }
 }

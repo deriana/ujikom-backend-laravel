@@ -20,7 +20,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             SettingSeeder::class,
             DivisionSeeder::class,
-            // PositionAllowanceSeeder::class,
+            PositionAllowanceSeeder::class,
             AllowanceSeeder::class
         ]);
     }
