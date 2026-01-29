@@ -12,53 +12,46 @@ use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
-    protected $authService;
+    protected AuthService $authService;
 
     public function __construct(AuthService $authService)
     {
         $this->authService = $authService;
     }
 
+    /**
+     * Register a new user
+     */
     public function register(RegisterRequest $request): JsonResponse
     {
-        try {
-            [$user, $token] = $this->authService->register($request->validated());
+        [$user, $token] = $this->authService->register($request->validated());
 
-            return $this->successResponse([
-                'user' => new UserResource($user),
-                'token' => $token,
-            ], 'User registered successfully', 201);
-
-        } catch (\Exception $e) {
-            return $this->errorResponse($e->getMessage(), 500);
-        }
+        return $this->successResponse([
+            'user'  => new UserResource($user),
+            'token' => $token,
+        ], 'User registered successfully', 201);
     }
 
+    /**
+     * Login user
+     */
     public function login(LoginRequest $request): JsonResponse
     {
-        try {
-            [$user, $token] = $this->authService->login($request->validated());
+        [$user, $token] = $this->authService->login($request->validated());
 
-            return $this->successResponse([
-                'user' => new UserResource($user),
-                'token' => $token,
-            ], 'User logged in successfully', 200);
-
-        } catch (\Exception $e) {
-            return $this->errorResponse($e->getMessage(), 500);
-        }
+        return $this->successResponse([
+            'user'  => new UserResource($user),
+            'token' => $token,
+        ], 'User logged in successfully', 200);
     }
 
+    /**
+     * Logout user
+     */
     public function logout(): JsonResponse
     {
-        try {
+        $this->authService->logout(Auth::user());
 
-            $this->authService->logout(Auth::user());
-
-            return $this->successResponse(null, 'User logged out successfully', 200);
-
-        } catch (\Exception $e) {
-            return $this->errorResponse($e->getMessage(), 500);
-        }
+        return $this->successResponse(null, 'User logged out successfully', 200);
     }
 }

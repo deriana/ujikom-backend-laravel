@@ -3,64 +3,65 @@
 namespace App\Services;
 
 use App\Models\User;
-use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
+use DomainException;
 
 class AuthService
 {
-    public function register(array $data)
+    /**
+     * Register a new user and return user + token
+     *
+     * @param array $data
+     * @return array [$user, $token]
+     */
+    public function register(array $data): array
     {
-        DB::beginTransaction();
-        try {
+        return DB::transaction(function () use ($data) {
             $user = User::create([
-                'name' => $data['name'],
-                'email' => $data['email'],
+                'name'     => $data['name'],
+                'email'    => $data['email'],
                 'password' => Hash::make($data['password']),
             ]);
 
             $token = $user->createToken('auth_token')->plainTextToken;
 
-            DB::commit();
             return [$user, $token];
-
-        } catch (Exception $e) {
-            DB::rollBack();
-            Log::error('Registration Error: ' . $e->getMessage());
-            throw new Exception('Registration failed. Please try again.');
-        }
+        });
     }
 
-    public function login(array $data)
+    /**
+     * Authenticate user and return user + token
+     *
+     * @param array $data
+     * @return array [$user, $token]
+     * @throws DomainException
+     */
+    public function login(array $data): array
     {
-        try {
-            $user = User::where('email', $data['email'])->first();
+        $user = User::where('email', $data['email'])->first();
 
-            if (!$user || !Hash::check($data['password'], $user->password)) {
-                throw new Exception('The Email or Password is incorrect.');
-            }
-
-            if (!$user->is_active) {
-                throw new Exception('Your account is inactive. Please contact support.');
-            }
-
-            $token = $user->createToken('auth_token')->plainTextToken;
-
-            return [$user, $token];
-        } catch (Exception $e) {
-            Log::error('Login Error: ' . $e->getMessage());
-            throw $e;
+        if (!$user || !Hash::check($data['password'], $user->password)) {
+            throw new DomainException('The email or password is incorrect.');
         }
+
+        if (!$user->is_active) {
+            throw new DomainException('Your account is inactive. Please contact support.');
+        }
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return [$user, $token];
     }
 
-    public function logout(User $user)
+    /**
+     * Logout user by deleting current access token
+     *
+     * @param User $user
+     * @return bool
+     */
+    public function logout(User $user): bool
     {
-        try {
-            return $user->currentAccessToken()->delete();
-        } catch (Exception $e) {
-            Log::error('Logout Error: ' . $e->getMessage());
-            throw new Exception('Logout failed. Please try again.');
-        }
+        return (bool) $user->currentAccessToken()?->delete();
     }
 }

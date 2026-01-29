@@ -25,7 +25,8 @@ class User extends Authenticatable
         'email',
         'password',
         'uuid',
-        'is_active'
+        'is_active',
+        'created_by_id',
     ];
 
     /**
@@ -52,6 +53,11 @@ class User extends Authenticatable
     public function getRouteKeyName()
     {
         return 'uuid';
+    }
+
+    public function teams()
+    {
+        return $this->belongsTo(Team::class);
     }
 
     /**

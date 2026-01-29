@@ -4,7 +4,6 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -19,7 +18,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions): void {
         // error responses keep the same JSON shape as your trait.
         $makeResponder = function () {
-            return new class {
+            return new class
+            {
                 use \App\Traits\ApiResponse;
             };
         };
@@ -75,5 +75,11 @@ return Application::configure(basePath: dirname(__DIR__))
             $responder = $makeResponder();
 
             return $responder->errorResponse('Server Error', 500);
+        });
+
+        $exceptions->render(function (DomainException $e, Request $request) use ($makeResponder) {
+            $responder = $makeResponder();
+
+            return $responder->errorResponse($e->getMessage(), 400); // 400 Bad Request untuk error bisnis
         });
     })->create();

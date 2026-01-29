@@ -1,6 +1,9 @@
 <?php
 
+use App\Http\Controllers\Api\AllowanceController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\DivisionController;
+use App\Http\Controllers\Api\PositionController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Http\Request;
@@ -27,5 +30,20 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
 
     Route::apiResource('users', UserController::class);
     Route::apiResource('roles', RoleController::class);
-
+    Route::apiResource('divisions', DivisionController::class);
+    Route::prefix('divisions')->group(function () {
+        Route::post('/restore/{uuid}', [DivisionController::class, 'restore']);
+        Route::delete('/force-delete/{uuid}', [DivisionController::class, 'forceDelete']);
+    });
+    Route::apiResource('allowances', AllowanceController::class);
+    Route::prefix('allowances')->group(function () {
+        Route::post('/restore/{uuid}', [AllowanceController::class, 'restore']);
+        Route::delete('/force-delete/{uuid}', [AllowanceController::class, 'forceDelete']);
+    });
+    Route::apiResource('positions', PositionController::class);
+    Route::prefix('positions')->group(function () {
+        Route::post('/restore/{uuid}', [PositionController::class, 'restore']);
+        Route::delete('/force-delete/{uuid}', [PositionController::class, 'forceDelete']);
+    });
 });
+
