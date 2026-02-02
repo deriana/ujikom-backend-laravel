@@ -42,7 +42,7 @@ return [
         ],
 
         'api' => [
-            'driver' => 'token',    // Pastikan driver-nya 'jwt'
+            'driver' => 'sanctum',    // Pastikan driver-nya 'jwt'
             'provider' => 'users',
         ],
     ],
