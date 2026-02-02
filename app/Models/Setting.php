@@ -12,21 +12,21 @@ class Setting extends Model implements HasMedia
     use HasFactory, InteractsWithMedia;
 
     protected $fillable = [
-        'values',
+        'key', 'values',
     ];
 
     protected $casts = [
-        'values' => 'json',
+        'values' => 'array',
     ];
 
-    public function getId($request)
-    {
-        return ($request->id) ? $request->id : $request->route('settings');
-    }
+    // public function getId($request)
+    // {
+    //     return ($request->id) ? $request->id : $request->route('settings');
+    // }
 
-    public function setValuesAttribute($value)
-    {
-        $this->attributes['values'] = json_encode($value);
-    }
+    // public function setValuesAttribute($value)
+    // {
+    //     $this->attributes['values'] = json_encode($value);
+    // }
 
 }

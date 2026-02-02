@@ -11,11 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('settings', function (Blueprint $table) {
+        Schema::create('positions', function (Blueprint $table) {
             $table->id();
-            $table->string('key')->unique();
-            $table->json('values')->nullable();
+            $table->uuid('uuid')->unique();
+            $table->string('name', 100);
+            $table->decimal('base_salary', 15,2);
+            $table->foreignId('created_by_id')
+            ->constrained('users')
+            ->cascadeOnDelete();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 
@@ -24,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('settings');
+        Schema::dropIfExists('positions');
     }
 };

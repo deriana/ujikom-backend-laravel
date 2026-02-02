@@ -19,62 +19,109 @@ class PermissionSeeder extends Seeder
         $modules = [
             'users' => [
                 'actions' => [
-                    'index'   => 'user.index',
-                    'create'  => 'user.create',
-                    'edit'    => 'user.edit',
+                    'index' => 'user.index',
+                    'create' => 'user.create',
+                    'edit' => 'user.edit',
                     'destroy' => 'user.destroy',
                     'forceDelete' => 'user.forceDelete',
                     'restore' => 'user.restore',
                 ],
                 'roles' => [
-                    UserRole::SUPER_ADMIN->value => ['index', 'create', 'edit', 'destroy', 'forceDelete', 'restore'],
-                    UserRole::ADMIN->value       => ['index', 'create', 'edit', 'destroy', 'forceDelete', 'restore'],
-                    UserRole::HR->value          => ['index', 'create', 'edit'],
-                ]
+                    UserRole::ADMIN->value => ['index', 'create', 'edit', 'destroy', 'forceDelete', 'restore'],
+                ],
             ],
             'roles' => [
                 'actions' => [
-                    'index'   => 'role.index',
-                    'create'  => 'role.create',
-                    'edit'    => 'role.edit',
-                    'destroy' => 'role.destroy'
+                    'index' => 'role.index',
+                    'create' => 'role.create',
+                    'edit' => 'role.edit',
+                    'destroy' => 'role.destroy',
                 ],
                 'roles' => [
-                    UserRole::SUPER_ADMIN->value => ['index', 'create', 'edit', 'destroy'],
-                    UserRole::ADMIN->value       => ['index', 'create', 'edit'],
+                    UserRole::ADMIN->value => ['index', 'create', 'edit', 'destroy'],
                 ],
             ],
             'pages' => [
                 'actions' => [
-                    'index'   => 'page.index',
-                    'create'  => 'page.create',
-                    'edit'    => 'page.edit',
+                    'index' => 'page.index',
+                    'create' => 'page.create',
+                    'edit' => 'page.edit',
                     'destroy' => 'page.destroy',
                 ],
                 'roles' => [
-                    UserRole::SUPER_ADMIN->value => ['index', 'create', 'edit', 'destroy'],
-                    UserRole::ADMIN->value       => ['index', 'create', 'edit', 'destroy'],
-                ]
+                    UserRole::ADMIN->value => ['index', 'create', 'edit', 'destroy'],
+                ],
             ],
             'settings' => [
                 'actions' => [
                     'index' => 'setting.index',
-                    'edit'  => 'setting.edit',
+                    'edit' => 'setting.edit',
                 ],
                 'roles' => [
-                    UserRole::SUPER_ADMIN->value => ['index', 'edit'],
-                    UserRole::ADMIN->value       => ['index', 'edit'],
+                    UserRole::ADMIN->value => ['index', 'edit'],
                 ],
+                'divisions' => [
+                    'actions' => [
+                        'index' => 'division.index',
+                        'create' => 'division.create',
+                        'edit' => 'division.edit',
+                        'destroy' => 'division.destroy',
+                        'restore' => 'division.restore',
+                        'forceDelete' => 'division.forceDelete',
+                    ],
+                    'roles' => [
+                        UserRole::ADMIN->value => ['index', 'create', 'edit', 'destroy', 'forceDelete', 'restore'],
+                    ],
+                ],
+                'positions' => [
+                    'actions' => [
+                        'index' => 'position.index',
+                        'create' => 'position.create',
+                        'edit' => 'position.edit',
+                        'destroy' => 'position.destroy',
+                        'restore' => 'position.restore',
+                        'forceDelete' => 'position.forceDelete',
+                    ],
+                    'roles' => [
+                        UserRole::ADMIN->value => ['index', 'create', 'edit', 'destroy', 'forceDelete', 'restore'],
+                    ],
+                ],
+                'allowances' => [
+                    'actions' => [
+                        'index' => 'allowances.index',
+                        'create' => 'allowances.create',
+                        'edit' => 'allowances.edit',
+                        'destroy' => 'allowances.destroy',
+                        'restore' => 'allowances.restore',
+                        'forceDelete' => 'allowances.forceDelete',
+                    ],
+                    'roles' => [
+                        UserRole::ADMIN->value => ['index', 'create', 'edit', 'destroy', 'forceDelete', 'restore'],
+                    ],
+                ],
+                'settings' => [
+                    'actions' => [
+                        'index' => 'setting.index',
+                        'edit' => 'setting.edit',
+                    ],
+                    'roles' => [
+                        UserRole::ADMIN->value => ['index', 'edit'],
+                    ]
+                ]
             ],
         ];
 
         // 3. Buat Semua Role dari Enum jika belum ada
         foreach (UserRole::cases() as $roleEnum) {
             Role::firstOrCreate(
-                ['name' => $roleEnum->value],
                 [
                     'name' => $roleEnum->value,
-                    'system_reserve' => in_array($roleEnum, [UserRole::SUPER_ADMIN, UserRole::ADMIN])
+                    'guard_name' => 'api', // Tambahkan di kriteria pencarian
+                ],
+                [
+                    'name' => $roleEnum->value,
+                    'guard_name' => 'api', // Tambahkan di data yang dibuat
+                    'system_reserve' => in_array($roleEnum, [UserRole::ADMIN]),
                 ]
             );
         }
@@ -103,8 +150,7 @@ class PermissionSeeder extends Seeder
             }
         }
 
-        // 5. Khusus Super Admin: Berikan SEMUA permission (Safety Net)
-        $superAdmin = Role::findByName(UserRole::SUPER_ADMIN->value);
-        $superAdmin->givePermissionTo(Permission::all());
+        $admin = Role::findByName(UserRole::ADMIN->value);
+        $admin->givePermissionTo(Permission::all());
     }
 }

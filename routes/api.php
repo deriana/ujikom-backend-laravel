@@ -1,6 +1,11 @@
 <?php
 
+use App\Http\Controllers\Api\AllowanceController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\DivisionController;
+use App\Http\Controllers\Api\PositionController;
+use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -24,6 +29,35 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         return $request->user();
     });
 
+    Route::apiResource('roles', RoleController::class);
     Route::apiResource('users', UserController::class);
-
+    Route::prefix('users')->group(function () {
+        Route::post('/restore/{uuid}', [UserController::class, 'restore']);
+        Route::delete('/force-delete/{uuid}', [UserController::class, 'forceDelete']);
+        Route::put('terminate-employment/{uuid}', [UserController::class, 'terminateEmployment']);
+        Route::put('change-password/{uuid}', [UserController::class, 'changePassword']);
+        Route::put('status/{uuid}', [UserController::class, 'status']);
+    });
+    Route::apiResource('divisions', DivisionController::class);
+    Route::prefix('divisions')->group(function () {
+        Route::post('/restore/{uuid}', [DivisionController::class, 'restore']);
+        Route::delete('/force-delete/{uuid}', [DivisionController::class, 'forceDelete']);
+    });
+    Route::apiResource('allowances', AllowanceController::class);
+    Route::prefix('allowances')->group(function () {
+        Route::post('/restore/{uuid}', [AllowanceController::class, 'restore']);
+        Route::delete('/force-delete/{uuid}', [AllowanceController::class, 'forceDelete']);
+    });
+    Route::apiResource('positions', PositionController::class);
+    Route::prefix('positions')->group(function () {
+        Route::post('/restore/{uuid}', [PositionController::class, 'restore']);
+        Route::delete('/force-delete/{uuid}', [PositionController::class, 'forceDelete']);
+    });
+    Route::prefix('settings')->group(function () {
+        Route::get('/get', [SettingController::class, 'get']);
+        Route::put('/attendance', [SettingController::class, 'updateAttendance']);
+        // Route::get('/geo-fencing', [SettingController::class, 'geoFencing']);
+        Route::put('/geo-fencing', [SettingController::class, 'updateGeoFencing']);
+        Route::put('/general', [SettingController::class, 'updateGeneral']);
+    });
 });

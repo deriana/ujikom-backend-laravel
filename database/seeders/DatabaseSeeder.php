@@ -19,6 +19,10 @@ class DatabaseSeeder extends Seeder
             PermissionSeeder::class,
             UserSeeder::class,
             SettingSeeder::class,
+            DivisionSeeder::class,
+            PositionAllowanceSeeder::class,
+            AllowanceSeeder::class,
+            EmployeeSeeder::class,
         ]);
     }
 }

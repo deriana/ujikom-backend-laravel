@@ -11,10 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('settings', function (Blueprint $table) {
+        Schema::create('position_allowances', function (Blueprint $table) {
             $table->id();
-            $table->string('key')->unique();
-            $table->json('values')->nullable();
+            $table->foreignId('position_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('allowance_id')->constrained()->cascadeOnDelete();
+            $table->decimal('amount', 15,2)->nullable();
             $table->timestamps();
         });
     }
@@ -24,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('settings');
+        Schema::dropIfExists('position_allowances');
     }
 };
