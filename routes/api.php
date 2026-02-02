@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DivisionController;
 use App\Http\Controllers\Api\PositionController;
 use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -51,5 +52,12 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::prefix('positions')->group(function () {
         Route::post('/restore/{uuid}', [PositionController::class, 'restore']);
         Route::delete('/force-delete/{uuid}', [PositionController::class, 'forceDelete']);
+    });
+    Route::prefix('settings')->group(function () {
+        Route::get('/get', [SettingController::class, 'get']);
+        Route::put('/attendance', [SettingController::class, 'updateAttendance']);
+        // Route::get('/geo-fencing', [SettingController::class, 'geoFencing']);
+        Route::put('/geo-fencing', [SettingController::class, 'updateGeoFencing']);
+        Route::put('/general', [SettingController::class, 'updateGeneral']);
     });
 });

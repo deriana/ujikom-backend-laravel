@@ -13,37 +13,34 @@ class SettingSeeder extends Seeder
     public function run(): void
     {
         $baseName = config('app.name');
-        $current_year = date('Y');
-        $values = [
-            'general' => [
-                'logo' => "/logo/logo-long.webp",
-                'logo_sm' => "/logo/logo_sm.jpeg",
-                'favicon' => "/logo/favicon.jpeg",
-                'site_name' => $baseName,
-                'footer' => "Copyright {$current_year} © {$baseName}",
-            ],
-            'google_reCaptcha' => [
-                'site_key' => null,
-                'secret' => null,
-                'status' => 1,
-            ],
-            'social_login' => [
-                'google' => [
-                    'google_client_id' => null,
-                    'google_client_secret' => null,
-                    'google_redirect_url' => null,
-                    'google_login_status' => 1,
-                ],
+        $currentYear = date('Y');
 
-                'facebook' => [
-                    'facebook_client_id' => null,
-                    'facebook_client_secret' => null,
-                    'facebook_redirect_url' => null,
-                    'facebook_login_status' => 1,
-                ],
-            ],
-        ];
-        Setting::updateOrCreate(['values' => $values]);
+        Setting::updateOrCreate(
+            ['key' => 'general'],
+            ['values' => [
+                'logo' => '/logo/logo-long.webp',
+                'favicon' => '/logo/favicon.jpeg',
+                'site_name' => $baseName,
+                'footer' => "Copyright {$currentYear} © {$baseName}",
+            ]]
+        );
+
+        Setting::updateOrCreate(
+            ['key' => 'attendance'],
+            ['values' => [
+                'late_tolerance_minutes' => 10,
+                'work_start_time' => '09:00',
+                'work_end_time' => '17:00',
+            ]]
+        );
+
+        Setting::updateOrCreate(
+            ['key' => 'geo_fencing'],
+            ['values' => [
+                'office_latitude' => -6.200000,
+                'office_longitude' => 106.816666,
+                'radius_meters' => 100,
+            ]]
+        );
     }
 }
-

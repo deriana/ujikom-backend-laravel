@@ -22,7 +22,7 @@ class SettingPolicy
 
     public function create(User $user): bool
     {
-        return $user->can('setting.create');
+        return false;
     }
 
     public function update(User $user, Setting $setting): bool
