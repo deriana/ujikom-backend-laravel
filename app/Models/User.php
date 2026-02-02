@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
@@ -13,7 +14,7 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasApiTokens, HasRoles;
+    use HasApiTokens, HasFactory, HasRoles, Notifiable, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -21,12 +22,13 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
+        'uuid',
         'name',
         'email',
         'password',
         'uuid',
         'is_active',
-        'created_by_id',
+        // 'created_by_id',
     ];
 
     /**
@@ -55,9 +57,21 @@ class User extends Authenticatable
         return 'uuid';
     }
 
-    public function teams()
+    public function employee()
     {
-        return $this->belongsTo(Team::class);
+        return $this->hasOne(Employee::class);
+    }
+
+    public function team()
+    {
+        return $this->hasOneThrough(
+            Team::class,
+            Employee::class,
+            'user_id',   // FK di employees
+            'id',        // PK di teams
+            'id',        // PK di users
+            'team_id'    // FK di employees ke teams
+        );
     }
 
     /**

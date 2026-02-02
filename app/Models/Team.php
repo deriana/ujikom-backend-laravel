@@ -48,4 +48,9 @@ class Team extends Model
     {
         return 'uuid';
     }
+
+    public function employees()
+    {
+        return $this->hasMany(Employee::class);
+    }
 }

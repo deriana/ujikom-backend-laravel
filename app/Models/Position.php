@@ -23,6 +23,7 @@ class Position extends Model
     protected $casts = [
         'base_salary' => 'decimal:2',
     ];
+
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by_id');
@@ -46,5 +47,10 @@ class Position extends Model
         return $this->belongsToMany(Allowance::class, 'position_allowances')
             ->withPivot('amount')
             ->withTimestamps();
+    }
+
+    public function employees()
+    {
+        return $this->hasMany(Employee::class);
     }
 }

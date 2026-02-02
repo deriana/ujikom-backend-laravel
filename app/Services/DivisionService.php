@@ -59,7 +59,7 @@ class DivisionService
         }
 
         return DB::transaction(function () use ($division) {
-            $division->teams()->delete(); // soft delete semua team
+            $division->teams()->delete();
             $division->delete();
 
             return true;
