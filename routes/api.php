@@ -20,6 +20,16 @@ Route::group(['prefix' => 'auth', 'middleware' => 'throttle:api'], function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
     Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/me', function (Request $request) {
+            $user = $request->user()->load([
+                'roles',
+                'employee.position',
+                'employee.team.division',
+                'employee.manager.user',
+            ]);
+
+            return new App\Http\Resources\UserResource($user);
+        });
         Route::post('/logout', [AuthController::class, 'logout']);
     });
 });
