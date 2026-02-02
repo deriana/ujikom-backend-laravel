@@ -28,7 +28,7 @@ Route::group(['prefix' => 'auth', 'middleware' => 'throttle:api'], function () {
                 'employee.manager.user',
             ]);
 
-            return new App\Http\Resources\UserResource($user);
+            return new App\Http\Resources\MeResource($user);
         });
         Route::post('/logout', [AuthController::class, 'logout']);
     });
