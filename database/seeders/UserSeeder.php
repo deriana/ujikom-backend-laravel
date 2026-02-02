@@ -30,8 +30,16 @@ class UserSeeder extends Seeder
         ]);
         $manager->assignRole(UserRole::MANAGER->value);
 
-        $employee = User::create([
+        $hr = User::create([
             'uuid' => '3',
+            'name' => 'Project Hr',
+            'email' => 'hr@app.com',
+            'password' => Hash::make('password'),
+        ]);
+        $hr->assignRole(UserRole::HR->value);
+
+        $employee = User::create([
+            'uuid' => '4',
             'name' => 'Nikola Tesla',
             'email' => 'employee@app.com',
             'password' => Hash::make('password'),

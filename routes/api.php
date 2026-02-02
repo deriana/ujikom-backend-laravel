@@ -28,8 +28,15 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         return $request->user();
     });
 
-    Route::apiResource('users', UserController::class);
     Route::apiResource('roles', RoleController::class);
+    Route::apiResource('users', UserController::class);
+    Route::prefix('users')->group(function () {
+        Route::post('/restore/{uuid}', [UserController::class, 'restore']);
+        Route::delete('/force-delete/{uuid}', [UserController::class, 'forceDelete']);
+        Route::put('terminate-employment/{uuid}', [UserController::class, 'terminateEmployment']);
+        Route::put('change-password/{uuid}', [UserController::class, 'changePassword']);
+        Route::put('status/{uuid}', [UserController::class, 'status']);
+    });
     Route::apiResource('divisions', DivisionController::class);
     Route::prefix('divisions')->group(function () {
         Route::post('/restore/{uuid}', [DivisionController::class, 'restore']);
@@ -46,4 +53,3 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::delete('/force-delete/{uuid}', [PositionController::class, 'forceDelete']);
     });
 });
-

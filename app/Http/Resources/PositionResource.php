@@ -15,8 +15,6 @@ class PositionResource extends JsonResource
             'base_salary' => (float) $this->base_salary,
             'created_at' => $this->created_at?->format('Y-m-d H:i:s'),
             'updated_at' => $this->updated_at?->format('Y-m-d H:i:s'),
-            'created_at' => $this->created_at?->format('Y-m-d H:i:s'),
-            'updated_at' => $this->updated_at?->format('Y-m-d H:i:s'),
             'creator' => $this->whenLoaded('creator', function () {
                 return [
                     'uuid' => $this->creator->uuid,
