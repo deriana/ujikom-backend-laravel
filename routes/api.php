@@ -39,6 +39,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         return $request->user();
     });
 
+    Route::get('/permissions/modules', [RoleController::class, 'permission']);
     Route::apiResource('roles', RoleController::class);
     Route::apiResource('users', UserController::class);
     Route::prefix('users')->group(function () {

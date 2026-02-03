@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
+use App\Models\Module;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\DB;
 use DomainException;
+use Spatie\Permission\Models\Permission;
 
 class RoleService
 {
@@ -34,6 +36,11 @@ class RoleService
 
             return $role;
         });
+    }
+
+    public function show(Role $role)
+    {
+        return $role->load('permissions');
     }
 
     /**
@@ -72,5 +79,10 @@ class RoleService
         }
 
         return DB::transaction(fn() => $role->delete());
+    }
+
+    public function permission()
+    {
+        return Module::with('permissions')->get();
     }
 }

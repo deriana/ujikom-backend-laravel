@@ -4,11 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Permission\Models\Permission;
 
 class Module extends Model
 {
     use HasFactory;
-
 
     /**
      * The attributes that are mass assignable.
@@ -28,4 +28,9 @@ class Module extends Model
     protected $casts = [
         'actions' => 'array',
     ];
+
+    public function permissions()
+    {
+        return $this->hasMany(Permission::class, 'module_name', 'name');
+    }
 }
