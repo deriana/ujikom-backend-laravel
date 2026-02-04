@@ -23,7 +23,12 @@ class DivisionResource extends JsonResource
                 ];
             }),
             'teams' => $this->whenLoaded('teams', function () {
-                return $this->teams->pluck('name');
+                return $this->teams->map(function ($team) {
+                    return [
+                        'uuid' => $team->uuid,
+                        'name' => $team->name,
+                    ];
+                });
             }),
         ];
     }
