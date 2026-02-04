@@ -22,7 +22,6 @@ class AllowanceService
                 'name' => $data['name'],
                 'amount' => $data['amount'],
                 'type' => $data['type'],
-                'created_by_id' => $userId,
             ]);
         });
     }

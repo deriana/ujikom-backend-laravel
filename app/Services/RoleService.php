@@ -48,8 +48,8 @@ class RoleService
      */
     public function update(Role $role, array $data): Role
     {
-        if ($role->system_reserve && $role->name !== ($data['name'] ?? $role->name)) {
-            throw new DomainException("This role cannot be changed.");
+        if($role->system_reserve) {
+            throw new DomainException("This role cannot be updated.");
         }
 
         return DB::transaction(function () use ($role, $data) {

@@ -51,13 +51,17 @@ return new class extends Migration
             $table->date('termination_date')->nullable();
             $table->text('termination_reason')->nullable();
 
-            // Audit
             $table->foreignId('created_by_id')
                 ->nullable()
                 ->constrained('users')
                 ->nullOnDelete();
 
             $table->foreignId('updated_by_id')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+
+            $table->foreignId('deleted_by_id')
                 ->nullable()
                 ->constrained('users')
                 ->nullOnDelete();

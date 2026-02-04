@@ -2,7 +2,6 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -19,8 +18,20 @@ return new class extends Migration
             $table->char('code', 10)->unique();
             $table->timestamps();
             $table->foreignId('created_by_id')
+                ->nullable()
                 ->constrained('users')
-                ->cascadeOnDelete();
+                ->nullOnDelete();
+
+            $table->foreignId('updated_by_id')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+
+            $table->foreignId('deleted_by_id')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+
             $table->softDeletes();
         });
     }

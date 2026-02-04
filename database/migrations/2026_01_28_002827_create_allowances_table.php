@@ -18,8 +18,19 @@ return new class extends Migration
             $table->enum('type', ['fixed', 'percentage']);
             $table->decimal('amount', 15, 2);
             $table->foreignId('created_by_id')
+                ->nullable()
                 ->constrained('users')
-                ->cascadeOnDelete();
+                ->nullOnDelete();
+
+            $table->foreignId('updated_by_id')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+
+            $table->foreignId('deleted_by_id')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
             $table->timestamps();
             $table->softDeletes();
         });

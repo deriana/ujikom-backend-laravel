@@ -96,4 +96,16 @@ class DivisionController extends Controller
 
         return $this->successResponse(null, 'Division permanently deleted');
     }
+
+    public function getTrashed(): JsonResponse
+    {
+        $this->authorize('viewAny', Division::class);
+
+        $divisions = $this->divisionService->getTrashed();
+
+        return $this->successResponse(
+            DivisionResource::collection($divisions),
+            'Trashed Divisions fetched successfully'
+        );
+    }
 }

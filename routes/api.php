@@ -49,11 +49,12 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::put('change-password/{uuid}', [UserController::class, 'changePassword']);
         Route::put('status/{uuid}', [UserController::class, 'status']);
     });
-    Route::apiResource('divisions', DivisionController::class);
     Route::prefix('divisions')->group(function () {
+        Route::get('/trashed', [DivisionController::class, 'getTrashed']);
         Route::post('/restore/{uuid}', [DivisionController::class, 'restore']);
         Route::delete('/force-delete/{uuid}', [DivisionController::class, 'forceDelete']);
     });
+    Route::apiResource('divisions', DivisionController::class);
     Route::apiResource('allowances', AllowanceController::class);
     Route::prefix('allowances')->group(function () {
         Route::post('/restore/{uuid}', [AllowanceController::class, 'restore']);

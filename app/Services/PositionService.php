@@ -21,7 +21,6 @@ class PositionService
             $position = Position::create([
                 'name' => $data['name'],
                 'base_salary' => $data['base_salary'],
-                'created_by_id' => $userId,
             ]);
 
             $this->syncAllowances($position, $data);
