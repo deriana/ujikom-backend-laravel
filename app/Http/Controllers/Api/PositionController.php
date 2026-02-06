@@ -52,6 +52,8 @@ class PositionController extends Controller
     {
         $this->authorize('view', $position);
 
+        $position->load('allowances', 'creator');
+
         return $this->successResponse(
             new PositionResource($position),
             'Position fetched successfully'

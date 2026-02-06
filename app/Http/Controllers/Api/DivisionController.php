@@ -50,7 +50,7 @@ class DivisionController extends Controller
         $this->authorize('view', $division);
 
         return $this->successResponse(
-            new DivisionResource($division->load('teams')),
+            new DivisionResource($division->load('teams', 'creator')),
             'Division fetched successfully'
         );
     }
@@ -62,7 +62,7 @@ class DivisionController extends Controller
         $updated = $this->divisionService->update($division, $request->validated(), Auth::id());
 
         return $this->successResponse(
-            new DivisionResource($updated->load('teams')),
+            new DivisionResource($updated->load('teams', 'creator')),
             'Division updated successfully'
         );
     }
@@ -99,7 +99,7 @@ class DivisionController extends Controller
 
     public function getTrashed(): JsonResponse
     {
-        $this->authorize('viewAny', Division::class);
+        $this->authorize('restore', Division::class);
 
         $divisions = $this->divisionService->getTrashed();
 

@@ -97,12 +97,12 @@ class PermissionSeeder extends Seeder
 
             'allowances' => [
                 'actions' => [
-                    'index' => 'allowances.index',
-                    'create' => 'allowances.create',
-                    'edit' => 'allowances.edit',
-                    'destroy' => 'allowances.destroy',
-                    'restore' => 'allowances.restore',
-                    'forceDelete' => 'allowances.forceDelete',
+                    'index' => 'allowance.index',
+                    'create' => 'allowance.create',
+                    'edit' => 'allowance.edit',
+                    'destroy' => 'allowance.destroy',
+                    'restore' => 'allowance.restore',
+                    'forceDelete' => 'allowance.forceDelete',
                 ],
                 'roles' => [
                     UserRole::ADMIN->value => ['index', 'create', 'edit', 'destroy', 'forceDelete', 'restore'],

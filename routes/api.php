@@ -55,11 +55,12 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::delete('/force-delete/{uuid}', [DivisionController::class, 'forceDelete']);
     });
     Route::apiResource('divisions', DivisionController::class);
-    Route::apiResource('allowances', AllowanceController::class);
     Route::prefix('allowances')->group(function () {
+        Route::get('/trashed', [AllowanceController::class, 'getTrashed']);
         Route::post('/restore/{uuid}', [AllowanceController::class, 'restore']);
         Route::delete('/force-delete/{uuid}', [AllowanceController::class, 'forceDelete']);
     });
+    Route::apiResource('allowances', AllowanceController::class);
     Route::apiResource('positions', PositionController::class);
     Route::prefix('positions')->group(function () {
         Route::post('/restore/{uuid}', [PositionController::class, 'restore']);

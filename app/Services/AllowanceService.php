@@ -74,4 +74,9 @@ class AllowanceService
             return (bool) $allowance->forceDelete();
         });
     }
+
+    public function getTrashed()
+    {
+        return Allowance::onlyTrashed()->latest()->get();
+    }
 }
