@@ -112,10 +112,10 @@ class AllowanceController extends Controller
     {
         $this->authorize('restore', Allowance::class);
 
-        $divisions = $this->allowanceService->getTrashed();
+        $allowances = $this->allowanceService->getTrashed();
 
         return $this->successResponse(
-            AllowanceResource::collection($divisions),
+            AllowanceResource::collection($allowances),
             'Trashed Allowances fetched successfully'
         );
     }

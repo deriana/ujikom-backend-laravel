@@ -107,4 +107,16 @@ class PositionController extends Controller
             'Position permanently deleted'
         );
     }
+
+    public function getTrashed()
+    {
+        $this->authorize('restore', Position::class);
+
+        $allowances = $this->positionService->getTrashed();
+
+        return $this->successResponse(
+            PositionResource::collection($allowances),
+            'Trashed Positions fetched successfully'
+        );
+    }
 }

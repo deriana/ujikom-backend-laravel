@@ -84,6 +84,12 @@ class PositionService
         });
     }
 
+    public function getTrashed()
+    {
+        return Position::onlyTrashed()->latest()->get();
+    }
+
+
     /**
      * Sync allowances pivot (UUID → ID mapping)
      */

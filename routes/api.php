@@ -61,11 +61,12 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::delete('/force-delete/{uuid}', [AllowanceController::class, 'forceDelete']);
     });
     Route::apiResource('allowances', AllowanceController::class);
-    Route::apiResource('positions', PositionController::class);
     Route::prefix('positions')->group(function () {
         Route::post('/restore/{uuid}', [PositionController::class, 'restore']);
         Route::delete('/force-delete/{uuid}', [PositionController::class, 'forceDelete']);
+        Route::get('/trashed', [PositionController::class, 'getTrashed']);
     });
+    Route::apiResource('positions', PositionController::class);
     Route::prefix('settings')->group(function () {
         Route::get('/get', [SettingController::class, 'get']);
         Route::put('/attendance', [SettingController::class, 'updateAttendance']);
