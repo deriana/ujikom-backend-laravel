@@ -31,20 +31,51 @@ class SettingController extends Controller
 
     public function updateGeneral(Request $request): JsonResponse
     {
-        $setting = $this->settingService->get('general');
         $this->authorize('update', Setting::class);
 
         $validated = $request->validate([
             'site_name' => 'required|string|max:100',
             'footer' => 'required|string|max:255',
-            'logo' => 'required|string',
-            'favicon' => 'nullable|string',
+            'logo' => 'nullable|image|mimes:png,jpg,jpeg,svg|max:2048',
+            'favicon' => 'nullable|image|mimes:png,ico|max:1024',
         ]);
 
-        $updated = $this->settingService->update('general', $validated);
+        $setting = $this->settingService->get('general');
+
+        $currentValues = $setting->values ?? [];
+
+        $setting->update([
+            'values' => [
+                ...$currentValues,
+                'site_name' => $validated['site_name'],
+                'footer' => $validated['footer'],
+            ],
+        ]);
+
+        if ($request->hasFile('logo')) {
+            $setting->clearMediaCollection('logo');
+            $media = $setting->addMediaFromRequest('logo')->toMediaCollection('logo');
+
+            $setting->values = [
+                ...$setting->values,
+                'logo' => $media->getUrl(),
+            ];
+            $setting->save();
+        }
+
+        if ($request->hasFile('favicon')) {
+            $setting->clearMediaCollection('favicon');
+            $media = $setting->addMediaFromRequest('favicon')->toMediaCollection('favicon');
+
+            $setting->values = [
+                ...$setting->values,
+                'favicon' => $media->getUrl(),
+            ];
+            $setting->save();
+        }
 
         return $this->successResponse(
-            new SettingResource($updated),
+            new SettingResource($setting->fresh()),
             'General setting updated successfully'
         );
     }

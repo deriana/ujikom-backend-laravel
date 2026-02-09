@@ -4,13 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
 class Setting extends Model implements HasMedia
 {
     use HasFactory, InteractsWithMedia;
 
+    // protected $guarded = [];
     protected $fillable = [
         'key', 'values',
     ];
@@ -18,6 +19,12 @@ class Setting extends Model implements HasMedia
     protected $casts = [
         'values' => 'array',
     ];
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('logo')->singleFile();
+        $this->addMediaCollection('favicon')->singleFile();
+    }
 
     // public function getId($request)
     // {

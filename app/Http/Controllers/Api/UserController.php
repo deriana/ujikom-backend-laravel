@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CreateUserRequest;
 use App\Http\Requests\UpdateUserRequest;
+use App\Http\Resources\ManagerResource;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Services\UserService;
@@ -30,9 +31,12 @@ class UserController extends Controller
 
         $users = $this->userService->index();
 
-        return $this->successResponse([
-            'users' => UserResource::collection($users),
-        ], 'Users fetched successfully', 200);
+        return $this->successResponse(
+            UserResource::collection($users),
+            'Users fetched successfully',
+            200
+        );
+
     }
 
     /**
@@ -123,7 +127,7 @@ class UserController extends Controller
 
         $validated = $request->validate([
             'type' => 'required|in:resign,terminated',
-            'date' => 'nullable|date',]);
+            'date' => 'nullable|date', ]);
 
         $user = $this->userService->terminateEmployment(
             $uuid,
@@ -168,6 +172,42 @@ class UserController extends Controller
         return $this->successResponse(
             new UserResource($user),
             'Status Changed successfully'
+        );
+    }
+
+    public function getTrashed(): JsonResponse
+    {
+        $this->authorize('restore', User::class);
+
+        $users = $this->userService->getTrashed();
+
+        return $this->successResponse(
+            UserResource::collection($users),
+            'Trashed Users fetched successfully'
+        );
+    }
+
+    public function uploadProfilePhoto(Request $request, User $user, string $uuid): JsonResponse
+    {
+        $this->authorize('edit', $user);
+
+        $photoFile = $request->file('photo');
+
+        $user = $this->userService->uploadProfilePhoto($user, $photoFile, $uuid);
+
+        return $this->successResponse(
+            new UserResource($user),
+            'Profile photo uploaded successfully'
+        );
+    }
+
+    public function getManagers(): JsonResponse
+    {
+        $users = $this->userService->getManagers();
+
+        return $this->successResponse(
+            ManagerResource::collection($users),
+            'Managers fetched successfully'
         );
     }
 }

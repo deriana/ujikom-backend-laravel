@@ -29,7 +29,7 @@ return new class extends Migration
                 ->nullOnDelete();
 
             // Status karyawan (0=permanent,1=contract,2=intern,resigned handled by resign_date)
-            $table->tinyInteger('employee_status')->default(0);
+            $table->tinyInteger('employee_status')->default(3);
 
             // Kontrak (khusus contract/intern)
             $table->date('contract_start')->nullable();

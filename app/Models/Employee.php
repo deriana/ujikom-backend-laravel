@@ -6,10 +6,12 @@ use App\Enums\EmployeeStatus;
 use App\Traits\Blameable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-class Employee extends Model
+class Employee extends Model implements HasMedia
 {
-    use SoftDeletes, Blameable;
+    use Blameable, InteractsWithMedia, SoftDeletes;
 
     protected $fillable = [
         'nik',
@@ -67,6 +69,11 @@ class Employee extends Model
         $number = $last ? ((int) substr($last->nik, -4)) + 1 : 1;
 
         return 'EMP'.$year.str_pad($number, 4, '0', STR_PAD_LEFT);
+    }
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('profile_photo')->singleFile();
     }
 
     public function creator()

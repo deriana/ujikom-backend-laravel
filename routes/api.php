@@ -41,14 +41,17 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
 
     Route::get('/permissions/modules', [RoleController::class, 'permission']);
     Route::apiResource('roles', RoleController::class);
-    Route::apiResource('users', UserController::class);
     Route::prefix('users')->group(function () {
         Route::post('/restore/{uuid}', [UserController::class, 'restore']);
         Route::delete('/force-delete/{uuid}', [UserController::class, 'forceDelete']);
         Route::put('terminate-employment/{uuid}', [UserController::class, 'terminateEmployment']);
         Route::put('change-password/{uuid}', [UserController::class, 'changePassword']);
         Route::put('status/{uuid}', [UserController::class, 'status']);
+        Route::get('/trashed', [UserController::class, 'getTrashed']);
+        Route::post('/upload-profile-photo/{uuid}', [UserController::class, 'uploadProfilePhoto']);
+        Route::get('/managers', [UserController::class, 'getManagers']);
     });
+    Route::apiResource('users', UserController::class);
     Route::prefix('divisions')->group(function () {
         Route::get('/trashed', [DivisionController::class, 'getTrashed']);
         Route::post('/restore/{uuid}', [DivisionController::class, 'restore']);
@@ -69,9 +72,9 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::apiResource('positions', PositionController::class);
     Route::prefix('settings')->group(function () {
         Route::get('/get', [SettingController::class, 'get']);
-        Route::put('/attendance', [SettingController::class, 'updateAttendance']);
+        Route::post('/attendance', [SettingController::class, 'updateAttendance']);
         // Route::get('/geo-fencing', [SettingController::class, 'geoFencing']);
-        Route::put('/geo-fencing', [SettingController::class, 'updateGeoFencing']);
-        Route::put('/general', [SettingController::class, 'updateGeneral']);
+        Route::post('/geo_fencing', [SettingController::class, 'updateGeoFencing']);
+        Route::post('/general', [SettingController::class, 'updateGeneral']);
     });
 });
