@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AllowanceController;
+use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DivisionController;
 use App\Http\Controllers\Api\PositionController;
@@ -33,6 +34,8 @@ Route::group(['prefix' => 'auth', 'middleware' => 'throttle:api'], function () {
         Route::post('/logout', [AuthController::class, 'logout']);
     });
 });
+
+Route::post('/attendance/bulk-send', [AttendanceController::class, 'bulkAttendance']);
 
 Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::get('/user', function (Request $request) {
