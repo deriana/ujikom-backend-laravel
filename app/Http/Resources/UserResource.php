@@ -15,6 +15,7 @@ class UserResource extends JsonResource
             'email' => $this->email,
             'created_at' => $this->created_at?->format('Y-m-d H:i:s'),
             'updated_at' => $this->updated_at?->format('Y-m-d H:i:s'),
+            'is_active' => $this->is_active,
 
             'roles' => $this->whenLoaded('roles', fn () => $this->roles->pluck('name')
             ),
@@ -23,7 +24,7 @@ class UserResource extends JsonResource
                 return [
                     'nik' => $this->employee->nik,
                     'status' => $this->employee->status_label,
-                    'employee_status' => $this->employee->employee_status,  
+                    'employee_status' => $this->employee->employee_status,
                     'base_salary' => $this->employee->base_salary,
 
                     'position' => [

@@ -8,6 +8,7 @@ use App\Models\BiometricUser;
 use App\Models\Employee;
 use App\Models\Setting;
 use Carbon\Carbon;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
@@ -42,7 +43,7 @@ class AttendanceService
 
         return [
             'employee' => ($bestScore > 0.75) ? $matchedEmployee : null,
-            'score' => $score,
+            'score' => $bestScore, // ✅
         ];
     }
 
@@ -163,116 +164,129 @@ class AttendanceService
     /**
      * Simpan record attendance + foto
      */
-   protected function recordAttendance($employee, array $data, float $score, string $userAgent)
-{
-    $today = Carbon::today();
-    $now = Carbon::now();
-    $setting = $this->getAttendanceSetting();
+    protected function recordAttendance($employee, array $data, float $score, string $userAgent)
+    {
+        $today = Carbon::today();
+        $now = Carbon::now();
+        $setting = $this->getAttendanceSetting();
 
-    $workStart = Carbon::createFromFormat('H:i', $setting['work_start_time']);
-    $workEnd   = Carbon::createFromFormat('H:i', $setting['work_end_time']);
-    $lateTolerance = (int) $setting['late_tolerance_minutes'];
+        $workStart = Carbon::createFromFormat('H:i', $setting['work_start_time']);
+        $workEnd = Carbon::createFromFormat('H:i', $setting['work_end_time']);
+        $lateTolerance = (int) $setting['late_tolerance_minutes'];
 
-    $maxClockIn = (clone $workStart)->addHours(2);
-    $minClockOut = (clone $workStart)->addHours($workStart->diffInHours($workEnd) / 2);
+        $maxClockIn = (clone $workStart)->addHours(2);
+        $minClockOut = (clone $workStart)->addHours($workStart->diffInHours($workEnd) / 2);
 
-    $attendance = Attendance::firstOrCreate(
-        ['employee_id' => $employee->id, 'date' => $today],
-        ['status' => 'present']
-    );
+        $attendance = Attendance::firstOrCreate(
+            ['employee_id' => $employee->id, 'date' => $today],
+            ['status' => 'present']
+        );
 
-    // ================= CLOCK IN =================
-    if (!$attendance->clock_in) {
+        // ================= CLOCK IN =================
+        if (! $attendance->clock_in) {
 
-        if ($now->gt($maxClockIn)) {
+            if ($now->gt($maxClockIn)) {
+                $this->logAttendance([
+                    'status' => 'failed',
+                    'employee_id' => $employee->id,
+                    'employee_nik' => $employee->nik,
+                    'reason' => 'clock_in_over_limit',
+                    'similarity_score' => $score,
+                    'user_agent' => $userAgent,
+                ]);
+
+                return ['success' => false, 'message' => 'Melewati batas waktu absen masuk'];
+            }
+
+            $lateMinutes = max(0, $workStart->diffInMinutes($now, false));
+            if ($lateMinutes <= $lateTolerance) {
+                $lateMinutes = 0;
+            }
+
+            $photoInPath = isset($data['photo'])
+            ? $this->storeAttendancePhoto($data['photo'], $employee->id, $today)
+            : null;
+
+            $attendance->update([
+                'clock_in' => $now,
+                'late_minutes' => $lateMinutes,
+                'latitude_in' => $data['latitude'] ?? null,
+                'longitude_in' => $data['longitude'] ?? null,
+                'clock_in_photo' => $photoInPath,
+            ]);
+
             $this->logAttendance([
-                'status' => 'failed',
+                'status' => 'success',
+                'action' => 'clock_in',
                 'employee_id' => $employee->id,
                 'employee_nik' => $employee->nik,
-                'reason' => 'clock_in_over_limit',
                 'similarity_score' => $score,
-                'user_agent' => $userAgent
+                'latitude' => $data['latitude'] ?? null,
+                'longitude' => $data['longitude'] ?? null,
+                'user_agent' => $userAgent,
             ]);
-            return ['success' => false, 'message' => 'Melewati batas waktu absen masuk'];
+
+            return ['success' => true, 'message' => 'Clock-in berhasil', 'data' => $attendance];
         }
 
-        $lateMinutes = max(0, $workStart->diffInMinutes($now, false));
-        if ($lateMinutes <= $lateTolerance) $lateMinutes = 0;
+        // ================= CLOCK OUT =================
+        if (! $attendance->clock_out) {
 
-        $attendance->update([
-            'clock_in' => $now,
-            'late_minutes' => $lateMinutes,
-            'latitude_in' => $data['latitude'] ?? null,
-            'longitude_in' => $data['longitude'] ?? null,
-        ]);
+            if ($now->lt($minClockOut)) {
+                $this->logAttendance([
+                    'status' => 'failed',
+                    'employee_id' => $employee->id,
+                    'employee_nik' => $employee->nik,
+                    'reason' => 'clock_out_too_early',
+                    'similarity_score' => $score,
+                    'user_agent' => $userAgent,
+                ]);
 
-        $this->logAttendance([
-            'status' => 'success',
-            'action' => 'clock_in',
-            'employee_id' => $employee->id,
-            'employee_nik' => $employee->nik,
-            'similarity_score' => $score,
-            'latitude' => $data['latitude'] ?? null,
-            'longitude' => $data['longitude'] ?? null,
-            'user_agent' => $userAgent
-        ]);
+                return ['success' => false, 'message' => 'Belum boleh absen pulang'];
+            }
 
-        return ['success' => true, 'message' => 'Clock-in berhasil', 'data' => $attendance];
-    }
+            $earlyLeaveMinutes = $now->lt($workEnd) ? $now->diffInMinutes($workEnd) : 0;
+            $overtimeMinutes = $now->gt($workEnd) ? $workEnd->diffInMinutes($now) : 0;
 
-    // ================= CLOCK OUT =================
-    if (!$attendance->clock_out) {
+            $photoOutPath = isset($data['photo'])
+            ? $this->storeAttendancePhoto($data['photo'], $employee->id, $today)
+            : null;
 
-        if ($now->lt($minClockOut)) {
+            $attendance->update([
+                'clock_out' => $now,
+                'early_leave_minutes' => $earlyLeaveMinutes,
+                'overtime_minutes' => $overtimeMinutes,
+                'work_minutes' => $attendance->clock_in->diffInMinutes($now),
+                'latitude_out' => $data['latitude'] ?? null,
+                'longitude_out' => $data['longitude'] ?? null,
+                'clock_out_photo' => $photoOutPath,
+            ]);
+
             $this->logAttendance([
-                'status' => 'failed',
+                'status' => 'success',
+                'action' => 'clock_out',
                 'employee_id' => $employee->id,
                 'employee_nik' => $employee->nik,
-                'reason' => 'clock_out_too_early',
                 'similarity_score' => $score,
-                'user_agent' => $userAgent
+                'latitude' => $data['latitude'] ?? null,
+                'longitude' => $data['longitude'] ?? null,
+                'user_agent' => $userAgent,
             ]);
-            return ['success' => false, 'message' => 'Belum boleh absen pulang'];
+
+            return ['success' => true, 'message' => 'Clock-out berhasil', 'data' => $attendance];
         }
 
-        $earlyLeaveMinutes = $now->lt($workEnd) ? $now->diffInMinutes($workEnd) : 0;
-        $overtimeMinutes = $now->gt($workEnd) ? $workEnd->diffInMinutes($now) : 0;
-
-        $attendance->update([
-            'clock_out' => $now,
-            'early_leave_minutes' => $earlyLeaveMinutes,
-            'overtime_minutes' => $overtimeMinutes,
-            'work_minutes' => $attendance->clock_in->diffInMinutes($now),
-            'latitude_out' => $data['latitude'] ?? null,
-            'longitude_out' => $data['longitude'] ?? null,
-        ]);
-
         $this->logAttendance([
-            'status' => 'success',
-            'action' => 'clock_out',
+            'status' => 'failed',
             'employee_id' => $employee->id,
             'employee_nik' => $employee->nik,
+            'reason' => 'already_clocked_in_out',
             'similarity_score' => $score,
-            'latitude' => $data['latitude'] ?? null,
-            'longitude' => $data['longitude'] ?? null,
-            'user_agent' => $userAgent
+            'user_agent' => $userAgent,
         ]);
 
-        return ['success' => true, 'message' => 'Clock-out berhasil', 'data' => $attendance];
+        return ['success' => false, 'message' => 'Sudah absen hari ini'];
     }
-
-    $this->logAttendance([
-        'status' => 'failed',
-        'employee_id' => $employee->id,
-        'employee_nik' => $employee->nik,
-        'reason' => 'already_clocked_in_out',
-        'similarity_score' => $score,
-        'user_agent' => $userAgent
-    ]);
-
-    return ['success' => false, 'message' => 'Sudah absen hari ini'];
-}
-
 
     protected function logAttendance(array $context): void
     {
@@ -301,5 +315,51 @@ class AttendanceService
             'work_start_time' => '09:00',
             'work_end_time' => '17:00',
         ];
+    }
+
+    protected function storeAttendancePhoto($photo, $employeeId, Carbon $date): ?string
+    {
+        $folderPath = 'attendance/'.$date->format('Y/m/d');
+        $fileName = 'photo_'.$employeeId.'_'.now()->timestamp.'_'.uniqid();
+
+        // ================= FILE UPLOAD (DARI FORM DATA) =================
+        if ($photo instanceof UploadedFile) {
+            $ext = $photo->getClientOriginalExtension() ?: 'jpg';
+            $path = $photo->storeAs($folderPath, $fileName.'.'.$ext, 'public');
+
+            return $path;
+        }
+
+        // ================= BASE64 (LEGACY SUPPORT) =================
+        if (is_string($photo) && str_contains($photo, 'base64')) {
+            $base64 = explode(',', $photo)[1] ?? null;
+            if (! $base64) {
+                return null;
+            }
+
+            $decoded = base64_decode($base64);
+
+            $finfo = finfo_open();
+            $mime = finfo_buffer($finfo, $decoded, FILEINFO_MIME_TYPE);
+
+            $ext = match ($mime) {
+                'image/jpeg' => 'jpg',
+                'image/png' => 'png',
+                'image/webp' => 'webp',
+                default => null
+            };
+
+            if (! $ext) {
+                Log::warning('Invalid attendance photo mime type', ['mime' => $mime]);
+
+                return null;
+            }
+
+            Storage::disk('public')->put($folderPath.'/'.$fileName.'.'.$ext, $decoded);
+
+            return $folderPath.'/'.$fileName.'.'.$ext;
+        }
+
+        return null;
     }
 }
