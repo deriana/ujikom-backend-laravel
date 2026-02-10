@@ -52,6 +52,8 @@ class AllowanceController extends Controller
     {
         $this->authorize('view', $allowance);
 
+        $allowance->load(['creator', 'positions']);
+
         return $this->successResponse(
             new AllowanceResource($allowance),
             'Allowance fetched successfully'
@@ -103,6 +105,18 @@ class AllowanceController extends Controller
         return $this->successResponse(
             null,
             'Allowance permanently deleted'
+        );
+    }
+
+    public function getTrashed()
+    {
+        $this->authorize('restore', Allowance::class);
+
+        $allowances = $this->allowanceService->getTrashed();
+
+        return $this->successResponse(
+            AllowanceResource::collection($allowances),
+            'Trashed Allowances fetched successfully'
         );
     }
 }

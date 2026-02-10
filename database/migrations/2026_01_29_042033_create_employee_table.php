@@ -29,7 +29,7 @@ return new class extends Migration
                 ->nullOnDelete();
 
             // Status karyawan (0=permanent,1=contract,2=intern,resigned handled by resign_date)
-            $table->tinyInteger('employee_status')->default(0);
+            $table->tinyInteger('employee_status')->default(3);
 
             // Kontrak (khusus contract/intern)
             $table->date('contract_start')->nullable();
@@ -51,13 +51,17 @@ return new class extends Migration
             $table->date('termination_date')->nullable();
             $table->text('termination_reason')->nullable();
 
-            // Audit
             $table->foreignId('created_by_id')
                 ->nullable()
                 ->constrained('users')
                 ->nullOnDelete();
 
             $table->foreignId('updated_by_id')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+
+            $table->foreignId('deleted_by_id')
                 ->nullable()
                 ->constrained('users')
                 ->nullOnDelete();

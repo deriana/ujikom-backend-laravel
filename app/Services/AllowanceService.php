@@ -22,7 +22,6 @@ class AllowanceService
                 'name' => $data['name'],
                 'amount' => $data['amount'],
                 'type' => $data['type'],
-                'created_by_id' => $userId,
             ]);
         });
     }
@@ -74,5 +73,10 @@ class AllowanceService
             $allowance = Allowance::withTrashed()->whereUuid($uuid)->firstOrFail();
             return (bool) $allowance->forceDelete();
         });
+    }
+
+    public function getTrashed()
+    {
+        return Allowance::onlyTrashed()->latest()->get();
     }
 }

@@ -21,7 +21,6 @@ class PositionService
             $position = Position::create([
                 'name' => $data['name'],
                 'base_salary' => $data['base_salary'],
-                'created_by_id' => $userId,
             ]);
 
             $this->syncAllowances($position, $data);
@@ -84,6 +83,12 @@ class PositionService
             return true;
         });
     }
+
+    public function getTrashed()
+    {
+        return Position::onlyTrashed()->latest()->get();
+    }
+
 
     /**
      * Sync allowances pivot (UUID → ID mapping)

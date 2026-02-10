@@ -23,6 +23,8 @@ class DatabaseSeeder extends Seeder
             PositionAllowanceSeeder::class,
             AllowanceSeeder::class,
             EmployeeSeeder::class,
+            AttendanceSeeder::class,
+            BiometricSeeder::class,
         ]);
     }
 }

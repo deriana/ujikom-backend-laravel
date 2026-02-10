@@ -15,10 +15,21 @@ return new class extends Migration
             $table->id();
             $table->uuid('uuid')->unique();
             $table->string('name', 100);
-            $table->decimal('base_salary', 15,2);
+            $table->decimal('base_salary', 15, 2);
             $table->foreignId('created_by_id')
-            ->constrained('users')
-            ->cascadeOnDelete();
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+
+            $table->foreignId('updated_by_id')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+
+            $table->foreignId('deleted_by_id')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
             $table->timestamps();
             $table->softDeletes();
         });

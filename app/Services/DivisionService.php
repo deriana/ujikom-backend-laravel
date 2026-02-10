@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Division;
-use App\Models\Team;
 use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -22,7 +21,6 @@ class DivisionService
             $division = Division::create([
                 'name' => $data['name'],
                 'code' => $data['code'],
-                'created_by_id' => $userId,
             ]);
 
             $this->syncTeams($division, $data['teams'] ?? [], $userId);
@@ -96,13 +94,21 @@ class DivisionService
         });
     }
 
+    public function getTrashed()
+    {
+        return Division::onlyTrashed()->With('teams')->latest()->get();
+    }
+
     /**
      * Sync Teams (create, update, delete)
      */
     private function syncTeams(Division $division, array $teams, int $userId): void
     {
+        // dd($teams);
+
         if (empty($teams)) {
             $division->teams()->delete();
+
             return;
         }
 
@@ -112,17 +118,18 @@ class DivisionService
         foreach ($teams as $teamData) {
 
             // UPDATE
-            if (!empty($teamData['uuid']) && isset($existingTeams[$teamData['uuid']])) {
+            if (! empty($teamData['uuid']) && isset($existingTeams[$teamData['uuid']])) {
                 $team = $existingTeams[$teamData['uuid']];
                 $team->update([
                     'name' => $teamData['name'],
                 ]);
                 $syncUUIDs[] = $team->uuid;
+
                 continue;
             }
 
             // INVALID UUID (security check)
-            if (!empty($teamData['uuid']) && !isset($existingTeams[$teamData['uuid']])) {
+            if (! empty($teamData['uuid']) && ! isset($existingTeams[$teamData['uuid']])) {
                 throw new Exception("Invalid team UUID {$teamData['uuid']} for this division");
             }
 
@@ -130,7 +137,6 @@ class DivisionService
             $newTeam = $division->teams()->create([
                 'uuid' => (string) Str::uuid(),
                 'name' => $teamData['name'],
-                'created_by_id' => $userId,
             ]);
 
             $syncUUIDs[] = $newTeam->uuid;
@@ -142,3 +148,4 @@ class DivisionService
             ->delete();
     }
 }
+

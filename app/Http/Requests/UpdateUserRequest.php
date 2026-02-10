@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\UserRole;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -26,7 +27,7 @@ class UpdateUserRequest extends FormRequest
             ],
             'password' => 'nullable|string|min:8|confirmed',
             'team_uuid' => 'sometimes|required|string|exists:teams,uuid',
-            'role_uuid' => 'sometimes|required|string|exists:roles,uuid',
+            'role' => ['nullable', 'string', Rule::in(array_column(UserRole::cases(), 'value'))],
             'is_active' => 'sometimes|required|boolean',
             'position_uuid' => 'sometimes|required|string|exists:positions,uuid',
             'manager_nik' => 'nullable|string|exists:employees,nik',

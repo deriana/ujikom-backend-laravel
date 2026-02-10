@@ -7,8 +7,8 @@ use App\Http\Requests\CreateRoleRequest;
 use App\Http\Requests\UpdateRoleRequest;
 use App\Http\Resources\RoleResource;
 use App\Services\RoleService;
-use Spatie\Permission\Models\Role;
 use Illuminate\Http\JsonResponse;
+use Spatie\Permission\Models\Role;
 
 class RoleController extends Controller
 {
@@ -32,6 +32,16 @@ class RoleController extends Controller
             RoleResource::collection($roles),
             'Roles retrieved successfully'
         );
+    }
+
+    public function show(Role $role)
+    {
+       $this->authorize('view', $role);
+
+       return $this->successResponse(
+           new RoleResource($role),
+           'Role retrieved successfully'
+       );
     }
 
     /**
@@ -69,4 +79,17 @@ class RoleController extends Controller
 
         return $this->successResponse(null, 'Role deleted successfully');
     }
+
+    public function permission(): JsonResponse
+    {
+        // $this->authorize('viewAny', Role::class);
+
+        $permissions = $this->roleService->permission();
+
+        return $this->successResponse(
+            $permissions,
+            'Permissions retrieved successfully'
+        );
+    }
+
 }

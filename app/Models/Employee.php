@@ -3,12 +3,15 @@
 namespace App\Models;
 
 use App\Enums\EmployeeStatus;
+use App\Traits\Blameable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-class Employee extends Model
+class Employee extends Model implements HasMedia
 {
-    use SoftDeletes;
+    use Blameable, InteractsWithMedia, SoftDeletes;
 
     protected $fillable = [
         'nik',
@@ -27,6 +30,8 @@ class Employee extends Model
         'join_date',
         'resign_date',
         'created_by_id',
+        'updated_by_id',
+        'deleted_by_id',
     ];
 
     protected $hidden = [
@@ -63,7 +68,12 @@ class Employee extends Model
 
         $number = $last ? ((int) substr($last->nik, -4)) + 1 : 1;
 
-        return 'EMP' . $year . str_pad($number, 4, '0', STR_PAD_LEFT);
+        return 'EMP'.$year.str_pad($number, 4, '0', STR_PAD_LEFT);
+    }
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('profile_photo')->singleFile();
     }
 
     public function creator()
@@ -125,6 +135,12 @@ class Employee extends Model
     {
         return $this->contract_end && now()->gt($this->contract_end);
     }
+
+    public function biometrics()
+    {
+        return $this->hasMany(BiometricUser::class);
+    }
+
 
     public function getStatusLabelAttribute(): string
     {

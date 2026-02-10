@@ -10,6 +10,7 @@ use App\Models\Role;
 use App\Models\Team;
 use App\Models\User;
 use Exception;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
@@ -22,7 +23,10 @@ class UserService
             'employee.team.division',
             'employee.manager.user',
             'roles',
-        ])->latest()->get();
+        ])
+            ->where('id', '!=', Auth::id())
+            ->latest()
+            ->get();
     }
 
     public function store(array $data, int $creatorId): User
@@ -279,5 +283,50 @@ class UserService
                 'employee.manager.user',
             ]);
         });
+    }
+
+    public function getTrashed()
+    {
+        return User::onlyTrashed()
+            ->with('employee.position',
+                'employee.team.division',
+                'employee.manager.user',
+                'roles', )
+            ->latest()
+            ->get();
+    }
+
+    public function uploadProfilePhoto(User $user, $photoFile, $uuid): User
+    {
+        $user = User::whereUuid($uuid)->firstOrFail();
+
+        $employee = $user->employee;
+
+        if (! $employee) {
+            throw new Exception('Employee record not found for this user');
+        }
+
+        $employee->clearMediaCollection('profile_photo');
+
+
+        if ($photoFile) {
+            $employee->addMedia($photoFile)
+                ->toMediaCollection('profile_photo');
+        }
+
+        return $user->load([
+            'roles',
+            'employee.position',
+            'employee.team.division',
+        ]);
+    }
+
+    public function getManagers()
+    {
+        return User::with('employee')
+            ->whereHas('roles', function ($q) {
+                $q->where('name', 'manager');
+            })
+            ->get();
     }
 }

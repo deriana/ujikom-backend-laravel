@@ -25,7 +25,8 @@ class CreateDivisionRequest extends FormRequest
             'name' => 'required|string',
             'code' => 'required|string|max:10|unique:divisions,code',
             'teams' => 'nullable|array',
-            'teams.*' => 'nullable|string',
+            'teams.*.name' => 'required|string',
+            'teams.*.uuid' => 'nullable|exists:teams,uuid',
         ];
     }
 }

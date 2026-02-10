@@ -2,18 +2,21 @@
 
 namespace App\Models;
 
+use App\Traits\Blameable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 class Position extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, Blameable;
 
     protected $fillable = [
         'name',
         'base_salary',
         'created_by_id',
+        'updated_by_id',
+        'deleted_by_id',
     ];
 
     protected $hidden = [

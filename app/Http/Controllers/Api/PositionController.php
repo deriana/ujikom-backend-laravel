@@ -52,6 +52,8 @@ class PositionController extends Controller
     {
         $this->authorize('view', $position);
 
+        $position->load('allowances', 'creator');
+
         return $this->successResponse(
             new PositionResource($position),
             'Position fetched successfully'
@@ -103,6 +105,18 @@ class PositionController extends Controller
         return $this->successResponse(
             null,
             'Position permanently deleted'
+        );
+    }
+
+    public function getTrashed()
+    {
+        $this->authorize('restore', Position::class);
+
+        $allowances = $this->positionService->getTrashed();
+
+        return $this->successResponse(
+            PositionResource::collection($allowances),
+            'Trashed Positions fetched successfully'
         );
     }
 }

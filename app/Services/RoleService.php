@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
+use App\Models\Module;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\DB;
 use DomainException;
+use Spatie\Permission\Models\Permission;
 
 class RoleService
 {
@@ -36,13 +38,18 @@ class RoleService
         });
     }
 
+    public function show(Role $role)
+    {
+        return $role->load('permissions');
+    }
+
     /**
      * Update role name and permissions
      */
     public function update(Role $role, array $data): Role
     {
-        if ($role->system_reserve && $role->name !== ($data['name'] ?? $role->name)) {
-            throw new DomainException("This role cannot be changed.");
+        if($role->system_reserve) {
+            throw new DomainException("This role cannot be updated.");
         }
 
         return DB::transaction(function () use ($role, $data) {
@@ -72,5 +79,10 @@ class RoleService
         }
 
         return DB::transaction(fn() => $role->delete());
+    }
+
+    public function permission()
+    {
+        return Module::with('permissions')->get();
     }
 }
