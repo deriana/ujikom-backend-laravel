@@ -288,7 +288,10 @@ class UserService
     public function getTrashed()
     {
         return User::onlyTrashed()
-            ->with('employee')
+            ->with('employee.position',
+                'employee.team.division',
+                'employee.manager.user',
+                'roles', )
             ->latest()
             ->get();
     }
@@ -305,8 +308,11 @@ class UserService
 
         $employee->clearMediaCollection('profile_photo');
 
-        $employee->addMedia($photoFile)
-            ->toMediaCollection('profile_photo');
+
+        if ($photoFile) {
+            $employee->addMedia($photoFile)
+                ->toMediaCollection('profile_photo');
+        }
 
         return $user->load([
             'roles',

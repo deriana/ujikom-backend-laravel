@@ -12,6 +12,7 @@ use App\Services\UserService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
@@ -191,12 +192,11 @@ class UserController extends Controller
     {
         $this->authorize('edit', $user);
 
-        $photoFile = $request->file('photo');
+        $photoFile = $request->file('profile_photo');
 
         $user = $this->userService->uploadProfilePhoto($user, $photoFile, $uuid);
 
         return $this->successResponse(
-            new UserResource($user),
             'Profile photo uploaded successfully'
         );
     }

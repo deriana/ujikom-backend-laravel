@@ -136,6 +136,12 @@ class Employee extends Model implements HasMedia
         return $this->contract_end && now()->gt($this->contract_end);
     }
 
+    public function biometrics()
+    {
+        return $this->hasMany(BiometricUser::class);
+    }
+
+
     public function getStatusLabelAttribute(): string
     {
         return match ($this->employee_status) {

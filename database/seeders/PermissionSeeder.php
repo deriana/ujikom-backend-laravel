@@ -108,6 +108,18 @@ class PermissionSeeder extends Seeder
                     UserRole::ADMIN->value => ['index', 'create', 'edit', 'destroy', 'forceDelete', 'restore'],
                 ],
             ],
+
+            'attendances' => [
+                'actions' => [
+                    'index' => 'attendance.index',
+                ],
+                'roles' => [
+                    UserRole::ADMIN->value => ['index'],
+                    UserRole::HR->value => ['index'],
+                    UserRole::MANAGER->value => ['index'],
+                    UserRole::EMPLOYEE->value => ['index'],
+                ],
+            ],
         ];
 
         DB::transaction(function () use ($modules) {
@@ -139,7 +151,7 @@ class PermissionSeeder extends Seeder
                     $permission = Permission::firstOrCreate([
                         'name' => $permissionName,
                         'guard_name' => 'api',
-                        'module_name' => $moduleName
+                        'module_name' => $moduleName,
                     ]);
 
                     // Assign permission ke role sesuai config
