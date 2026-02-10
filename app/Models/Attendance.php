@@ -21,4 +21,9 @@ class Attendance extends Model
         'clock_in' => 'datetime',
         'clock_out' => 'datetime',
     ];
+
+    public function employee()
+    {
+        return $this->belongsTo(Employee::class);
+    }
 }

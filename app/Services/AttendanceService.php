@@ -327,7 +327,7 @@ class AttendanceService
             $ext = $photo->getClientOriginalExtension() ?: 'jpg';
             $path = $photo->storeAs($folderPath, $fileName.'.'.$ext, 'public');
 
-            return $path;
+            return Storage::url($path);
         }
 
         // ================= BASE64 (LEGACY SUPPORT) =================
