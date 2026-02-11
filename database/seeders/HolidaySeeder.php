@@ -5,37 +5,42 @@ namespace Database\Seeders;
 use App\Models\Holiday;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 
 class HolidaySeeder extends Seeder
 {
     public function run(): void
     {
-        // Ubah tahun sesuai kebutuhan
         $year = now()->year;
+        $userId = 1;
 
-        $employeeId = 2;
-
-        $response = Http::get("https://libur.deno.dev/api?year={$year}");
+        $response = Http::get('https://libur.deno.dev/api', [
+            'year' => $year
+        ]);
 
         if ($response->failed()) {
             $this->command->error('Gagal mengambil data holiday API');
             return;
         }
 
-        $holidays = $response->json();
+        $holidays = collect($response->json());
 
         foreach ($holidays as $item) {
             Holiday::updateOrCreate(
-                ['date' => $item['date']],
                 [
+                    'start_date' => $item['date'],
+                    'end_date'   => null,
+                ],
+                [
+                    // Hanya dipakai saat INSERT
+                    'uuid' => (string) Str::uuid(),
+
                     'name' => $item['name'],
-                    'is_recurring' => false, // diasumsikan tidak tahunan
-                    'created_by_id' => $employeeId,
-                    'updated_by_id' => $employeeId,
+                    'is_recurring' => false,
+                    'created_by_id' => $userId,
+                    'updated_by_id' => $userId,
                 ]
             );
         }
-
-        $this->command->info('Holiday import selesai.');
     }
 }

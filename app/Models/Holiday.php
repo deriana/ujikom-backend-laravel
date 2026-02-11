@@ -10,10 +10,11 @@ class Holiday extends Model
 {
     use Blameable;
 
-    protected $fillable = ['uuid', 'name', 'date', 'is_recurring', 'created_by_id', 'updated_by_id'];
+    protected $fillable = ['uuid', 'name', 'start_date', 'end_date', 'is_recurring', 'created_by_id', 'updated_by_id'];
 
     protected $casts = [
-        'date' => 'date',
+        'start_date' => 'date',
+        'end_date' => 'date',
         'is_recurring' => 'boolean',
     ];
 

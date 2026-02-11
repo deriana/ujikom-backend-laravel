@@ -23,8 +23,9 @@ class CreateHolidayRequest extends FormRequest
     {
         return [
             'name' => 'required|string',
-            'date' => 'required|date',
-            'is_recurring' => 'nullable|boolean'
+            'start_date' => 'required|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+            'is_recurring' => 'nullable|boolean',
         ];
     }
 }

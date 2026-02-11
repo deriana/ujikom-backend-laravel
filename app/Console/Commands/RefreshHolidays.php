@@ -15,7 +15,9 @@ class RefreshHolidays extends Command
     {
         $year = $this->argument('year') ?? now()->year;
 
-        $response = Http::get("https://libur.deno.dev/api?year={$year}");
+        $response = Http::get("https://libur.deno.dev/api", [
+            'year' => $year
+        ]);
 
         if ($response->failed()) {
             $this->error('Gagal mengambil data holiday API');
@@ -26,8 +28,14 @@ class RefreshHolidays extends Command
 
         foreach ($holidays as $item) {
             Holiday::updateOrCreate(
-                ['date' => $item['date']],
-                ['name' => $item['name'], 'is_recurring' => false]
+                [
+                    'start_date' => $item['date'],
+                    'end_date'   => null,
+                ],
+                [
+                    'name' => $item['name'],
+                    'is_recurring' => false,
+                ]
             );
         }
 

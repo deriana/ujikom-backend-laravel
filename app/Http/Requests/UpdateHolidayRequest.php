@@ -23,7 +23,8 @@ class UpdateHolidayRequest extends FormRequest
     {
         return [
             'name' => 'required|string',
-            'date' => 'required|date',
+            'start_date' => 'required|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
             'is_recurring' => 'nullable|boolean',
         ];
     }

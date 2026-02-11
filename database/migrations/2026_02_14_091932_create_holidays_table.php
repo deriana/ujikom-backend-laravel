@@ -15,19 +15,25 @@ return new class extends Migration
             $table->id();
             $table->uuid('uuid')->unique();
             $table->string('name');
-            $table->date('date');
+
+            $table->date('start_date');
+            $table->date('end_date')->nullable();
+
             $table->boolean('is_recurring')->default(false);
+
             $table->foreignId('created_by_id')
                 ->nullable()
                 ->constrained('users')
                 ->nullOnDelete();
+
             $table->foreignId('updated_by_id')
                 ->nullable()
                 ->constrained('users')
                 ->nullOnDelete();
+
             $table->timestamps();
 
-            $table->unique(['date', 'name']);
+            $table->unique(['name', 'start_date', 'end_date']);
         });
 
     }
