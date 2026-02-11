@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\AttendanceDetailController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DivisionController;
+use App\Http\Controllers\Api\HolidayController;
 use App\Http\Controllers\Api\PositionController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\SettingController;
@@ -82,4 +83,5 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::post('/general', [SettingController::class, 'updateGeneral']);
     });
     Route::apiResource('attendances', AttendanceDetailController::class)->only('index', 'show');
+    Route::apiResource('holidays', HolidayController::class);
 });

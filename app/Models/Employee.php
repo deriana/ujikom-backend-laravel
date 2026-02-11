@@ -141,6 +141,10 @@ class Employee extends Model implements HasMedia
         return $this->hasMany(BiometricUser::class);
     }
 
+    public function attendances()
+    {
+        return $this->hasMany(Attendance::class);
+    }
 
     public function getStatusLabelAttribute(): string
     {

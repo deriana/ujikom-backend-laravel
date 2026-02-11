@@ -108,6 +108,18 @@ class PermissionSeeder extends Seeder
                     UserRole::ADMIN->value => ['index', 'create', 'edit', 'destroy', 'forceDelete', 'restore'],
                 ],
             ],
+            'holidays' => [
+                'actions' => [
+                    'index' => 'holiday.index',
+                    'create' => 'holiday.create',
+                    'edit' => 'holiday.edit',
+                    'destroy' => 'holiday.destroy',
+                ],
+                'roles' => [
+                    UserRole::ADMIN->value => ['index', 'create', 'edit', 'destroy', 'forceDelete', 'restore'],
+                    UserRole::HR->value => ['index', 'create', 'edit', 'destroy', 'forceDelete', 'restore'],
+                ],
+            ],
 
             'attendances' => [
                 'actions' => [

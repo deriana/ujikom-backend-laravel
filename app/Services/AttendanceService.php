@@ -14,6 +14,13 @@ use Illuminate\Support\Facades\Storage;
 
 class AttendanceService
 {
+    protected WorkdayService $workdayService;
+
+    public function __construct(WorkdayService $workdayService)
+    {
+        $this->workdayService = $workdayService;
+    }
+
     /**
      * Match descriptor dari FE dengan semua employee
      * Mengembalikan employee_id jika match, null jika tidak
@@ -188,6 +195,23 @@ class AttendanceService
     protected function recordAttendance($employee, array $data, float $score, string $userAgent)
     {
         $today = Carbon::today();
+
+        if (! $this->workdayService->isWorkday($today)) {
+            $this->logAttendance([
+                'status' => 'failed',
+                'employee_id' => $employee->id,
+                'employee_nik' => $employee->nik,
+                'reason' => 'non_working_day_attempt',
+                'similarity_score' => $score,
+                'user_agent' => $userAgent,
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Hari ini bukan hari kerja',
+            ];
+        }
+
         $now = Carbon::now();
         $setting = $this->getAttendanceSetting();
 

@@ -6,7 +6,6 @@ use App\Models\Attendance;
 use App\Models\Employee;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
-
 class AttendanceSeeder extends Seeder
 {
     /**
@@ -51,7 +50,5 @@ class AttendanceSeeder extends Seeder
                 ]);
             }
         }
-
-        $this->command->info('Attendance seeder completed.');
     }
 }
