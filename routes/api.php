@@ -5,11 +5,13 @@ use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\AttendanceDetailController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DivisionController;
+use App\Http\Controllers\Api\EmployeeWorkScheduleController;
 use App\Http\Controllers\Api\HolidayController;
 use App\Http\Controllers\Api\PositionController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\WorkScheduleController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -55,6 +57,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::get('/trashed', [UserController::class, 'getTrashed']);
         Route::post('/upload-profile-photo/{uuid}', [UserController::class, 'uploadProfilePhoto']);
         Route::get('/managers', [UserController::class, 'getManagers']);
+        Route::get('/employees-lite', [UserController::class, 'getEmployeesLite']);
     });
     Route::apiResource('users', UserController::class);
     Route::prefix('divisions')->group(function () {
@@ -84,4 +87,11 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     });
     Route::apiResource('attendances', AttendanceDetailController::class)->only('index', 'show');
     Route::apiResource('holidays', HolidayController::class);
+    Route::prefix('work_schedules')->group(function () {
+        Route::post('/restore/{uuid}', [WorkScheduleController::class, 'restore']);
+        Route::delete('/force-delete/{uuid}', [WorkScheduleController::class, 'forceDelete']);
+        Route::get('/trashed', [WorkScheduleController::class, 'getTrashed']);
+    });
+    Route::apiResource('work_schedules', WorkScheduleController::class);
+    Route::apiResource('employee_work_schedules', EmployeeWorkScheduleController::class);
 });

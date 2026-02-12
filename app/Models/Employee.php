@@ -146,6 +146,24 @@ class Employee extends Model implements HasMedia
         return $this->hasMany(Attendance::class);
     }
 
+    public function workSchedules()
+    {
+        return $this->hasMany(EmployeeWorkSchedule::class);
+    }
+
+    public function activeWorkSchedule($date = null)
+    {
+        $date = $date ?? now()->toDateString();
+
+        return $this->hasOne(EmployeeWorkSchedule::class)
+            ->whereDate('start_date', '<=', $date)
+            ->where(function ($q) use ($date) {
+                $q->whereNull('end_date')
+                    ->orWhereDate('end_date', '>=', $date);
+            })
+            ->with('workSchedule.workMode');
+    }
+
     public function getStatusLabelAttribute(): string
     {
         return match ($this->employee_status) {

@@ -15,13 +15,14 @@ class MeResource extends JsonResource
             'email' => $this->email,
             'created_at' => $this->created_at?->format('Y-m-d H:i:s'),
 
-            'roles' => RoleResource::collection($this->whenLoaded('roles')), 
+            'roles' => RoleResource::collection($this->whenLoaded('roles')),
 
             'employee' => $this->whenLoaded('employee', function () {
                 return [
                     'nik' => $this->employee->nik,
                     'status' => $this->employee->status_label,
                     'base_salary' => $this->employee->base_salary,
+                    'profile_photo' => $this->employee->getFirstMediaUrl('profile_photo') ?: null,
 
                     'position' => [
                         'name' => $this->employee->position?->name,
