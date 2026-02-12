@@ -19,6 +19,7 @@ class Employee extends Model implements HasMedia
         'team_id',
         'position_id',
         'manager_id',
+        'work_mode_id',
         'employee_status',
         'contract_start',
         'contract_end',

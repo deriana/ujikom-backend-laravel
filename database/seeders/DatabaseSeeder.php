@@ -25,6 +25,9 @@ class DatabaseSeeder extends Seeder
             EmployeeSeeder::class,
             AttendanceSeeder::class,
             BiometricSeeder::class,
+            WorkModeSeeder::class,
+            WorkScheduleSeeder::class,
+            EmployeeWorkScheduleSeeder::class,
         ]);
     }
 }
