@@ -11,21 +11,32 @@ class WorkdayService
     {
         $date = $date->copy();
 
-        // Weekend
+        // 1. Weekend
         if ($date->isWeekend()) {
             return false;
         }
 
-        // Libur spesifik tanggal
-        if (Holiday::whereDate('date', $date)->exists()) {
+        // 2. Libur tidak berulang (range tanggal)
+        $isHoliday = Holiday::where('is_recurring', false)
+            ->whereDate('start_date', '<=', $date)
+            ->whereDate('end_date', '>=', $date)
+            ->exists();
+
+        if ($isHoliday) {
             return false;
         }
 
-        // Libur tahunan berulang (misal 17 Agustus tiap tahun)
-        if (Holiday::where('is_recurring', true)
-            ->whereMonth('date', $date->month)
-            ->whereDay('date', $date->day)
-            ->exists()) {
+        // 3. Libur berulang tiap tahun (cek bulan & hari dalam range)
+        $isRecurringHoliday = Holiday::where('is_recurring', true)
+            ->get()
+            ->contains(function ($holiday) use ($date) {
+                $start = Carbon::parse($holiday->start_date)->year($date->year);
+                $end   = Carbon::parse($holiday->end_date)->year($date->year);
+
+                return $date->between($start, $end);
+            });
+
+        if ($isRecurringHoliday) {
             return false;
         }
 
