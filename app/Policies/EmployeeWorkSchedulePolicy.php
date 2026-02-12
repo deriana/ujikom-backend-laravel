@@ -15,7 +15,7 @@ class EmployeeWorkSchedulePolicy
 
     public function view(EmployeeWorkSchedule $employeeWorkSchedule, EmployeeWorkSchedule $model): bool
     {
-        return $employeeWorkSchedule->can('employee-work-schedule.index') || $employeeWorkSchedule->id === $model->id;
+        return $employeeWorkSchedule->can('employee-work-schedule.show') || $employeeWorkSchedule->id === $model->id;
     }
 
     public function create(EmployeeWorkSchedule $employeeWorkSchedule): bool

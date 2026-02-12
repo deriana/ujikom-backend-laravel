@@ -18,7 +18,7 @@ class UserPolicy
 
     public function view(User $user, User $model): bool
     {
-        return $user->can('user.index') || $user->id === $model->id;
+        return $user->can('user.show') || $user->id === $model->id;
     }
 
     public function create(User $user): bool

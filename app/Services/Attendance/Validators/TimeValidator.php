@@ -3,6 +3,7 @@
 namespace App\Services\Attendance\Validators;
 
 use App\Exceptions\Attendance\TimeValidationException;
+use App\Models\Employee;
 use App\Models\Setting;
 use App\Services\WorkdayService;
 use Carbon\Carbon;
@@ -16,24 +17,34 @@ class TimeValidator
         $this->workdayService = $workdayService;
     }
 
-    public function validateWorkday(Carbon $date): void
+    public function validateWorkday(Carbon $date, ?Employee $employee = null): void
     {
-        if (! $this->workdayService->isWorkday($date)) {
-            throw TimeValidationException::notWorkday($date);
+        if ($employee) {
+            $activeSchedule = $employee->activeWorkSchedule($date->toDateString())->first();
+            if (! $activeSchedule) {
+                throw TimeValidationException::notWorkday($date);
+            }
+        } else {
+            if (! $this->workdayService->isWorkday($date)) {
+                throw TimeValidationException::notWorkday($date);
+            }
         }
     }
 
-    public function validateClockInWindow(Carbon $now): array
+    public function validateClockInWindow(Employee $employee, Carbon $now): array
     {
-        $settings = $this->getAttendanceSetting();
-        $workStart = Carbon::createFromFormat('H:i', $settings['work_start_time']);
-        $maxClockIn = (clone $workStart)->addHours(2);
+        $times = $this->getEmployeeScheduleTimes($employee, $now);
+
+        $workStart = $times['work_start_time'];
+        $lateTolerance = (int) ($times['late_tolerance_minutes'] ?? 10);
+
+        // Maksimal clock-in = start + toleransi menit
+        $maxClockIn = (clone $workStart)->addMinutes($lateTolerance);
 
         if ($now->gt($maxClockIn)) {
             throw TimeValidationException::clockInLate($now, $maxClockIn);
         }
 
-        $lateTolerance = (int) $settings['late_tolerance_minutes'];
         $lateMinutes = max(0, $workStart->diffInMinutes($now, false));
 
         return [
@@ -42,22 +53,23 @@ class TimeValidator
         ];
     }
 
-    public function validateClockOutWindow(Carbon $now): array
+    public function validateClockOutWindow(Employee $employee, Carbon $now): array
     {
-        $settings = $this->getAttendanceSetting();
-        $workStart = Carbon::createFromFormat('H:i', $settings['work_start_time']);
-        $workEnd = Carbon::createFromFormat('H:i', $settings['work_end_time']);
+        $times = $this->getEmployeeScheduleTimes($employee, $now);
 
-        // Min clock out is half-day? (Based on old logic: halfway between start and end)
-        $totalHours = $workStart->diffInHours($workEnd);
-        $minClockOut = (clone $workStart)->addHours($totalHours / 2);
+        $workStart = $times['work_start_time'];
+        $workEnd   = $times['work_end_time'];
+
+        // Minimal clock-out setengah hari kerja
+        $totalMinutes = $workStart->diffInMinutes($workEnd);
+        $minClockOut = (clone $workStart)->addMinutes($totalMinutes / 2);
 
         if ($now->lt($minClockOut)) {
             throw TimeValidationException::clockOutTooEarly($now, $minClockOut);
         }
 
         $earlyLeaveMinutes = $now->lt($workEnd) ? $now->diffInMinutes($workEnd) : 0;
-        $overtimeMinutes = $now->gt($workEnd) ? $workEnd->diffInMinutes($now) : 0;
+        $overtimeMinutes   = $now->gt($workEnd) ? $workEnd->diffInMinutes($now) : 0;
 
         return [
             'early_leave_minutes' => $earlyLeaveMinutes,
@@ -65,15 +77,35 @@ class TimeValidator
         ];
     }
 
-    protected function getAttendanceSetting(): array
+    public function getEmployeeScheduleTimes(Employee $employee, Carbon $date): array
     {
-        $setting = Setting::where('key', 'attendance')->first();
+        $activeSchedule = $employee->activeWorkSchedule($date->toDateString())->first();
 
-        return $setting?->values ?? [
-            'late_tolerance_minutes' => 10,
-            'work_start_time' => '09:00',
-            'work_end_time' => '17:00',
+        if ($activeSchedule) {
+            $ws = $activeSchedule->workSchedule;
+
+            return [
+                'work_start_time' => Carbon::parse($ws->work_start_time),
+                'work_end_time'   => Carbon::parse($ws->work_end_time),
+                'requires_office_location' => $ws->requires_office_location,
+                'late_tolerance_minutes' => $ws->late_tolerance_minutes ?? $this->getDefaultLateTolerance(),
+            ];
+        }
+
+        // fallback ke default setting dari database
+        $setting = Setting::where('key', 'attendance')->first()?->values ?? [];
+
+        return [
+            'work_start_time' => Carbon::createFromFormat('H:i', $setting['work_start_time'] ?? '09:00'),
+            'work_end_time'   => Carbon::createFromFormat('H:i', $setting['work_end_time'] ?? '17:00'),
+            'requires_office_location' => $setting['requires_office_location'] ?? false,
+            'late_tolerance_minutes' => $setting['late_tolerance_minutes'] ?? 10,
         ];
+    }
 
+    protected function getDefaultLateTolerance(): int
+    {
+        $setting = Setting::where('key', 'attendance')->first()?->values ?? [];
+        return (int) ($setting['late_tolerance_minutes'] ?? 10);
     }
 }

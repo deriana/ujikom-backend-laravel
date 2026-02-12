@@ -22,6 +22,7 @@ class PermissionSeeder extends Seeder
             'users' => [
                 'actions' => [
                     'index' => 'user.index',
+                    'show' => 'user.show',
                     'create' => 'user.create',
                     'edit' => 'user.edit',
                     'destroy' => 'user.destroy',
@@ -29,7 +30,7 @@ class PermissionSeeder extends Seeder
                     'restore' => 'user.restore',
                 ],
                 'roles' => [
-                    UserRole::ADMIN->value => ['index', 'create', 'edit', 'destroy', 'forceDelete', 'restore'],
+                    UserRole::ADMIN->value => ['index', 'show', 'create', 'edit', 'destroy', 'forceDelete', 'restore'],
                 ],
             ],
 
@@ -70,6 +71,7 @@ class PermissionSeeder extends Seeder
             'divisions' => [
                 'actions' => [
                     'index' => 'division.index',
+                    'show' => 'division.show',
                     'create' => 'division.create',
                     'edit' => 'division.edit',
                     'destroy' => 'division.destroy',
@@ -77,13 +79,14 @@ class PermissionSeeder extends Seeder
                     'forceDelete' => 'division.forceDelete',
                 ],
                 'roles' => [
-                    UserRole::ADMIN->value => ['index', 'create', 'edit', 'destroy', 'forceDelete', 'restore'],
+                    UserRole::ADMIN->value => ['index', 'show', 'create', 'edit', 'destroy', 'forceDelete', 'restore'],
                 ],
             ],
 
             'positions' => [
                 'actions' => [
                     'index' => 'position.index',
+                    'show' => 'position.show',
                     'create' => 'position.create',
                     'edit' => 'position.edit',
                     'destroy' => 'position.destroy',
@@ -91,13 +94,14 @@ class PermissionSeeder extends Seeder
                     'forceDelete' => 'position.forceDelete',
                 ],
                 'roles' => [
-                    UserRole::ADMIN->value => ['index', 'create', 'edit', 'destroy', 'forceDelete', 'restore'],
+                    UserRole::ADMIN->value => ['index', 'show', 'create', 'edit', 'destroy', 'forceDelete', 'restore'],
                 ],
             ],
 
             'allowances' => [
                 'actions' => [
                     'index' => 'allowance.index',
+                    'show' => 'allowance.show',
                     'create' => 'allowance.create',
                     'edit' => 'allowance.edit',
                     'destroy' => 'allowance.destroy',
@@ -105,7 +109,7 @@ class PermissionSeeder extends Seeder
                     'forceDelete' => 'allowance.forceDelete',
                 ],
                 'roles' => [
-                    UserRole::ADMIN->value => ['index', 'create', 'edit', 'destroy', 'forceDelete', 'restore'],
+                    UserRole::ADMIN->value => ['index', 'show', 'create', 'edit', 'destroy', 'forceDelete', 'restore'],
                 ],
             ],
 
@@ -125,27 +129,32 @@ class PermissionSeeder extends Seeder
             'attendances' => [
                 'actions' => [
                     'index' => 'attendance.index',
+                    'show' => 'attendance.show'
                 ],
                 'roles' => [
-                    UserRole::ADMIN->value => ['index'],
-                    UserRole::HR->value => ['index'],
+                    UserRole::ADMIN->value => ['index', 'show'],
+                    UserRole::HR->value => ['index', 'show'],
                     UserRole::MANAGER->value => ['index'],
                     UserRole::EMPLOYEE->value => ['index'],
                 ],
+
             ],
+
             'work_schedules' => [
                 'actions' => [
                     'index' => 'work-schedule.index',
-                    'store' => 'work-schedule.store',
                     'show' => 'work-schedule.show',
-                    'update' => 'work-schedule.update',
+                    'create' => 'work-schedule.create',
+                    'create' => 'work-schedule.create',
+                    'show' => 'work-schedule.show',
+                    'edit' => 'work-schedule.edit',
                     'destroy' => 'work-schedule.destroy',
                     'restore' => 'work-schedule.restore',
                     'forceDelete' => 'work-schedule.forceDelete',
                 ],
                 'roles' => [
-                    UserRole::ADMIN->value => ['index', 'store', 'show', 'update', 'destroy', 'restore', 'forceDelete'],
-                    UserRole::HR->value => ['index', 'store', 'show', 'update', 'destroy', 'restore', 'forceDelete'],
+                    UserRole::ADMIN->value => ['index', 'create', 'show', 'edit', 'destroy', 'restore', 'forceDelete'],
+                    UserRole::HR->value => ['index', 'create', 'show', 'edit', 'destroy', 'restore', 'forceDelete'],
                     UserRole::MANAGER->value => ['index', 'show'],
                     UserRole::EMPLOYEE->value => [],
                 ],
@@ -154,14 +163,14 @@ class PermissionSeeder extends Seeder
             'employee_work_schedules' => [
                 'actions' => [
                     'index' => 'employee-work-schedule.index',
-                    'store' => 'employee-work-schedule.store',
                     'show' => 'employee-work-schedule.show',
-                    'update' => 'employee-work-schedule.update',
+                    'create' => 'employee-work-schedule.create',
+                    'edit' => 'employee-work-schedule.edit',
                     'destroy' => 'employee-work-schedule.destroy',
                 ],
                 'roles' => [
-                    UserRole::ADMIN->value => ['index', 'store', 'show', 'update', 'destroy'],
-                    UserRole::HR->value => ['index', 'store', 'show', 'update'],
+                    UserRole::ADMIN->value => ['index', 'create', 'show', 'edit', 'destroy'],
+                    UserRole::HR->value => ['index', 'create', 'show', 'edit'],
                     UserRole::MANAGER->value => ['index', 'show'],
                     UserRole::EMPLOYEE->value => [],
                 ],

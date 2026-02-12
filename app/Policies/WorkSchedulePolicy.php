@@ -17,7 +17,7 @@ class WorkSchedulePolicy
 
     public function view(User $user, WorkSchedule $workSchedule): bool
     {
-        return $user->can('work-schedule.index');
+        return $user->can('work-schedule.show');
     }
 
     public function create(User $user): bool
