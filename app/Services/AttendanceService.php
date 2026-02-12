@@ -14,6 +14,13 @@ use Illuminate\Support\Facades\Storage;
 
 class AttendanceService
 {
+    protected WorkdayService $workdayService;
+
+    public function __construct(WorkdayService $workdayService)
+    {
+        $this->workdayService = $workdayService;
+    }
+
     /**
      * Match descriptor dari FE dengan semua employee
      * Mengembalikan employee_id jika match, null jika tidak
@@ -22,16 +29,25 @@ class AttendanceService
     {
         $biometrics = BiometricUser::with('employee')->get();
 
+        $scores = [];
         $bestScore = -1;
         $matchedEmployee = null;
 
         foreach ($biometrics as $bio) {
             $desc = $bio->descriptor;
-            if (! is_array($desc)) {
+
+            if (! is_array($desc) || count($desc) !== count($inputDescriptor)) {
                 continue;
             }
 
             $score = $this->cosineSimilarity($inputDescriptor, $desc);
+
+            $scores[] = [
+                'employee_id' => $bio->employee_id,
+                'employee_name' => $bio->employee?->name,
+                'view' => $bio->view,
+                'score' => round($score, 5),
+            ];
 
             if ($score > $bestScore) {
                 $bestScore = $score;
@@ -39,11 +55,23 @@ class AttendanceService
             }
         }
 
-        Log::info($bestScore);
+        // Urutkan skor tertinggi
+        usort($scores, fn ($a, $b) => $b['score'] <=> $a['score']);
+
+        $top3 = array_slice($scores, 0, 3);
+
+        Log::info('FACE_MATCH_DEBUG', [
+            'best_score' => round($bestScore, 5),
+            'threshold' => 0.75,
+            'matched_employee_id' => $matchedEmployee?->id,
+            'matched_employee_name' => $matchedEmployee?->name,
+            'top_candidates' => $top3,
+            'descriptor_length' => count($inputDescriptor),
+        ]);
 
         return [
             'employee' => ($bestScore > 0.75) ? $matchedEmployee : null,
-            'score' => $bestScore, // ✅
+            'score' => $bestScore,
         ];
     }
 
@@ -167,6 +195,23 @@ class AttendanceService
     protected function recordAttendance($employee, array $data, float $score, string $userAgent)
     {
         $today = Carbon::today();
+
+        if (! $this->workdayService->isWorkday($today)) {
+            $this->logAttendance([
+                'status' => 'failed',
+                'employee_id' => $employee->id,
+                'employee_nik' => $employee->nik,
+                'reason' => 'non_working_day_attempt',
+                'similarity_score' => $score,
+                'user_agent' => $userAgent,
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Hari ini bukan hari kerja',
+            ];
+        }
+
         $now = Carbon::now();
         $setting = $this->getAttendanceSetting();
 
@@ -177,6 +222,67 @@ class AttendanceService
         $maxClockIn = (clone $workStart)->addHours(2);
         $minClockOut = (clone $workStart)->addHours($workStart->diffInHours($workEnd) / 2);
 
+        // ================= GEO FENCING CHECK (WAJIB) =================
+        $geo = $this->getGeoSetting();
+
+        if ($geo) {
+
+            // GPS wajib ada
+            if (! isset($data['latitude']) || ! isset($data['longitude'])) {
+                return [
+                    'success' => false,
+                    'message' => 'Lokasi GPS wajib diaktifkan',
+                ];
+            }
+
+            // Validasi angka
+            $lat = filter_var($data['latitude'], FILTER_VALIDATE_FLOAT);
+            $lon = filter_var($data['longitude'], FILTER_VALIDATE_FLOAT);
+
+            if ($lat === false || $lon === false) {
+                return [
+                    'success' => false,
+                    'message' => 'Format koordinat tidak valid',
+                ];
+            }
+
+            $distance = $this->distanceInMeters(
+                $geo['office_latitude'],
+                $geo['office_longitude'],
+                $lat,
+                $lon
+            );
+
+            Log::info('GEOFENCE_CHECK', [
+                'employee_id' => $employee->id,
+                'distance_m' => round($distance, 2),
+                'radius_m' => $geo['radius_meters'],
+            ]);
+
+            if ($distance > $geo['radius_meters']) {
+                $this->logAttendance([
+                    'status' => 'failed',
+                    'employee_id' => $employee->id,
+                    'employee_nik' => $employee->nik,
+                    'reason' => 'outside_geofence',
+                    'similarity_score' => $score,
+                    'latitude' => $lat,
+                    'longitude' => $lon,
+                    'user_agent' => $userAgent,
+                ]);
+
+                return [
+                    'success' => false,
+                    'message' => 'Anda berada di luar area absensi',
+                ];
+            }
+
+            // Simpan nilai bersih biar konsisten dipakai nanti
+            $data['latitude'] = $lat;
+            $data['longitude'] = $lon;
+        }
+
+        // ================= BUAT / AMBIL ATTENDANCE =================
         $attendance = Attendance::firstOrCreate(
             ['employee_id' => $employee->id, 'date' => $today],
             ['status' => 'present']
@@ -204,14 +310,14 @@ class AttendanceService
             }
 
             $photoInPath = isset($data['photo'])
-            ? $this->storeAttendancePhoto($data['photo'], $employee->id, $today)
-            : null;
+                ? $this->storeAttendancePhoto($data['photo'], $employee->id, $today)
+                : null;
 
             $attendance->update([
                 'clock_in' => $now,
                 'late_minutes' => $lateMinutes,
-                'latitude_in' => $data['latitude'] ?? null,
-                'longitude_in' => $data['longitude'] ?? null,
+                'latitude_in' => $data['latitude'],
+                'longitude_in' => $data['longitude'],
                 'clock_in_photo' => $photoInPath,
             ]);
 
@@ -221,8 +327,8 @@ class AttendanceService
                 'employee_id' => $employee->id,
                 'employee_nik' => $employee->nik,
                 'similarity_score' => $score,
-                'latitude' => $data['latitude'] ?? null,
-                'longitude' => $data['longitude'] ?? null,
+                'latitude' => $data['latitude'],
+                'longitude' => $data['longitude'],
                 'user_agent' => $userAgent,
             ]);
 
@@ -249,16 +355,16 @@ class AttendanceService
             $overtimeMinutes = $now->gt($workEnd) ? $workEnd->diffInMinutes($now) : 0;
 
             $photoOutPath = isset($data['photo'])
-            ? $this->storeAttendancePhoto($data['photo'], $employee->id, $today)
-            : null;
+                ? $this->storeAttendancePhoto($data['photo'], $employee->id, $today)
+                : null;
 
             $attendance->update([
                 'clock_out' => $now,
                 'early_leave_minutes' => $earlyLeaveMinutes,
                 'overtime_minutes' => $overtimeMinutes,
                 'work_minutes' => $attendance->clock_in->diffInMinutes($now),
-                'latitude_out' => $data['latitude'] ?? null,
-                'longitude_out' => $data['longitude'] ?? null,
+                'latitude_out' => $data['latitude'],
+                'longitude_out' => $data['longitude'],
                 'clock_out_photo' => $photoOutPath,
             ]);
 
@@ -268,14 +374,15 @@ class AttendanceService
                 'employee_id' => $employee->id,
                 'employee_nik' => $employee->nik,
                 'similarity_score' => $score,
-                'latitude' => $data['latitude'] ?? null,
-                'longitude' => $data['longitude'] ?? null,
+                'latitude' => $data['latitude'],
+                'longitude' => $data['longitude'],
                 'user_agent' => $userAgent,
             ]);
 
             return ['success' => true, 'message' => 'Clock-out berhasil', 'data' => $attendance];
         }
 
+        // ================= SUDAH ABSEN =================
         $this->logAttendance([
             'status' => 'failed',
             'employee_id' => $employee->id,
@@ -315,6 +422,29 @@ class AttendanceService
             'work_start_time' => '09:00',
             'work_end_time' => '17:00',
         ];
+    }
+
+    protected function getGeoSetting(): ?array
+    {
+        $setting = Setting::where('key', 'geo_fencing')->first();
+
+        return $setting?->values;
+    }
+
+    protected function distanceInMeters($lat1, $lon1, $lat2, $lon2): float
+    {
+        $earthRadius = 6371000; // meter
+
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLon = deg2rad($lon2 - $lon1);
+
+        $a = sin($dLat / 2) * sin($dLat / 2) +
+             cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+             sin($dLon / 2) * sin($dLon / 2);
+
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+        return $earthRadius * $c;
     }
 
     protected function storeAttendancePhoto($photo, $employeeId, Carbon $date): ?string

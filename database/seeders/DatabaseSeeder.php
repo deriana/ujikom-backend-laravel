@@ -24,7 +24,9 @@ class DatabaseSeeder extends Seeder
             AllowanceSeeder::class,
             EmployeeSeeder::class,
             AttendanceSeeder::class,
-            BiometricSeeder::class,
+            // BiometricSeeder::class,
+            BiometricUserSeeder::class,
+            HolidaySeeder::class,
         ]);
     }
 }
