@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CreateUserRequest;
 use App\Http\Requests\UpdateUserRequest;
+use App\Http\Resources\EmployeeLiteResources;
 use App\Http\Resources\ManagerResource;
 use App\Http\Resources\UserResource;
 use App\Models\User;
@@ -208,6 +209,16 @@ class UserController extends Controller
         return $this->successResponse(
             ManagerResource::collection($users),
             'Managers fetched successfully'
+        );
+    }
+
+    public function getEmployeesLite(): JsonResponse
+    {
+        $users = $this->userService->getEmployeesLite();
+
+        return $this->successResponse(
+            EmployeeLiteResources::collection($users),
+            'Employees fetched successfully'
         );
     }
 }

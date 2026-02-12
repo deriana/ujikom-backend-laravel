@@ -13,13 +13,14 @@ class EmployeeWorkScheduleResource extends JsonResource
             'uuid' => $this->uuid,
 
             'employee' => [
-                'id' => $this->employee?->id,
+                'uuid' => $this->employee?->uuid,
                 'name' => $this->employee?->user?->name,
                 'nik' => $this->employee?->nik,
+                'profile_photo' => $this->employee?->getFirstMediaUrl('profile_photo') ?? null,
             ],
 
             'work_schedule' => [
-                'id' => $this->workSchedule?->id,
+                'uuid' => $this->workSchedule?->uuid,
                 'name' => $this->workSchedule?->name,
                 'work_mode' => $this->workSchedule?->workMode?->name,
             ],

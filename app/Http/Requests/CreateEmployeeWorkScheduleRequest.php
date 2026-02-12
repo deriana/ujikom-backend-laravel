@@ -22,8 +22,8 @@ class CreateEmployeeWorkScheduleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'employee_id' => 'required|exists:employees,id',
-            'work_schedule_id' => 'required|exists:work_schedules,id',
+            'employee_nik' => 'required|exists:employees,nik',
+            'work_schedule_uuid' => 'required|exists:work_schedules,uuid',
             'start_date' => 'required|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
         ];

@@ -24,10 +24,10 @@ class EmployeeWorkScheduleController extends Controller
     {
         $this->authorize('viewAny', EmployeeWorkSchedule::class);
 
-        $employeeWorkScheduleEmployeeWorkSchedules = $this->employeeWorkScheduleService->index();
+        $employee_work_schedules = $this->employeeWorkScheduleService->index();
 
         return $this->successResponse(
-            EmployeeWorkScheduleResource::collection($employeeWorkScheduleEmployeeWorkSchedules),
+            EmployeeWorkScheduleResource::collection($employee_work_schedules),
             'EmployeeWorkSchedules fetched successfully'
         );
     }
@@ -36,35 +36,35 @@ class EmployeeWorkScheduleController extends Controller
     {
         $this->authorize('create', EmployeeWorkSchedule::class);
 
-        $employeeWorkScheduleEmployeeWorkSchedule = $this->employeeWorkScheduleService->store(
+        $employee_work_schedule = $this->employeeWorkScheduleService->store(
             $request->validated(),
             Auth::id()
         );
 
         return $this->successResponse(
-            new EmployeeWorkScheduleResource($employeeWorkScheduleEmployeeWorkSchedule),
+            new EmployeeWorkScheduleResource($employee_work_schedule),
             'EmployeeWorkSchedule created successfully',
             201
         );
     }
 
-    public function show(EmployeeWorkSchedule $employeeWorkScheduleEmployeeWorkSchedule): JsonResponse
+    public function show(EmployeeWorkSchedule $employee_work_schedule): JsonResponse
     {
-        $this->authorize('view', $employeeWorkScheduleEmployeeWorkSchedule);
+        $this->authorize('view', $employee_work_schedule);
 
-        $employeeWorkScheduleEmployeeWorkSchedule->load('allowances', 'creator');
+        $employee_work_schedule->load('allowances', 'creator');
 
         return $this->successResponse(
-            new EmployeeWorkScheduleResource($employeeWorkScheduleEmployeeWorkSchedule),
+            new EmployeeWorkScheduleResource($employee_work_schedule),
             'EmployeeWorkSchedule fetched successfully'
         );
     }
 
-    public function update(UpdateEmployeeWorkScheduleRequest $request, EmployeeWorkSchedule $employeeWorkScheduleEmployeeWorkSchedule): JsonResponse
+    public function update(UpdateEmployeeWorkScheduleRequest $request, EmployeeWorkSchedule $employee_work_schedule): JsonResponse
     {
-        $this->authorize('edit', $employeeWorkScheduleEmployeeWorkSchedule);
+        $this->authorize('edit', $employee_work_schedule);
 
-        $updated = $this->employeeWorkScheduleService->update($employeeWorkScheduleEmployeeWorkSchedule, $request->validated(), Auth::id());
+        $updated = $this->employeeWorkScheduleService->update($employee_work_schedule, $request->validated(), Auth::id());
 
         return $this->successResponse(
             new EmployeeWorkScheduleResource($updated),
@@ -72,15 +72,16 @@ class EmployeeWorkScheduleController extends Controller
         );
     }
 
-    public function destroy(EmployeeWorkSchedule $employeeWorkScheduleEmployeeWorkSchedule): JsonResponse
+    public function destroy(EmployeeWorkSchedule $employee_work_schedule): JsonResponse
     {
-        $this->authorize('destroy', $employeeWorkScheduleEmployeeWorkSchedule);
+        $this->authorize('destroy', $employee_work_schedule);
 
-        $this->employeeWorkScheduleService->delete($employeeWorkScheduleEmployeeWorkSchedule);
+        $deleted = $this->employeeWorkScheduleService->delete($employee_work_schedule);
 
-        return $this->successResponse(
-            null,
-            'EmployeeWorkSchedule deleted successfully'
-        );
+        if (! $deleted) {
+            return $this->errorResponse('Failed to delete EmployeeWorkSchedule', 500);
+        }
+
+        return $this->successResponse(null, 'EmployeeWorkSchedule deleted successfully');
     }
 }

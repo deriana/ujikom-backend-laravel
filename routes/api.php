@@ -57,6 +57,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::get('/trashed', [UserController::class, 'getTrashed']);
         Route::post('/upload-profile-photo/{uuid}', [UserController::class, 'uploadProfilePhoto']);
         Route::get('/managers', [UserController::class, 'getManagers']);
+        Route::get('/employees-lite', [UserController::class, 'getEmployeesLite']);
     });
     Route::apiResource('users', UserController::class);
     Route::prefix('divisions')->group(function () {

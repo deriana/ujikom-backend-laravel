@@ -308,7 +308,6 @@ class UserService
 
         $employee->clearMediaCollection('profile_photo');
 
-
         if ($photoFile) {
             $employee->addMedia($photoFile)
                 ->toMediaCollection('profile_photo');
@@ -328,5 +327,10 @@ class UserService
                 $q->where('name', 'manager');
             })
             ->get();
+    }
+
+    public function getEmployeesLite()
+    {
+        return Employee::with('user')->get();
     }
 }
