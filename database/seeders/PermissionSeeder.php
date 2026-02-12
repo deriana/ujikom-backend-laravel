@@ -108,6 +108,7 @@ class PermissionSeeder extends Seeder
                     UserRole::ADMIN->value => ['index', 'create', 'edit', 'destroy', 'forceDelete', 'restore'],
                 ],
             ],
+
             'holidays' => [
                 'actions' => [
                     'index' => 'holiday.index',
@@ -131,41 +132,39 @@ class PermissionSeeder extends Seeder
                     UserRole::MANAGER->value => ['index'],
                     UserRole::EMPLOYEE->value => ['index'],
                 ],
-
-                'work_schedules' => [
-                    'actions' => [
-                        'index' => 'work-schedule.index',
-                        'store' => 'work-schedule.store',
-                        'show' => 'work-schedule.show',
-                        'update' => 'work-schedule.update',
-                        'destroy' => 'work-schedule.destroy',
-                        'restore' => 'work-schedule.restore',
-                        'forceDelete' => 'work-schedule.forceDelete',
-                    ],
-                    'roles' => [
-                        UserRole::ADMIN->value => ['index', 'store', 'show', 'update', 'destroy', 'restore', 'forceDelete'],
-                        UserRole::HR->value => ['index', 'store', 'show', 'update', 'destroy', 'restore', 'forceDelete'],
-                        UserRole::MANAGER->value => ['index', 'show'],
-                        UserRole::EMPLOYEE->value => [],
-                    ],
+            ],
+            'work_schedules' => [
+                'actions' => [
+                    'index' => 'work-schedule.index',
+                    'store' => 'work-schedule.store',
+                    'show' => 'work-schedule.show',
+                    'update' => 'work-schedule.update',
+                    'destroy' => 'work-schedule.destroy',
+                    'restore' => 'work-schedule.restore',
+                    'forceDelete' => 'work-schedule.forceDelete',
                 ],
-
-                'employee_work_schedules' => [
-                    'actions' => [
-                        'index' => 'employee-work-schedule.index',
-                        'store' => 'employee-work-schedule.store',
-                        'show' => 'employee-work-schedule.show',
-                        'update' => 'employee-work-schedule.update',
-                        'destroy' => 'employee-work-schedule.destroy',
-                    ],
-                    'roles' => [
-                        UserRole::ADMIN->value => ['index', 'store', 'show', 'update', 'destroy'],
-                        UserRole::HR->value => ['index', 'store', 'show', 'update'],
-                        UserRole::MANAGER->value => ['index', 'show'],
-                        UserRole::EMPLOYEE->value => [],
-                    ],
+                'roles' => [
+                    UserRole::ADMIN->value => ['index', 'store', 'show', 'update', 'destroy', 'restore', 'forceDelete'],
+                    UserRole::HR->value => ['index', 'store', 'show', 'update', 'destroy', 'restore', 'forceDelete'],
+                    UserRole::MANAGER->value => ['index', 'show'],
+                    UserRole::EMPLOYEE->value => [],
                 ],
+            ],
 
+            'employee_work_schedules' => [
+                'actions' => [
+                    'index' => 'employee-work-schedule.index',
+                    'store' => 'employee-work-schedule.store',
+                    'show' => 'employee-work-schedule.show',
+                    'update' => 'employee-work-schedule.update',
+                    'destroy' => 'employee-work-schedule.destroy',
+                ],
+                'roles' => [
+                    UserRole::ADMIN->value => ['index', 'store', 'show', 'update', 'destroy'],
+                    UserRole::HR->value => ['index', 'store', 'show', 'update'],
+                    UserRole::MANAGER->value => ['index', 'show'],
+                    UserRole::EMPLOYEE->value => [],
+                ],
             ],
         ];
 

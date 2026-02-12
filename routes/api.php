@@ -86,11 +86,11 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     });
     Route::apiResource('attendances', AttendanceDetailController::class)->only('index', 'show');
     Route::apiResource('holidays', HolidayController::class);
-    Route::apiResource('work_schedules', WorkScheduleController::class);
-    Route::prefix('employee_work_schedules')->group(function () {
-        Route::post('/restore/{uuid}', [EmployeeWorkScheduleController::class, 'restore']);
-        Route::delete('/force-delete/{uuid}', [EmployeeWorkScheduleController::class, 'forceDelete']);
-        Route::get('/trashed', [EmployeeWorkScheduleController::class, 'getTrashed']);
+    Route::prefix('work_schedules')->group(function () {
+        Route::post('/restore/{uuid}', [WorkScheduleController::class, 'restore']);
+        Route::delete('/force-delete/{uuid}', [WorkScheduleController::class, 'forceDelete']);
+        Route::get('/trashed', [WorkScheduleController::class, 'getTrashed']);
     });
+    Route::apiResource('work_schedules', WorkScheduleController::class);
     Route::apiResource('employee_work_schedules', EmployeeWorkScheduleController::class);
 });

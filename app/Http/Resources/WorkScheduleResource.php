@@ -20,6 +20,17 @@ class WorkScheduleResource extends JsonResource
 
             'total_employees' => $this->whenCounted('employeeWorkSchedules'),
 
+            'work_start_time' => $this->work_start_time,
+            'work_end_time' => $this->work_end_time,
+            'requires_office_location' => (bool) $this->requires_office_location,
+
+            'creator' => $this->whenLoaded('creator', function () {
+                return [
+                    'id' => $this->creator?->id,
+                    'name' => $this->creator?->name,
+                ];
+            }),
+
             'created_at' => $this->created_at?->toDateTimeString(),
             'updated_at' => $this->updated_at?->toDateTimeString(),
             'deleted_at' => $this->whenNotNull($this->deleted_at?->toDateTimeString()),

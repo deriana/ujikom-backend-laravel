@@ -20,7 +20,7 @@ class AttendanceSeeder extends Seeder
             return;
         }
 
-        $totalDesiredRecords = 100000;
+        $totalDesiredRecords = 10000;
         $batchSize = 500; // Masukkan 500 data per satu kali query SQL
         $data = [];
         $count = 0;

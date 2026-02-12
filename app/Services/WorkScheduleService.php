@@ -55,8 +55,7 @@ class WorkScheduleService
 
         return DB::transaction(function () use ($schedule) {
 
-            // Optional safety check
-            if ($schedule->employeeSchedules()->exists()) {
+            if ($schedule->employeeWorkSchedules()->exists()) {
                 throw new Exception('Cannot delete schedule that is assigned to employees');
             }
 
@@ -92,7 +91,7 @@ class WorkScheduleService
                 ->whereUuid($uuid)
                 ->firstOrFail();
 
-            if ($schedule->employeeSchedules()->withTrashed()->exists()) {
+            if ($schedule->employeeWorkSchedules()->exists()) {
                 throw new Exception('Cannot force delete schedule that has assignment history');
             }
 
