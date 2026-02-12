@@ -5,11 +5,13 @@ use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\AttendanceDetailController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DivisionController;
+use App\Http\Controllers\Api\EmployeeWorkScheduleController;
 use App\Http\Controllers\Api\HolidayController;
 use App\Http\Controllers\Api\PositionController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\WorkScheduleController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -84,4 +86,11 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     });
     Route::apiResource('attendances', AttendanceDetailController::class)->only('index', 'show');
     Route::apiResource('holidays', HolidayController::class);
+    Route::apiResource('work_schedules', WorkScheduleController::class);
+    Route::prefix('employee_work_schedules')->group(function () {
+        Route::post('/restore/{uuid}', [EmployeeWorkScheduleController::class, 'restore']);
+        Route::delete('/force-delete/{uuid}', [EmployeeWorkScheduleController::class, 'forceDelete']);
+        Route::get('/trashed', [EmployeeWorkScheduleController::class, 'getTrashed']);
+    });
+    Route::apiResource('employee_work_schedules', EmployeeWorkScheduleController::class);
 });
