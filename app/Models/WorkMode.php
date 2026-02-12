@@ -11,8 +11,8 @@ class WorkMode extends Model
         'name',
     ];
 
-    public function employees(): HasMany
+    public function workSchedules(): HasMany
     {
-        return $this->hasMany(Employee::class);
+        return $this->hasMany(WorkSchedule::class);
     }
 }

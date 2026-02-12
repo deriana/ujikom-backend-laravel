@@ -6,15 +6,34 @@ use App\Traits\Blameable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class WorkSchedule extends Model
 {
     use Blameable, SoftDeletes;
 
     protected $fillable = [
+        'uuid',
         'name',
         'work_mode_id',
     ];
+
+    protected $hidden = [
+        'id',
+    ];
+
+    protected static function boot()
+    {
+        parent::boot();
+        static::creating(function ($model) {
+            $model->uuid = (string) Str::uuid();
+        });
+    }
+
+    public function getRouteKeyName()
+    {
+        return 'uuid';
+    }
 
     public function employeeWorkSchedules(): HasMany
     {
@@ -24,5 +43,10 @@ class WorkSchedule extends Model
     public function workMode()
     {
         return $this->belongsTo(WorkMode::class);
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by_id');
     }
 }

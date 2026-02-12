@@ -6,6 +6,7 @@ use Illuminate\Database\Seeder;
 use App\Models\Employee;
 use App\Models\WorkSchedule;
 use App\Models\EmployeeWorkSchedule;
+use Illuminate\Support\Str;
 
 class EmployeeWorkScheduleSeeder extends Seeder
 {
@@ -22,6 +23,7 @@ class EmployeeWorkScheduleSeeder extends Seeder
         EmployeeWorkSchedule::updateOrCreate(
             ['employee_id' => $manager->id],
             [
+                'uuid' => Str::uuid(),
                 'work_schedule_id' => $office->id,
                 'start_date' => $manager->join_date,
                 'end_date' => null,
@@ -31,6 +33,7 @@ class EmployeeWorkScheduleSeeder extends Seeder
         EmployeeWorkSchedule::updateOrCreate(
             ['employee_id' => $hr->id],
             [
+                'uuid' => Str::uuid(),
                 'work_schedule_id' => $hybrid->id,
                 'start_date' => $hr->join_date,
                 'end_date' => null,
@@ -40,6 +43,7 @@ class EmployeeWorkScheduleSeeder extends Seeder
         EmployeeWorkSchedule::updateOrCreate(
             ['employee_id' => $employee->id],
             [
+                'uuid' => Str::uuid(),
                 'work_schedule_id' => $remote->id,
                 'start_date' => $employee->join_date,
                 'end_date' => null,

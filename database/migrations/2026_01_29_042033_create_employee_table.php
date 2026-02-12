@@ -22,9 +22,6 @@ return new class extends Migration
             $table->foreignId('team_id')->constrained('teams')->cascadeOnDelete();
             $table->foreignId('position_id')->constrained('positions')->cascadeOnDelete();
 
-            // Mode Kerja
-            $table->foreignId('work_mode_id')->constrained('work_modes');
-
             // Atasan langsung (self relation)
             $table->foreignId('manager_id')
                 ->nullable()

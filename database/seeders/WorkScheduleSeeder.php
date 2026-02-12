@@ -2,9 +2,10 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use App\Models\WorkSchedule;
 use App\Models\WorkMode;
+use App\Models\WorkSchedule;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 class WorkScheduleSeeder extends Seeder
 {
@@ -16,6 +17,7 @@ class WorkScheduleSeeder extends Seeder
 
         $schedules = [
             [
+                'uuid' => Str::uuid(),
                 'name' => 'Office Regular',
                 'work_mode_id' => $wfo->id,
                 'work_start_time' => '08:00:00',
@@ -23,6 +25,7 @@ class WorkScheduleSeeder extends Seeder
                 'requires_office_location' => true,
             ],
             [
+                'uuid' => Str::uuid(),
                 'name' => 'Remote Regular',
                 'work_mode_id' => $wfh->id,
                 'work_start_time' => '08:00:00',
@@ -30,6 +33,7 @@ class WorkScheduleSeeder extends Seeder
                 'requires_office_location' => false,
             ],
             [
+                'uuid' => Str::uuid(),
                 'name' => 'Hybrid Standard',
                 'work_mode_id' => $hybrid->id,
                 'work_start_time' => '08:00:00',
