@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\BiometricUser;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class BiometricSeeder extends Seeder
@@ -11,12 +11,12 @@ class BiometricSeeder extends Seeder
     /**
      * Run the database seeds.
      */
-      /**
+    /**
      * Run the database seeds.
      */
     public function run(): void
     {
-        $employeeId = 3;
+        $employeeId = 4;
 
         BiometricUser::updateOrCreate(
             ['employee_id' => $employeeId, 'view' => 'front'],
