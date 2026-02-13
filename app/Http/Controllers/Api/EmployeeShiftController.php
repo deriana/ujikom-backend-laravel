@@ -52,7 +52,7 @@ class EmployeeShiftController extends Controller
     {
         $this->authorize('view', $employee_shift);
 
-        $employee_shift->load('allowances', 'creator');
+        $employee_shift->load('employee', 'shiftTemplate', 'creator');
 
         return $this->successResponse(
             new EmployeeShiftResource($employee_shift),

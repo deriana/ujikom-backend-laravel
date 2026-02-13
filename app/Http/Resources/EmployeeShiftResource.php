@@ -19,7 +19,9 @@ class EmployeeShiftResource extends JsonResource
             'employee' => $this->whenLoaded('employee', function () {
                 return [
                     'uuid' => $this->employee->uuid,
-                    'name' => $this->employee->name,
+                    'nik' => $this->employee->nik,
+                    'name' => $this->employee->user?->name,
+                    'profile_photo' => $this->employee?->getFirstMediaUrl('profile_photo') ?? null,
                 ];
             }),
 
@@ -27,8 +29,8 @@ class EmployeeShiftResource extends JsonResource
                 return [
                     'uuid' => $this->shiftTemplate->uuid,
                     'name' => $this->shiftTemplate->name,
-                    'start_time' => optional($this->shiftTemplate->start_time)->format('H:i:s'),
-                    'end_time' => optional($this->shiftTemplate->end_time)->format('H:i:s'),
+                    'start_time' => optional($this->shiftTemplate->start_time)->format('H:i'),
+                    'end_time' => optional($this->shiftTemplate->end_time)->format('H:i'),
                 ];
             }),
 

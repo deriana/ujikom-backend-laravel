@@ -21,7 +21,9 @@ class TimeValidator
     {
         if ($employee) {
             $activeSchedule = $employee->activeWorkSchedule($date->toDateString())->first();
-            if (! $activeSchedule) {
+            $activeShift = $employee->employeeShifts()->where('shift_date', $date->toDateString())->first();
+
+            if (! $activeShift && ! $activeSchedule) {
                 throw TimeValidationException::notWorkday($date);
             }
         } else {
@@ -38,7 +40,6 @@ class TimeValidator
         $workStart = $times['work_start_time'];
         $lateTolerance = (int) ($times['late_tolerance_minutes'] ?? 10);
 
-        // Maksimal clock-in = start + toleransi menit
         $maxClockIn = (clone $workStart)->addMinutes($lateTolerance);
 
         if ($now->gt($maxClockIn)) {
@@ -60,7 +61,6 @@ class TimeValidator
         $workStart = $times['work_start_time'];
         $workEnd   = $times['work_end_time'];
 
-        // Minimal clock-out setengah hari kerja
         $totalMinutes = $workStart->diffInMinutes($workEnd);
         $minClockOut = (clone $workStart)->addMinutes($totalMinutes / 2);
 
@@ -77,13 +77,38 @@ class TimeValidator
         ];
     }
 
+    /**
+     * Ambil jam kerja employee dengan 3-layer fallback:
+     * 1. Shift override tanggal tertentu
+     * 2. WorkSchedule default employee
+     * 3. Default setting
+     */
     public function getEmployeeScheduleTimes(Employee $employee, Carbon $date): array
     {
-        $activeSchedule = $employee->activeWorkSchedule($date->toDateString())->first();
+        // -----------------------------
+        // Layer 1: Shift override
+        // -----------------------------
+        $activeShift = $employee->employeeShifts()
+            ->where('shift_date', $date->toDateString())
+            ->with('shiftTemplate')
+            ->first();
 
+        if ($activeShift) {
+            $shift = $activeShift->shiftTemplate;
+            return [
+                'work_start_time' => Carbon::parse($shift->start_time),
+                'work_end_time'   => Carbon::parse($shift->end_time),
+                'late_tolerance_minutes' => $shift->late_tolerance_minutes ?? 10,
+                'requires_office_location' => $shift->requires_office_location ?? false,
+            ];
+        }
+
+        // -----------------------------
+        // Layer 2: WorkSchedule default
+        // -----------------------------
+        $activeSchedule = $employee->activeWorkSchedule($date->toDateString())->first();
         if ($activeSchedule) {
             $ws = $activeSchedule->workSchedule;
-
             return [
                 'work_start_time' => Carbon::parse($ws->work_start_time),
                 'work_end_time'   => Carbon::parse($ws->work_end_time),
@@ -92,9 +117,10 @@ class TimeValidator
             ];
         }
 
-        // fallback ke default setting dari database
+        // -----------------------------
+        // Layer 3: Default setting
+        // -----------------------------
         $setting = Setting::where('key', 'attendance')->first()?->values ?? [];
-
         return [
             'work_start_time' => Carbon::createFromFormat('H:i', $setting['work_start_time'] ?? '09:00'),
             'work_end_time'   => Carbon::createFromFormat('H:i', $setting['work_end_time'] ?? '17:00'),

@@ -23,14 +23,17 @@ class CreateEmployeeShiftRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'employee_id' => 'required|exists:employees,id',
-            'shift_template_id' => 'required|exists:shift_templates,id',
+            'employee_nik' => 'required|exists:employees,nik',
+            'shift_template_uuid' => 'required|exists:shift_templates,uuid',
             'shift_date' => [
                 'required',
                 'date',
                 Rule::unique('employee_shifts')
-                    ->where(fn ($q) => $q->where('employee_id', $this->employee_id)
-                    ),
+                    ->where(function ($query) {
+                        $employeeId = \App\Models\Employee::where('nik', $this->employee_nik)
+                            ->value('id');
+                        return $query->where('employee_id', $employeeId);
+                    }),
             ],
         ];
     }

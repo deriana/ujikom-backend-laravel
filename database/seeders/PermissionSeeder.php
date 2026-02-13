@@ -194,11 +194,11 @@ class PermissionSeeder extends Seeder
 
             'employee_shifts' => [
                 'actions' => [
-                    'index' => 'employee-shifts.index',
-                    'show' => 'employee-shifts.show',
-                    'create' => 'employee-shifts.create',
-                    'edit' => 'employee-shifts.edit',
-                    'destroy' => 'employee-shifts.destroy',
+                    'index' => 'employee-shift.index',
+                    'show' => 'employee-shift.show',
+                    'create' => 'employee-shift.create',
+                    'edit' => 'employee-shift.edit',
+                    'destroy' => 'employee-shift.destroy',
                 ],
                 'roles' => [
                     UserRole::ADMIN->value => ['index', 'show', 'create', 'edit', 'destroy'],
