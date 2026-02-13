@@ -10,7 +10,8 @@ class ShiftTemplateService
 {
     public function index()
     {
-        return ShiftTemplate::with(['creator', 'employeeShifts'])
+        return ShiftTemplate::with(['creator'])
+            ->withCount('employeeShifts')
             ->latest()
             ->get();
     }
@@ -19,11 +20,16 @@ class ShiftTemplateService
     {
         return DB::transaction(function () use ($data) {
 
+            $crossDay = $this->calculateCrossDay(
+                $data['start_time'],
+                $data['end_time']
+            );
+
             return ShiftTemplate::create([
                 'name' => $data['name'],
                 'start_time' => $data['start_time'],
                 'end_time' => $data['end_time'],
-                'cross_day' => $data['cross_day'],
+                'cross_day' => $crossDay, // enforced
                 'late_tolerance_minutes' => $data['late_tolerance_minutes'] ?? 0,
             ]);
         });
@@ -37,16 +43,20 @@ class ShiftTemplateService
 
         return DB::transaction(function () use ($shift, $data) {
 
+            $start = $data['start_time'] ?? $shift->start_time;
+            $end = $data['end_time'] ?? $shift->end_time;
+
+            $crossDay = $this->calculateCrossDay($start, $end);
+
             $shift->update([
                 'name' => $data['name'] ?? $shift->name,
-                'start_time' => $data['start_time'] ?? $shift->start_time,
-                'end_time' => $data['end_time'] ?? $shift->end_time,
-                'cross_day' => $data['cross_day'] ?? $shift->cross_day,
-                'late_tolerance_minutes' =>
-                    $data['late_tolerance_minutes'] ?? $shift->late_tolerance_minutes,
+                'start_time' => $start,
+                'end_time' => $end,
+                'cross_day' => $crossDay,
+                'late_tolerance_minutes' => $data['late_tolerance_minutes'] ?? $shift->late_tolerance_minutes,
             ]);
 
-            return $shift->load(['creator', 'employeeShifts']);
+            return $shift->load(['creator'])->loadCount('employeeShifts');
         });
     }
 
@@ -110,5 +120,10 @@ class ShiftTemplateService
             ->with(['creator'])
             ->latest()
             ->get();
+    }
+
+    private function calculateCrossDay(string $start, string $end): bool
+    {
+        return $end < $start;
     }
 }

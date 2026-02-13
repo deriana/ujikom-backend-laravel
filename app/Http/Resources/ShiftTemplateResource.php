@@ -15,10 +15,17 @@ class ShiftTemplateResource extends JsonResource
         return [
             'uuid' => $this->uuid,
             'name' => $this->name,
-            'start_time' => optional($this->start_time)->format('H:i:s'),
-            'end_time' => optional($this->end_time)->format('H:i:s'),
+            'start_time' => optional($this->start_time)->format('H:i'),
+            'end_time' => optional($this->end_time)->format('H:i'),
             'cross_day' => $this->cross_day,
             'late_tolerance_minutes' => $this->late_tolerance_minutes,
+            'creator' => $this->whenLoaded('creator', function () {
+                return [
+                    'uuid' => $this->creator->uuid,
+                    'name' => $this->creator->name,
+                    'email' => $this->creator->email,
+                ];
+            }),
 
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
