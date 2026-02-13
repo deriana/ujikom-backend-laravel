@@ -129,7 +129,7 @@ class PermissionSeeder extends Seeder
             'attendances' => [
                 'actions' => [
                     'index' => 'attendance.index',
-                    'show' => 'attendance.show'
+                    'show' => 'attendance.show',
                 ],
                 'roles' => [
                     UserRole::ADMIN->value => ['index', 'show'],
@@ -173,6 +173,37 @@ class PermissionSeeder extends Seeder
                     UserRole::HR->value => ['index', 'create', 'show', 'edit'],
                     UserRole::MANAGER->value => ['index', 'show'],
                     UserRole::EMPLOYEE->value => [],
+                ],
+            ],
+
+            'shift_templates' => [
+                'actions' => [
+                    'index' => 'shift-template.index',
+                    'show' => 'shift-template.show',
+                    'create' => 'shift-template.create',
+                    'edit' => 'shift-template.edit',
+                    'destroy' => 'shift-template.destroy',
+                    'restore' => 'shift-template.restore',
+                    'forceDelete' => 'shift-template.forceDelete',
+                ],
+                'roles' => [
+                    UserRole::ADMIN->value => ['index', 'show', 'create', 'edit', 'destroy', 'forceDelete', 'restore'],
+                    UserRole::HR->value => ['index', 'show', 'create', 'edit', 'destroy'],
+                ],
+            ],
+
+            'employee_shifts' => [
+                'actions' => [
+                    'index' => 'employee-shifts.index',
+                    'show' => 'employee-shifts.show',
+                    'create' => 'employee-shifts.create',
+                    'edit' => 'employee-shifts.edit',
+                    'destroy' => 'employee-shifts.destroy',
+                ],
+                'roles' => [
+                    UserRole::ADMIN->value => ['index', 'show', 'create', 'edit', 'destroy'],
+                    UserRole::HR->value => ['index', 'show', 'create', 'edit', 'destroy'],
+                    UserRole::MANAGER->value => ['index', 'show', 'create', 'edit', 'destroy'],
                 ],
             ],
         ];

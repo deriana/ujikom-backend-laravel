@@ -32,8 +32,8 @@ class AttendanceService
         DB::beginTransaction();
         try {
             // 1. Validate Face
-            $descriptor = is_array($data['descriptor'] ?? null) 
-                ? $data['descriptor'] 
+            $descriptor = is_array($data['descriptor'] ?? null)
+                ? $data['descriptor']
                 : json_decode($data['descriptor'] ?? '[]', true);
 
             $faceResult = $this->faceValidator->validate($descriptor);
@@ -42,7 +42,7 @@ class AttendanceService
 
             // 2. Validate Geo Location (if applicable)
             $this->geoValidator->validate(
-                (float) ($data['latitude'] ?? 0), 
+                (float) ($data['latitude'] ?? 0),
                 (float) ($data['longitude'] ?? 0)
             );
 
@@ -57,8 +57,8 @@ class AttendanceService
             );
 
             $now = Carbon::now();
-            $photoPath = isset($data['photo']) 
-                ? $this->uploader->upload($data['photo'], $employee->id, $today) 
+            $photoPath = isset($data['photo'])
+                ? $this->uploader->upload($data['photo'], $employee->id, $today)
                 : null;
 
             $resultMessage = 'Sudah absen hari ini'; // Default if both filled
@@ -104,7 +104,7 @@ class AttendanceService
             ]));
 
             return [
-                'success' => false, 
+                'success' => false,
                 'message' => $e->getMessage()
             ];
 
@@ -112,10 +112,10 @@ class AttendanceService
             DB::rollBack();
             $this->logger->logFailure('System Error: ' . $e->getMessage(), ['user_agent' => $userAgent]);
 
-            Log::error('System Error: ' . $e->getMessage());    
-            
+            Log::error('System Error: ' . $e->getMessage());
+
             return [
-                'success' => false, 
+                'success' => false,
                 'message' => 'Terjadi kesalahan sistem'
             ];
         }
@@ -123,8 +123,8 @@ class AttendanceService
 
     protected function processClockIn(Attendance $attendance, Carbon $now, array $data, ?string $photoPath): void
     {
-        $timeValidation = $this->timeValidator->validateClockInWindow($now);
-        
+        $timeValidation = $this->timeValidator->validateClockInWindow($attendance->employee, $now);
+
         $attendance->update([
             'clock_in' => $now,
             'late_minutes' => $timeValidation['late_minutes'], // TimeValidator returns 0 if within tolerance
@@ -136,7 +136,7 @@ class AttendanceService
 
     protected function processClockOut(Attendance $attendance, Carbon $now, array $data, ?string $photoPath): void
     {
-        $timeValidation = $this->timeValidator->validateClockOutWindow($now);
+        $timeValidation = $this->timeValidator->validateClockOutWindow($attendance->employee, $now);
 
         $attendance->update([
             'clock_out' => $now,

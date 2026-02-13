@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -30,6 +29,8 @@ class DatabaseSeeder extends Seeder
             WorkModeSeeder::class,
             WorkScheduleSeeder::class,
             EmployeeWorkScheduleSeeder::class,
+            ShiftTemplateSeeder::class,
+            EmployeeShiftSeeder::class,
         ]);
     }
 }

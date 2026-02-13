@@ -11,18 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('work_schedules', function (Blueprint $table) {
-            $table->id();
+        Schema::create('employee_shifts', function (Blueprint $table) {
+            $table->id();   
             $table->uuid()->unique();
-            $table->string('name');
-            $table->foreignId('work_mode_id')->constrained()->cascadeOnDelete();
-
-            $table->time('work_start_time');
-            $table->time('work_end_time');
-            $table->integer('late_tolerance_minutes')->default(10);
-
-            $table->boolean('requires_office_location')->default(false);
-
+            $table->foreignId('employee_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('shift_template_id')->constrained()->cascadeOnDelete();
+            $table->date('shift_date');
             $table->foreignId('created_by_id')
                 ->nullable()
                 ->constrained('users')
@@ -31,12 +25,8 @@ return new class extends Migration
                 ->nullable()
                 ->constrained('users')
                 ->nullOnDelete();
-            $table->foreignId('deleted_by_id')
-                ->nullable()
-                ->constrained('users')
-                ->nullOnDelete();
             $table->timestamps();
-            $table->softDeletes();
+            $table->unique(['employee_id', 'shift_date']);
         });
 
     }
@@ -46,6 +36,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('work_schedules');
+        Schema::dropIfExists('employee_shifhts');
     }
 };
