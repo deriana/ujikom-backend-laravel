@@ -151,6 +151,11 @@ class Employee extends Model implements HasMedia
         return $this->hasMany(EmployeeWorkSchedule::class);
     }
 
+    public function shifts()
+    {
+        return $this->hasMany(EmployeeShift::class);
+    }
+
     public function activeWorkSchedule($date = null)
     {
         $date = $date ?? now()->toDateString();

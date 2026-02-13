@@ -5,11 +5,13 @@ use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\AttendanceDetailController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DivisionController;
+use App\Http\Controllers\Api\EmployeeShiftController;
 use App\Http\Controllers\Api\EmployeeWorkScheduleController;
 use App\Http\Controllers\Api\HolidayController;
 use App\Http\Controllers\Api\PositionController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\SettingController;
+use App\Http\Controllers\Api\ShiftTemplateController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\WorkScheduleController;
 use Illuminate\Http\Request;
@@ -94,4 +96,11 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     });
     Route::apiResource('work_schedules', WorkScheduleController::class);
     Route::apiResource('employee_work_schedules', EmployeeWorkScheduleController::class);
+    Route::prefix('shift_templates')->group(function () {
+        Route::post('/restore/{uuid}', [ShiftTemplateController::class, 'restore']);
+        Route::delete('/force-delete/{uuid}', [ShiftTemplateController::class, 'forceDelete']);
+        Route::get('/trashed', [ShiftTemplateController::class, 'getTrashed']);
+    });
+    Route::apiResource('shift_templates', ShiftTemplateController::class);
+    Route::apiResource('employee_shift', EmployeeShiftController::class);
 });
