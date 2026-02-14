@@ -55,6 +55,30 @@ class Employee extends Model implements HasMedia
                 $employee->nik = self::generateNik();
             }
         });
+        static::created(function ($employee) {
+
+            $currentYear = now()->year;
+
+            $leaveTypes = LeaveType::whereNotNull('default_days')
+                ->where('is_active', true)
+                ->get();
+
+            foreach ($leaveTypes as $type) {
+                EmployeeLeaveBalance::firstOrCreate(
+                    [
+                        'employee_id' => $employee->id,
+                        'leave_type_id' => $type->id,
+                        'year' => $currentYear,
+                    ],
+                    [
+                        'total_days' => $type->default_days,
+                        'used_days' => 0,
+                        'remaining_days' => $type->default_days,
+                    ]
+                );
+            }
+        });
+
     }
 
     public static function generateNik(): string
@@ -154,6 +178,32 @@ class Employee extends Model implements HasMedia
     public function shifts()
     {
         return $this->hasMany(EmployeeShift::class);
+    }
+
+    public function leaves()
+    {
+        return $this->hasMany(Leave::class);
+    }
+
+    public function leaveApprovals()
+    {
+        return $this->hasMany(LeaveApproval::class);
+    }
+
+    public function employeeLeaves()
+    {
+        return $this->hasMany(EmployeeLeave::class);
+    }
+
+    public function leaveBalances()
+    {
+
+        return $this->hasMany(EmployeeLeaveBalance::class, 'employee_id');
+    }
+
+    public function getRouteKeyName()
+    {
+        return 'nik';
     }
 
     public function activeWorkSchedule($date = null)
