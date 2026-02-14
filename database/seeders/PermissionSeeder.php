@@ -206,6 +206,19 @@ class PermissionSeeder extends Seeder
                     UserRole::MANAGER->value => ['index', 'show', 'create', 'edit', 'destroy'],
                 ],
             ],
+
+            'leave_types' => [
+                'actions' => [
+                    'index' => 'leave-type.index',
+                    'create' => 'leave-type.create',
+                    'edit' => 'leave-type.edit',
+                    'destroy' => 'leave-type.destroy',
+                ],
+                'roles' => [
+                    UserRole::ADMIN->value => ['index', 'show', 'create', 'edit', 'destroy'],
+                    UserRole::HR->value => ['index', 'show', 'create', 'edit', 'destroy'],
+                ],
+            ],
         ];
 
         DB::transaction(function () use ($modules) {

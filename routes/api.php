@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\DivisionController;
 use App\Http\Controllers\Api\EmployeeShiftController;
 use App\Http\Controllers\Api\EmployeeWorkScheduleController;
 use App\Http\Controllers\Api\HolidayController;
+use App\Http\Controllers\Api\LeaveTypeController;
 use App\Http\Controllers\Api\PositionController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\SettingController;
@@ -103,4 +104,5 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     });
     Route::apiResource('shift_templates', ShiftTemplateController::class);
     Route::apiResource('employee_shift', EmployeeShiftController::class);
+    Route::apiResource('leave_types', LeaveTypeController::class);
 });

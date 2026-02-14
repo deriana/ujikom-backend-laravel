@@ -156,6 +156,27 @@ class Employee extends Model implements HasMedia
         return $this->hasMany(EmployeeShift::class);
     }
 
+    public function leaves()
+    {
+        return $this->hasMany(Leave::class);
+    }
+
+    public function leaveApprovals()
+    {
+        return $this->hasMany(LeaveApproval::class);
+    }
+
+    public function employeeLeaves()
+    {
+        return $this->hasMany(EmployeeLeave::class);
+    }
+
+    public function getRouteKeyName()
+    {
+        return 'nik';
+    }
+
+
     public function activeWorkSchedule($date = null)
     {
         $date = $date ?? now()->toDateString();

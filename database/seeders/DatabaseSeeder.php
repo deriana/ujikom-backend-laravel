@@ -31,6 +31,8 @@ class DatabaseSeeder extends Seeder
             EmployeeWorkScheduleSeeder::class,
             ShiftTemplateSeeder::class,
             EmployeeShiftSeeder::class,
+            LeaveTypeSeeder::class,
+            LeaveSeeder::class,
         ]);
     }
 }
