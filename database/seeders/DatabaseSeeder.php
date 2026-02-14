@@ -32,7 +32,9 @@ class DatabaseSeeder extends Seeder
             ShiftTemplateSeeder::class,
             EmployeeShiftSeeder::class,
             LeaveTypeSeeder::class,
+            EmployeeLeaveBalanceSeeder::class,
             LeaveSeeder::class,
+            EmployeeLeaveSeeder::class,
         ]);
     }
 }

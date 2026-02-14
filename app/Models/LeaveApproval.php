@@ -30,6 +30,11 @@ class LeaveApproval extends Model
         });
     }
 
+    public function getRouteKeyName()
+    {
+        return 'uuid';
+    }
+
     // RELASI
 
     public function leave()

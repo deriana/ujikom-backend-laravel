@@ -23,7 +23,6 @@ return new class extends Migration
             $table->tinyInteger('approval_status')->default(0); // 0=PENDING, 1=APPROVED, 2=REJECTED
             $table->boolean('is_half_day')->default(false);
             $table->timestamps();
-            $table->softDeletes();
             $table->index(['employee_id']);
             $table->index(['date_start', 'date_end']);
             $table->index('approval_status');

@@ -13,6 +13,11 @@ return new class extends Migration
     {
         Schema::create('employee_leave_balances', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('employee_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('leave_type_id')->constrained()->cascadeOnDelete();
+            $table->integer('year');
+            $table->integer('total_days');
+            $table->integer('used_days')->default(0);
             $table->timestamps();
         });
     }

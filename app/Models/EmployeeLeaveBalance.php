@@ -9,8 +9,6 @@ class EmployeeLeaveBalance extends Model
 {
     use HasFactory;
 
-    protected $table = 'employee_leave_balances';
-
     /**
      * Mass assignable attributes
      */

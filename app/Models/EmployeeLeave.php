@@ -22,6 +22,12 @@ class EmployeeLeave extends Model
         'end_date' => 'date',
     ];
 
+    public function getRouteKeyName()
+    {
+        return 'uuid';
+    }
+
+
     protected static function boot()
     {
         parent::boot();

@@ -38,7 +38,10 @@ class LeaveSeeder extends Seeder
                 $startDate = Carbon::now()->subDays(rand(0, 60));
                 $endDate = (clone $startDate)->addDays(rand(0, 5));
 
-                // Buat leave
+                // hitung is_half_day
+                $isHalfDay = rand(0, 1) ? true : false;
+
+                // simpan leave
                 $leave = Leave::create([
                     'uuid' => Str::uuid(),
                     'employee_id' => $employee->id,
@@ -48,28 +51,28 @@ class LeaveSeeder extends Seeder
                     'reason' => "Cuti {$type->display_name} untuk testing",
                     'attachment' => null,
                     'approval_status' => ApprovalStatus::PENDING->value,
-                    'is_half_day' => rand(0, 1) ? true : false,
+                    'is_half_day' => $isHalfDay,
                 ]);
 
-                // Buat approval manager
+                // buat approval manager
                 if ($employee->manager_id) {
                     LeaveApproval::create([
                         'uuid' => Str::uuid(),
                         'leave_id' => $leave->id,
                         'approver_id' => $employee->manager_id,
-                        'level' => 0, // manager
+                        'level' => 0,
                         'status' => ApprovalStatus::PENDING->value,
                     ]);
                 }
 
-                // Buat approval HR (level 1) untuk testing, nanti bisa approve setelah manager
-                $hr = User::role(UserRole::HR->value)->first();
+                // buat approval HR (level 1)
+                $hr = User::role(UserRole::HR->value)->inRandomOrder()->first();
                 if ($hr) {
                     LeaveApproval::create([
                         'uuid' => Str::uuid(),
                         'leave_id' => $leave->id,
                         'approver_id' => $hr->id,
-                        'level' => 1, // HR
+                        'level' => 1,
                         'status' => ApprovalStatus::PENDING->value,
                     ]);
                 }

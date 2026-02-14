@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\DivisionController;
 use App\Http\Controllers\Api\EmployeeShiftController;
 use App\Http\Controllers\Api\EmployeeWorkScheduleController;
 use App\Http\Controllers\Api\HolidayController;
+use App\Http\Controllers\Api\LeaveController;
 use App\Http\Controllers\Api\LeaveTypeController;
 use App\Http\Controllers\Api\PositionController;
 use App\Http\Controllers\Api\RoleController;
@@ -105,4 +106,14 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::apiResource('shift_templates', ShiftTemplateController::class);
     Route::apiResource('employee_shift', EmployeeShiftController::class);
     Route::apiResource('leave_types', LeaveTypeController::class);
+
+    Route::prefix('leaves')->group(function () {
+        Route::get('/', [LeaveController::class, 'index']);
+        Route::post('/', [LeaveController::class, 'store']);
+        Route::get('/{leave}', [LeaveController::class, 'show']);
+        Route::post('/{leave}', [LeaveController::class, 'update']);
+        Route::delete('/{leave}', [LeaveController::class, 'destroy']);
+        Route::put('/approvals/{approval:uuid}/approve', [LeaveController::class, 'approve']);
+        Route::get('/download-attachment/{filename}', [LeaveController::class, 'downloadAttachment']);
+    });
 });

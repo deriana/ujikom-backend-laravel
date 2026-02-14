@@ -219,6 +219,23 @@ class PermissionSeeder extends Seeder
                     UserRole::HR->value => ['index', 'show', 'create', 'edit', 'destroy'],
                 ],
             ],
+
+            'leaves' => [
+                'actions' => [
+                    'index' => 'leave.index',          // lihat daftar leave
+                    'show' => 'leave.show',            // lihat detail leave
+                    'create' => 'leave.create',        // submit leave
+                    'edit' => 'leave.edit',            // update leave (sebelum approved)
+                    'destroy' => 'leave.destroy',      // batalkan leave (sebelum approved)
+                    'approve' => 'leave.approve',      // approve/reject leave
+                ],
+                'roles' => [
+                    UserRole::ADMIN->value => ['index', 'show', 'create', 'edit', 'destroy', 'approve'],
+                    UserRole::HR->value => ['index', 'show', 'create', 'edit', 'destroy', 'approve'],
+                    UserRole::MANAGER->value => ['index', 'show', 'approve'], // manager cuma bisa approve dan lihat
+                    UserRole::EMPLOYEE->value => ['index', 'show', 'create', 'edit', 'destroy'], // employee cuma bisa submit, update, batalkan
+                ],
+            ],
         ];
 
         DB::transaction(function () use ($modules) {

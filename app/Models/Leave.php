@@ -2,16 +2,12 @@
 
 namespace App\Models;
 
-use App\Traits\Blameable;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Str;
 use App\Enums\ApprovalStatus;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Leave extends Model
 {
-    use Blameable, SoftDeletes;
-
     protected $fillable = [
         'employee_id',
         'leave_type_id',
@@ -50,6 +46,12 @@ class Leave extends Model
         return $this->belongsTo(Employee::class);
     }
 
+    public function employeeLeave()
+    {
+        return $this->hasOne(EmployeeLeave::class, 'leave_type_id', 'leave_type_id')
+            ->where('employee_id', $this->employee_id);
+    }
+
     public function leaveType()
     {
         return $this->belongsTo(LeaveType::class);
@@ -64,26 +66,26 @@ class Leave extends Model
     public function nextApprover()
     {
         return $this->approvals()
-                    ->where('status', ApprovalStatus::PENDING->value)
-                    ->orderBy('level')
-                    ->first()?->approver;
+            ->where('status', ApprovalStatus::PENDING->value)
+            ->orderBy('level')
+            ->first()?->approver;
     }
 
     // CHECK level approval
     public function isApprovedByManager()
     {
         return $this->approvals()
-                    ->where('level', 0)
-                    ->where('status', ApprovalStatus::APPROVED->value)
-                    ->exists();
+            ->where('level', 0)
+            ->where('status', ApprovalStatus::APPROVED->value)
+            ->exists();
     }
 
     public function isApprovedByHR()
     {
         return $this->approvals()
-                    ->where('level', 1)
-                    ->where('status', ApprovalStatus::APPROVED->value)
-                    ->exists();
+            ->where('level', 1)
+            ->where('status', ApprovalStatus::APPROVED->value)
+            ->exists();
     }
 
     // SCOPES
