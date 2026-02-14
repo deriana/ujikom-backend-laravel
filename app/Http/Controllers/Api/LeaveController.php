@@ -9,7 +9,9 @@ use App\Http\Resources\LeaveResource;
 use App\Models\Leave;
 use App\Models\LeaveApproval;
 use App\Services\LeaveService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
@@ -41,6 +43,8 @@ class LeaveController extends Controller
     public function show(Leave $leave): JsonResponse
     {
         $this->authorize('view', $leave);
+
+        Log::info($leave);
 
         $detail = $this->leaveService->show($leave);
 
@@ -100,10 +104,24 @@ class LeaveController extends Controller
     /**
      * Approval
      */
-    public function approve(LeaveApproval $approval, bool $approve, ?string $note = null): JsonResponse
+    public function approve(Request $request, LeaveApproval $approval): JsonResponse
     {
+        // 1. Validasi input (Sangat disarankan)
+        $validated = $request->validate([
+            'approve' => 'required|boolean',
+            'note' => 'nullable|string',
+        ]);
+
+        // 2. Authorize
         $this->authorize('approve', $approval->leave);
 
+        // 3. Ambil nilai dari request
+        $approve = $request->input('approve');
+        $note = $request->input('note');
+
+        Log::info('Data Request Masuk:', $request->all());
+
+        // 4. Panggil service
         $updated = $this->leaveService->approve($approval, Auth::user(), $approve, $note);
 
         return $this->successResponse(

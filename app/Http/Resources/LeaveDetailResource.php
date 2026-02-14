@@ -16,13 +16,13 @@ class LeaveDetailResource extends JsonResource
         return [
             'uuid' => $this->uuid,
             'employee' => [
-                'name' => $this->employee->name,
-                'nik' => $this->employee->nik,
-                'role' => $this->employee->role,
+                'name' => $this->employee->user->name ?? 'N/A',
+                'nik' => $this->employee->nik ?? '-',
+                'job_position' => $this->employee->position?->name ?? '-',
+                'profile_photo' => $this->employee->getFirstMediaUrl('profile_photo') ?? null,
             ],
             'leave_type' => [
-                'uuid' => $this->leaveType->uuid,
-                'name' => $this->leaveType->name,
+                'name' => $this->leaveType?->name ?? 'Unknown',
                 'default_days' => $this->leaveType->default_days,
                 'is_active' => $this->leaveType->is_active,
                 'gender' => $this->leaveType->gender,
@@ -36,15 +36,16 @@ class LeaveDetailResource extends JsonResource
                 'exists' => true,
                 'filename' => basename($this->attachment),
                 'path' => $this->attachment,
-            ] : null,            'approval_status' => $this->approval_status,
+                'download_url' => url('/api/download-attachment/'.basename($this->attachment)),
+            ] : null,
+            'approval_status' => $this->approval_status,
             'next_approver' => optional($this->nextApprover())->name,
             'approvals' => $this->approvals->map(function ($approval) {
                 return [
                     'uuid' => $approval->uuid,
                     'approver' => [
-                        'uuid' => $approval->approver->uuid,
-                        'name' => $approval->approver->name,
-                        'role' => $approval->approver->role,
+                        'name' => $approval->approver?->name ?? 'System',
+                        // 'role' => $approval->approver->role,
                     ],
                     'level' => $approval->level,
                     'status' => $approval->status,

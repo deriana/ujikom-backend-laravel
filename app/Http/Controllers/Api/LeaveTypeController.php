@@ -22,7 +22,7 @@ class LeaveTypeController extends Controller
 
     public function index(): JsonResponse
     {
-        $this->authorize('viewAny', LeaveType::class);
+        // $this->authorize('viewAny', LeaveType::class);
 
         $leave_types = $this->leaveTypeService->index();
 

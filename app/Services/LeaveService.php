@@ -30,11 +30,33 @@ class LeaveService
     {
         $query = Leave::with(['employee', 'leaveType', 'approvals']);
 
-        // filter berdasarkan role
+        // 1. ROLE: EMPLOYEE (Hanya lihat milik sendiri)
         if ($user->hasRole(UserRole::EMPLOYEE)) {
             $query->where('employee_id', $user->employee->id);
-        } elseif ($user->hasRole(UserRole::MANAGER)) {
-            $query->whereHas('employee', fn ($q) => $q->where('manager_id', $user->employee->id));
+        }
+
+        // 2. ROLE: MANAGER (Milik sendiri + Bawahan langsung)
+        elseif ($user->hasRole(UserRole::MANAGER)) {
+            $query->where(function ($q) use ($user) {
+                $q->where('employee_id', $user->employee->id) // Milik sendiri
+                    ->orWhereHas('employee', fn ($sq) => $sq->where('manager_id', $user->employee->id)); // Milik bawahan
+            });
+        }
+
+        // 3. ROLE: HR (Lihat semua yang sudah 'siap' di-approve HR)
+        elseif ($user->hasRole(UserRole::HR)) {
+            $query->where(function ($q) {
+                // HR hanya melihat yang:
+                // A. Tidak punya level 0 (Misal: Pengaju adalah Manager)
+                // B. ATAU Level 0-nya sudah APPROVED
+                $q->whereDoesntHave('approvals', function ($sq) {
+                    $sq->where('level', 0);
+                })
+                    ->orWhereHas('approvals', function ($sq) {
+                        $sq->where('level', 0)
+                            ->where('status', ApprovalStatus::APPROVED->value);
+                    });
+            });
         }
 
         return LeaveResource::collection($query->latest()->get());
@@ -53,7 +75,6 @@ class LeaveService
     public function store(array $data, $user)
     {
         return DB::transaction(function () use ($data) {
-
             $employeeId = $data['employee_id'];
             $leaveTypeId = $data['leave_type_id'];
             $isHalfDay = $data['is_half_day'] ?? false;
@@ -61,14 +82,13 @@ class LeaveService
             $start = Carbon::parse($data['date_start']);
             $end = Carbon::parse($data['date_end']);
 
-            // 🔥 Recalculate duration (jangan percaya request)
             $daysRequested = $this->calculateWorkDays(
                 $start->toDateString(),
                 $end->toDateString(),
                 $isHalfDay
             );
 
-            // 🔒 Lock saldo
+            // 🔒 Lock & Check Saldo
             $balance = EmployeeLeaveBalance::where('employee_id', $employeeId)
                 ->where('leave_type_id', $leaveTypeId)
                 ->lockForUpdate()
@@ -77,12 +97,11 @@ class LeaveService
             if (! $balance) {
                 throw new \Exception('Saldo cuti tidak ditemukan');
             }
-
             if ($balance->remaining_days < $daysRequested) {
                 throw new \Exception('Saldo cuti tidak mencukupi');
             }
 
-            // Attachment
+            // Attachment Logic
             $attachmentPath = null;
             if (! empty($data['attachment']) && $data['attachment'] instanceof UploadedFile) {
                 $filename = Str::uuid().'.'.$data['attachment']->getClientOriginalExtension();
@@ -91,6 +110,7 @@ class LeaveService
 
             $employee = Employee::findOrFail($employeeId);
 
+            // 1. Simpan Data Leave
             $leave = Leave::create([
                 'employee_id' => $employeeId,
                 'leave_type_id' => $leaveTypeId,
@@ -103,16 +123,25 @@ class LeaveService
                 'duration' => $daysRequested,
             ]);
 
-            LeaveApproval::create([
-                'leave_id' => $leave->id,
-                'approver_id' => $employee->manager_id,
-                'level' => 0,
-                'status' => ApprovalStatus::PENDING->value,
-            ]);
+            // 2. LOGIKA APPROVAL DINAMIS
+
+            // --- LEVEL 0: Manager (Hanya jika employee punya manager_id) ---
+            if (! empty($employee->manager_id)) {
+                LeaveApproval::create([
+                    'leave_id' => $leave->id,
+                    'approver_id' => $employee->manager_id,
+                    'level' => 0,
+                    'status' => ApprovalStatus::PENDING->value,
+                ]);
+            }
+
+            // --- LEVEL 1: HR (Semua orang harus lewat HR) ---
+            // Cari User yang memiliki role HR.
+            // Contoh: cari user pertama yang punya role 'hr'
 
             LeaveApproval::create([
                 'leave_id' => $leave->id,
-                'approver_id' => null,
+                'approver_id' => null, // ID HR sistem
                 'level' => 1,
                 'status' => ApprovalStatus::PENDING->value,
             ]);
@@ -195,6 +224,7 @@ class LeaveService
                 throw new \Exception('Approval sudah diproses');
             }
 
+            // 1. Update status approval yang sedang diproses
             $approval->update([
                 'status' => $approve ? ApprovalStatus::APPROVED->value : ApprovalStatus::REJECTED->value,
                 'approved_at' => now(),
@@ -203,32 +233,38 @@ class LeaveService
 
             $leave = $approval->leave;
 
-            // update approval_status di leave
-            if ($leave->approvals()->where('status', ApprovalStatus::PENDING->value)->count() === 0) {
-                $allApproved = $leave->approvals()->where('status', ApprovalStatus::REJECTED->value)->count() === 0;
-                $leave->approval_status = $allApproved ? ApprovalStatus::APPROVED->value : ApprovalStatus::REJECTED->value;
-                $leave->save();
+            // 2. Cek apakah ada yang menolak? Jika satu saja REJECTED, maka Leave Gagal
+            if (! $approve) {
+                $leave->update(['approval_status' => ApprovalStatus::REJECTED->value]);
 
-                // jika full approved → buat EmployeeLeave & update balance
-                if ($allApproved) {
-                    $days = $this->calculateWorkDays($leave->date_start, $leave->date_end, $leave->is_half_day);
+                return $approval;
+            }
 
-                    EmployeeLeave::create([
-                        'employee_id' => $leave->employee_id,
-                        'leave_type_id' => $leave->leave_type_id,
-                        'start_date' => $leave->date_start,
-                        'end_date' => $leave->date_end,
-                        'days_taken' => $days,
-                        'status' => ApprovalStatus::APPROVED->value,
-                    ]);
+            // 3. Cek apakah masih ada approval lain yang PENDING?
+            $hasPending = $leave->approvals()->where('status', ApprovalStatus::PENDING->value)->exists();
 
-                    $balance = EmployeeLeaveBalance::firstOrCreate(
-                        ['employee_id' => $leave->employee_id, 'leave_type_id' => $leave->leave_type_id, 'year' => now()->year],
-                        ['total_days' => $leave->leaveType->default_days, 'used_days' => 0]
-                    );
+            if (! $hasPending) {
+                // Jika tidak ada pending lagi, berarti semua level sudah APPROVED
+                $leave->update(['approval_status' => ApprovalStatus::APPROVED->value]);
 
-                    $balance->useDays($days);
-                }
+                // LOGIKA EXECUTOR (Potong Cuti & Buat Record)
+                $days = $this->calculateWorkDays($leave->date_start, $leave->date_end, $leave->is_half_day);
+
+                EmployeeLeave::create([
+                    'employee_id' => $leave->employee_id,
+                    'leave_type_id' => $leave->leave_type_id,
+                    'start_date' => $leave->date_start,
+                    'end_date' => $leave->date_end,
+                    'days_taken' => $days,
+                    'status' => ApprovalStatus::APPROVED->value,
+                ]);
+
+                $balance = EmployeeLeaveBalance::firstOrCreate(
+                    ['employee_id' => $leave->employee_id, 'leave_type_id' => $leave->leave_type_id, 'year' => now()->year],
+                    ['total_days' => $leave->leaveType->default_days, 'used_days' => 0]
+                );
+
+                $balance->useDays($days);
             }
 
             return $approval;

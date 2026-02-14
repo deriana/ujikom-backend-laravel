@@ -2,15 +2,33 @@
 
 namespace App\Http\Resources;
 
+use App\Enums\UserRole;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 
 class LeaveResource extends JsonResource
 {
     public function toArray($request)
     {
+        $user = Auth::user();
+
+        $currentApproval = $this->approvals
+            ->where('status', 0)
+            ->filter(function ($approval) use ($user) {
+                if ($approval->level === 0) {
+                    return $approval->approver_id == $user->employee?->id;
+                }
+                if ($approval->level === 1) {
+                    return $user->hasRole(UserRole::HR->value);
+                }
+
+                return false;
+            })
+            ->first();
+
         return [
             'uuid' => $this->uuid,
+            'current_approval_uuid' => $currentApproval?->uuid,
             'employee_name' => $this->employee->user->name,
             'employee_nik' => $this->employee->nik,
             'leave_type_uuid' => $this->leaveType->uuid,
