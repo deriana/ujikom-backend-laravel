@@ -222,18 +222,35 @@ class PermissionSeeder extends Seeder
 
             'leaves' => [
                 'actions' => [
-                    'index' => 'leave.index',          // lihat daftar leave
-                    'show' => 'leave.show',            // lihat detail leave
-                    'create' => 'leave.create',        // submit leave
-                    'edit' => 'leave.edit',            // update leave (sebelum approved)
-                    'destroy' => 'leave.destroy',      // batalkan leave (sebelum approved)
-                    'approve' => 'leave.approve',      // approve/reject leave
+                    'index' => 'leave.index',
+                    'show' => 'leave.show',
+                    'create' => 'leave.create',
+                    'edit' => 'leave.edit',
+                    'destroy' => 'leave.destroy',
+                    'approve' => 'leave.approve',
                 ],
                 'roles' => [
                     UserRole::ADMIN->value => ['index', 'show', 'create', 'edit', 'destroy', 'approve'],
                     UserRole::HR->value => ['index', 'show', 'create', 'edit', 'destroy', 'approve'],
-                    UserRole::MANAGER->value => ['index', 'show', 'approve'], // manager cuma bisa approve dan lihat
-                    UserRole::EMPLOYEE->value => ['index', 'show', 'create', 'edit', 'destroy'], // employee cuma bisa submit, update, batalkan
+                    UserRole::MANAGER->value => ['index', 'show', 'approve'],
+                    UserRole::EMPLOYEE->value => ['index', 'show', 'create', 'edit', 'destroy'],
+                ],
+            ],
+
+            'early_leaves' => [
+                'actions' => [
+                    'index' => 'early-leave.index',
+                    'show' => 'early-leave.show',
+                    'create' => 'early-leave.create',
+                    'edit' => 'early-leave.edit',
+                    'destroy' => 'early-leave.destroy',
+                    'approve' => 'early-leave.approve',
+                ],
+                'roles' => [
+                    UserRole::ADMIN->value => ['index', 'show', 'create', 'edit', 'destroy', 'approve'],
+                    UserRole::HR->value => ['index', 'show', 'create', 'destroy', 'approve'],
+                    UserRole::MANAGER->value => ['index', 'show', 'approve'],
+                    UserRole::EMPLOYEE->value => ['index', 'show', 'create', 'edit', 'destroy'],
                 ],
             ],
         ];

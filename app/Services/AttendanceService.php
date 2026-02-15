@@ -2,8 +2,10 @@
 
 namespace App\Services;
 
+use App\Enums\ApprovalStatus;
 use App\Exceptions\Attendance\AttendanceException;
 use App\Models\Attendance;
+use App\Models\EarlyLeave;
 use App\Services\Attendance\Internal\AttendanceLogger;
 use App\Services\Attendance\Internal\AttendanceUploader;
 use App\Services\Attendance\Validators\FaceValidator;
@@ -141,12 +143,24 @@ class AttendanceService
         $attendance->update([
             'clock_out' => $now,
             'early_leave_minutes' => $timeValidation['early_leave_minutes'],
+            'is_early_leave_approved' => $timeValidation['is_early_leave_approved'],
             'overtime_minutes' => $timeValidation['overtime_minutes'],
             'work_minutes' => $attendance->clock_in->diffInMinutes($now),
             'latitude_out' => $data['latitude'] ?? null,
             'longitude_out' => $data['longitude'] ?? null,
             'clock_out_photo' => $photoPath,
         ]);
+
+        $earlyLeave = EarlyLeave::where('attendance_id', $attendance->id)
+            ->where('status', ApprovalStatus::APPROVED->value)
+            ->first();
+
+        if ($earlyLeave && $timeValidation['early_leave_minutes'] > 0) {
+            $earlyLeave->update([
+                'minutes_early' => $timeValidation['early_leave_minutes'],
+            ]);
+        }
+
     }
 
     /**

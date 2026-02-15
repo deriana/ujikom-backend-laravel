@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->uuid('uuid')->unique();
             $table->foreignId('leave_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('approver_id')->nullable()->constrained('users'); // manager atau HR
+            $table->foreignId('approver_id')->nullable()->constrained('employees'); // manager atau HR
             $table->tinyInteger('level'); // 0=Manager, 1=HR
             $table->tinyInteger('status')->default(0); // PENDING=0, APPROVED=1, REJECTED=2
             $table->timestamp('approved_at')->nullable();

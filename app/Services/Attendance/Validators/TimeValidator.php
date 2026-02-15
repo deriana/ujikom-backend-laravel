@@ -2,8 +2,10 @@
 
 namespace App\Services\Attendance\Validators;
 
+use App\Enums\ApprovalStatus;
 use App\Exceptions\Attendance\AttendanceException;
 use App\Exceptions\Attendance\TimeValidationException;
+use App\Models\EarlyLeave;
 use App\Models\Employee;
 use App\Models\Setting;
 use App\Services\WorkdayService;
@@ -74,11 +76,10 @@ class TimeValidator
         $workStart = $times['work_start_time'];
         $workEnd = $times['work_end_time'];
 
-        // 1. Tentukan batas paling awal boleh pencet tombol Clock Out
+        // 1. Batas minimal boleh Clock Out (50% durasi kerja)
         $totalWorkDuration = $workStart->diffInMinutes($workEnd);
-        $earliestClockOut = (clone $workStart)->addMinutes($totalWorkDuration / 2);
+        $earliestClockOut = (clone $workStart)->addMinutes(intval($totalWorkDuration / 2));
 
-        // 2. Jika sekarang belum melewati batas earliestClockOut, tolak request-nya.
         if ($now->lt($earliestClockOut)) {
             throw new AttendanceException(
                 'Belum saatnya absen pulang. Minimal pukul '.$earliestClockOut->format('H:i'),
@@ -86,18 +87,28 @@ class TimeValidator
             );
         }
 
-        // --- Logika Early Leave & Overtime tetap jalan jika sudah lolos validasi di atas ---
+        // 2. Hitung Early Leave & Overtime (Attendance adalah sumber kebenaran)
+        $earlyLeaveMinutes = $now->lt($workEnd)
+            ? $now->diffInMinutes($workEnd)
+            : 0;
 
-        // Early Leave: Jika absen keluar sebelum jam pulang (tapi sudah lewat batas minimal)
-        $earlyLeaveMinutes = $now->lt($workEnd) ? $now->diffInMinutes($workEnd) : 0;
+        $overtimeMinutes = $now->gt($workEnd)
+            ? $workEnd->diffInMinutes($now)
+            : 0;
 
-        // Overtime: Jika absen keluar setelah jam pulang
-        $overtimeMinutes = $now->gt($workEnd) ? $workEnd->diffInMinutes($now) : 0;
+        // 3. Cek Approval Early Leave (tanpa tergantung > 0)
+        $isApproved = EarlyLeave::where('employee_id', $employee->id)
+            ->where('approval_status', ApprovalStatus::APPROVED->value)
+            ->whereHas('attendance', function ($q) use ($now) {
+                $q->whereDate('date', $now->toDateString());
+            })
+            ->exists();
 
         return [
             'early_leave_minutes' => $earlyLeaveMinutes,
             'overtime_minutes' => $overtimeMinutes,
             'is_early_leave' => $earlyLeaveMinutes > 0,
+            'is_early_leave_approved' => $isApproved,
         ];
     }
 

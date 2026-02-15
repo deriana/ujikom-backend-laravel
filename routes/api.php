@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\AttendanceDetailController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DivisionController;
+use App\Http\Controllers\Api\EarlyLeaveController;
 use App\Http\Controllers\Api\EmployeeShiftController;
 use App\Http\Controllers\Api\EmployeeWorkScheduleController;
 use App\Http\Controllers\Api\HolidayController;
@@ -115,5 +116,15 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::delete('/{leave}', [LeaveController::class, 'destroy']);
         Route::put('/approvals/{approval:uuid}/approve', [LeaveController::class, 'approve']);
         Route::get('/download-attachment/{filename}', [LeaveController::class, 'downloadAttachment']);
+    });
+
+    Route::prefix('early_leaves')->group(function () {
+        Route::get('/', [EarlyLeaveController::class, 'index']);
+        Route::post('/', [EarlyLeaveController::class, 'store']);
+        Route::get('/{early_leave}', [EarlyLeaveController::class, 'show']);
+        Route::post('/{early_leave}', [EarlyLeaveController::class, 'update']);
+        Route::delete('/{early_leave}', [EarlyLeaveController::class, 'destroy']);
+        Route::put('/approvals/{early_leave:uuid}/approve', [EarlyLeaveController::class, 'approve']);
+        Route::get('/download-attachment/{filename}', [EarlyLeaveController::class, 'downloadAttachment']);
     });
 });

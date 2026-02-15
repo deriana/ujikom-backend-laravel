@@ -35,6 +35,7 @@ class DatabaseSeeder extends Seeder
             EmployeeLeaveBalanceSeeder::class,
             LeaveSeeder::class,
             EmployeeLeaveSeeder::class,
+            EarlyLeaveSeeder::class,
         ]);
     }
 }
