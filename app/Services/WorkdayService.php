@@ -10,28 +10,31 @@ class WorkdayService
     public function isWorkday(Carbon $date): bool
     {
         $date = $date->copy()->startOfDay();
+        $currentMD = $date->format('m-d');
 
+        // 1. Cek Weekend
         if ($date->isWeekend()) {
             return false;
         }
 
-        // 2. Libur Single/Range (is_recurring = false)
-        $isHoliday = Holiday::where('is_recurring', false)
+        // 2. Cek Libur Spesifik (Tahun, Bulan, Tanggal harus sama persis)
+        $isSpecificHoliday = Holiday::where('is_recurring', false)
             ->whereDate('start_date', '<=', $date)
             ->whereDate('end_date', '>=', $date)
             ->exists();
 
-        if ($isHoliday) {
+        if ($isSpecificHoliday) {
             return false;
         }
 
-        // 3. Libur Berulang (is_recurring = true)
-        // Kita cek berdasarkan bulan dan hari saja
-        $isRecurringHoliday = Holiday::where('is_recurring', true)
-            ->whereRaw("DATE_FORMAT(start_date, '%m-%d') <= ?", [$date->format('m-d')])
-            ->whereRaw("DATE_FORMAT(end_date, '%m-%d') >= ?", [$date->format('m-d')])
+        // 3. Cek Libur Tahunan (Hanya Bulan dan Tanggal yang sama)
+        // Walaupun is_recurring false, kalau tanggal & bulan pas, kita anggap libur
+        $isYearlyHoliday = Holiday::where(function ($query) use ($currentMD) {
+            $query->whereRaw("DATE_FORMAT(start_date, '%m-%d') = ?", [$currentMD])
+                ->orWhereRaw("DATE_FORMAT(end_date, '%m-%d') = ?", [$currentMD]);
+        })
             ->exists();
 
-        return ! $isRecurringHoliday;
+        return ! $isYearlyHoliday;
     }
 }

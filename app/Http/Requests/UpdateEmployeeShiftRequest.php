@@ -25,7 +25,6 @@ class UpdateEmployeeShiftRequest extends FormRequest
         $shift = $this->route('employee_shift'); // model instance
 
         return [
-            'employee_nik' => 'required|exists:employees,nik',
             'shift_template_uuid' => 'required|exists:shift_templates,uuid',
             'shift_date' => [
                 'required',

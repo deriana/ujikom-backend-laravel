@@ -23,7 +23,7 @@ class DatabaseSeeder extends Seeder
             AllowanceSeeder::class,
             EmployeeSeeder::class,
             AttendanceSeeder::class, // Developing
-            // BiometricSeeder::class,
+            BiometricSeeder::class,
             BiometricUserSeeder::class,
             HolidaySeeder::class,
             WorkModeSeeder::class,

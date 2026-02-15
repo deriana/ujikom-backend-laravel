@@ -16,7 +16,7 @@ class BiometricSeeder extends Seeder
      */
     public function run(): void
     {
-        $employeeId = 3;
+        $employeeId = 4;
 
         BiometricUser::updateOrCreate(
             ['employee_id' => $employeeId, 'view' => 'front'],

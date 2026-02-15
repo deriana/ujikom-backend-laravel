@@ -74,7 +74,7 @@ class AttendanceService
                 $status = $this->processClockOut($attendance, $now, $data, $photoPath);
                 $resultMessage = 'Clock-out berhasil';
             } else {
-                 throw new AttendanceException('Sudah absen hari ini', ['reason' => 'already_clocked_in_out']);
+                throw new AttendanceException('Sudah absen hari ini', ['reason' => 'already_clocked_in_out']);
             }
 
             // 6. Log Success
@@ -92,7 +92,7 @@ class AttendanceService
             return [
                 'success' => true,
                 'message' => $resultMessage,
-                'data' => $attendance
+                'data' => $attendance,
             ];
 
         } catch (AttendanceException $e) {
@@ -105,18 +105,18 @@ class AttendanceService
 
             return [
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
             ];
 
         } catch (Exception $e) {
             DB::rollBack();
-            $this->logger->logFailure('System Error: ' . $e->getMessage(), ['user_agent' => $userAgent]);
+            $this->logger->logFailure('System Error: '.$e->getMessage(), ['user_agent' => $userAgent]);
 
-            Log::error('System Error: ' . $e->getMessage());
+            Log::error('System Error: '.$e->getMessage());
 
             return [
                 'success' => false,
-                'message' => 'Terjadi kesalahan sistem'
+                'message' => 'Terjadi kesalahan sistem',
             ];
         }
     }
