@@ -17,29 +17,41 @@ class EmployeeLeaveSeeder extends Seeder
      */
     public function run(): void
     {
-        $leaves = Leave::with('leaveType', 'employee')->where('approval_status', ApprovalStatus::APPROVED->value)->get();
+        // 1. Ambil semua leave yang PENDING lalu jadikan APPROVED secara acak
+        // agar ada data yang masuk ke tabel EmployeeLeave
+        $pendingLeaves = Leave::where('approval_status', ApprovalStatus::PENDING->value)->get();
+        foreach ($pendingLeaves as $pending) {
+            if (rand(0, 1)) { // 50% kemungkinan untuk diapprove
+                $pending->update(['approval_status' => ApprovalStatus::APPROVED->value]);
+            }
+        }
+
+        // 2. Tarik data yang sudah APPROVED
+        $leaves = Leave::with(['leaveType', 'employee'])
+            ->where('approval_status', ApprovalStatus::APPROVED->value)
+            ->get();
 
         foreach ($leaves as $leave) {
+            // Logika hitung hari
             $days = $leave->is_half_day ? 0.5 : $leave->date_start->diffInDays($leave->date_end) + 1;
 
-            // Buat EmployeeLeave
+            // Buat Record di EmployeeLeave (Data final untuk Payroll)
             EmployeeLeave::updateOrCreate(
                 [
-                    'uuid' => Str::uuid(),
                     'employee_id' => $leave->employee_id,
                     'leave_type_id' => $leave->leave_type_id,
-                    'start_date' => $leave->date_start,
-                    'end_date' => $leave->date_end,
+                    'start_date' => $leave->date_start->toDateString(),
+                    'end_date' => $leave->date_end->toDateString(),
                 ],
                 [
+                    'uuid' => Str::uuid(),
                     'days_taken' => $days,
                     'status' => ApprovalStatus::APPROVED->value,
-                    'created_by_id' => $leave->created_by_id,
-                    'updated_by_id' => $leave->updated_by_id,
+                    'created_by_id' => $leave->employee->user_id, // Asumsi dibuat oleh user terkait
                 ]
             );
 
-            // Update saldo EmployeeLeaveBalance
+            // 3. Update saldo EmployeeLeaveBalance
             $balance = EmployeeLeaveBalance::firstOrCreate(
                 [
                     'employee_id' => $leave->employee_id,
@@ -52,6 +64,8 @@ class EmployeeLeaveSeeder extends Seeder
                 ]
             );
 
+            // Panggil method useDays dari model untuk kurangi saldo
+            // Pastikan di Model EmployeeLeaveBalance sudah ada method useDays()
             $balance->useDays($days);
         }
     }

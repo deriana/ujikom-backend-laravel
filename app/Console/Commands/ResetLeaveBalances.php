@@ -2,43 +2,57 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
+use App\Enums\UserRole;
 use App\Models\Employee;
-use App\Models\LeaveType;
 use App\Models\EmployeeLeaveBalance;
+use App\Models\LeaveType;
+use Illuminate\Console\Command;
 
 class ResetLeaveBalances extends Command
 {
     protected $signature = 'leave:reset-balances';
+
     protected $description = 'Reset leave balances for all employees at the start of a new year';
 
     public function handle()
     {
-        $employees = Employee::all();
-        $leaveTypes = LeaveType::where('is_active', true)->get();
+        // --- FILTER: KECUALI OWNER ---
+        // Kita hanya ambil employee yang usernya BUKAN Owner
+        $employees = Employee::whereHas('user', function ($q) {
+            $q->withoutRole(UserRole::OWNER->value);
+        })->get();
+        // -----------------------------
+
+        $leaveTypes = LeaveType::where('is_active', true)
+            ->whereNotNull('default_days') // Hanya yang punya kuota
+            ->get();
+
+        $currentYear = now()->year;
+        $count = 0;
 
         foreach ($employees as $employee) {
             foreach ($leaveTypes as $type) {
-                // Cek apakah sudah ada saldo untuk tahun ini
-                $balance = EmployeeLeaveBalance::firstOrCreate(
+                // Validasi Gender agar balance yang dibuat relevan
+                if ($type->gender !== 'all' && $type->gender !== $employee->gender) {
+                    continue;
+                }
+
+                $balance = EmployeeLeaveBalance::updateOrCreate(
                     [
                         'employee_id' => $employee->id,
                         'leave_type_id' => $type->id,
-                        'year' => now()->year,
+                        'year' => $currentYear,
                     ],
                     [
-                        'total_days' => $type->default_days ?? 0,
+                        'total_days' => $type->default_days,
                         'used_days' => 0,
                     ]
                 );
 
-                // Optional: reset jika sudah ada
-                $balance->used_days = 0;
-                $balance->total_days = $type->default_days ?? 0;
-                $balance->save();
+                $count++;
             }
         }
 
-        $this->info('Employee leave balances reset for ' . now()->year);
+        $this->info("Successfully reset/created {$count} leave balances for {$currentYear}. (Owner skipped)");
     }
 }

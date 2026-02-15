@@ -32,6 +32,9 @@ class Employee extends Model implements HasMedia
         'created_by_id',
         'updated_by_id',
         'deleted_by_id',
+        'employment_state',
+        'termination_date',
+        'termination_reason'
     ];
 
     protected $hidden = [

@@ -19,6 +19,8 @@ return new class extends Migration
 
             $table->time('work_start_time');
             $table->time('work_end_time');
+            $table->time('break_start_time')->nullable();
+            $table->time('break_end_time')->nullable();
             $table->integer('late_tolerance_minutes')->default(10);
 
             $table->boolean('requires_office_location')->default(false);

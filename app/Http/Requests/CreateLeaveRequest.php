@@ -21,6 +21,9 @@ class CreateLeaveRequest extends FormRequest
             UserRole::HR,
             UserRole::MANAGER,
             UserRole::EMPLOYEE,
+            UserRole::DIRECTOR,
+            UserRole::OWNER,
+            UserRole::FINANCE,
         ]);
     }
 

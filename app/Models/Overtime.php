@@ -6,15 +6,14 @@ use App\Enums\ApprovalStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
-class EarlyLeave extends Model
+class Overtime extends Model
 {
     protected $fillable = [
         'uuid',
         'attendance_id',
         'employee_id',
-        'minutes_early',
+        'duration_minutes',
         'reason',
-        'attachment',
         'status',
         'approved_by_id',
         'approved_at',
@@ -24,6 +23,10 @@ class EarlyLeave extends Model
     protected $casts = [
         'approved_at' => 'datetime',
         'status' => 'integer',
+    ];
+
+    protected $hidden = [
+        'id',
     ];
 
     protected static function boot()
@@ -56,7 +59,7 @@ class EarlyLeave extends Model
         return $this->belongsTo(Employee::class);
     }
 
-    public function approver()
+    public function manager()
     {
         return $this->belongsTo(Employee::class, 'approved_by_id');
     }

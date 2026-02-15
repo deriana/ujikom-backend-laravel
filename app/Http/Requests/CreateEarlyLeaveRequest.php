@@ -15,6 +15,9 @@ class CreateEarlyLeaveRequest extends FormRequest
             UserRole::HR,
             UserRole::MANAGER,
             UserRole::EMPLOYEE,
+            UserRole::DIRECTOR,
+            UserRole::OWNER,
+            UserRole::FINANCE,
         ]);
     }
 
@@ -60,6 +63,7 @@ class CreateEarlyLeaveRequest extends FormRequest
                 $this->merge([
                     'employee_id' => $user->employee?->id,
                 ]);
+
                 return;
             }
 
@@ -67,6 +71,7 @@ class CreateEarlyLeaveRequest extends FormRequest
 
             if (! $employee) {
                 $validator->errors()->add('employee_nik', 'Employee tidak ditemukan.');
+
                 return;
             }
 
@@ -77,6 +82,7 @@ class CreateEarlyLeaveRequest extends FormRequest
                         'employee_nik',
                         'Manager hanya dapat mengajukan early leave untuk bawahan langsung.'
                     );
+
                     return;
                 }
             }

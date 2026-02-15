@@ -18,6 +18,8 @@ class WorkSchedule extends Model
         'work_mode_id',
         'work_start_time',
         'work_end_time',
+        'break_start_time',
+        'break_end_time',
         'requires_office_location',
         'created_by_id',
         'updated_by_id',

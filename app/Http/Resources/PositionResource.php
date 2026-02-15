@@ -13,6 +13,7 @@ class PositionResource extends JsonResource
             'uuid' => $this->uuid,
             'name' => $this->name,
             'base_salary' => (float) $this->base_salary,
+            'system_reserve' => $this->system_reserve,
             'created_at' => $this->created_at?->format('Y-m-d H:i:s'),
             'updated_at' => $this->updated_at?->format('Y-m-d H:i:s'),
             'creator' => $this->whenLoaded('creator', function () {

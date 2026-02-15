@@ -42,6 +42,14 @@ class AttendanceService
             $employee = $faceResult['employee'];
             $score = $faceResult['score'];
 
+            $user = $employee->user;
+
+            if ($user->hasRole([\App\Enums\UserRole::DIRECTOR->value, \App\Enums\UserRole::OWNER->value])) {
+                throw new AttendanceException('This position is exempt from daily attendance', [
+                    'reason' => 'role_exempted',
+                ]);
+            }
+
             // 2. Validate Geo Location (if applicable)
             $this->geoValidator->validate(
                 (float) ($data['latitude'] ?? 0),
@@ -63,20 +71,20 @@ class AttendanceService
                 ? $this->uploader->upload($data['photo'], $employee->id, $today)
                 : null;
 
-            $resultMessage = 'Sudah absen hari ini'; // Default if both filled
+            $resultMessage = 'Already attended today'; // Default if both filled
 
             // 5. Process Clock-In or Clock-Out
             $actionType = null;
             if (! $attendance->clock_in) {
                 $actionType = 'clock_in';
                 $status = $this->processClockIn($attendance, $now, $data, $photoPath);
-                $resultMessage = 'Clock-in berhasil';
+                $resultMessage = 'Clock-in successful';
             } elseif (! $attendance->clock_out) {
                 $actionType = 'clock_out';
                 $status = $this->processClockOut($attendance, $now, $data, $photoPath);
-                $resultMessage = 'Clock-out berhasil';
+                $resultMessage = 'Clock-out successful';
             } else {
-                throw new AttendanceException('Sudah absen hari ini', ['reason' => 'already_clocked_in_out']);
+                throw new AttendanceException('Already clocked in and out today', ['reason' => 'already_clocked_in_out']);
             }
 
             // 6. Log Success
@@ -118,7 +126,7 @@ class AttendanceService
 
             return [
                 'success' => false,
-                'message' => 'Terjadi kesalahan sistem',
+                'message' => 'A system error occurred',
             ];
         }
     }

@@ -14,32 +14,14 @@ class PositionAllowanceSeeder extends Seeder
     {
         $creatorId = User::first()->id;
 
-        $manager = Position::create([
-            'uuid' => Str::uuid(),
-            'name' => 'Manager',
-            'base_salary' => 5000000,
-            'created_by_id' => $creatorId,
-        ]);
-
-        $staff = Position::create([
-            'uuid' => Str::uuid(),
-            'name' => 'Staff',
-            'base_salary' => 3000000,
-            'created_by_id' => $creatorId,
-        ]);
-
-        $intern = Position::create([
-            'uuid' => Str::uuid(),
-            'name' => 'Intern',
-            'base_salary' => 1500000,
-            'created_by_id' => $creatorId,
-        ]);
-
+        // =========================
+        // 1. Create All Allowances
+        // =========================
         $transport = Allowance::create([
             'uuid' => Str::uuid(),
             'name' => 'Transport',
             'type' => 'fixed',
-            'amount' => 150000,
+            'amount' => 150000, // Nilai default
             'created_by_id' => $creatorId,
         ]);
 
@@ -53,29 +35,104 @@ class PositionAllowanceSeeder extends Seeder
 
         $jabatan = Allowance::create([
             'uuid' => Str::uuid(),
-            'name' => 'Jabatan',
+            'name' => 'Tunjangan Jabatan',
             'type' => 'percentage',
             'amount' => 10,
             'created_by_id' => $creatorId,
         ]);
 
-        // =========================
-        // 3. Attach Allowances to Positions
-        // =========================
-        $manager->allowances()->attach([
-            $transport->id => ['amount' => 200000],
-            $meal->id => ['amount' => null],
-            $jabatan->id => ['amount' => 15],
+        $health = Allowance::create([
+            'uuid' => Str::uuid(),
+            'name' => 'Kesehatan',
+            'type' => 'fixed',
+            'amount' => 500000,
+            'created_by_id' => $creatorId,
         ]);
 
+        $comm = Allowance::create([
+            'uuid' => Str::uuid(),
+            'name' => 'Komunikasi',
+            'type' => 'fixed',
+            'amount' => 200000,
+            'created_by_id' => $creatorId,
+        ]);
+
+        // =========================
+        // 2. Create Positions & Attach Allowances
+        // =========================
+
+        // --- OWNER ---
+        $owner = Position::create([
+            'uuid' => Str::uuid(),
+            'name' => 'Owner',
+            'base_salary' => 0, // Sesuai diskusi, owner ambil profit
+            'created_by_id' => $creatorId,
+            'system_reserve' => true
+        ]);
+        // Owner tidak perlu tunjangan teknis, atau dikosongkan saja
+
+        // --- DIRECTOR ---
+        $director = Position::create([
+            'uuid' => Str::uuid(),
+            'name' => 'Director',
+            'base_salary' => 50000000,
+            'created_by_id' => $creatorId,
+        ]);
+        $director->allowances()->attach([
+            $transport->id => ['amount' => 2000000], // Tunjangan khusus bensin mobil mewah
+            $jabatan->id   => ['amount' => 25],      // 25% dari Gaji Pokok
+            $health->id    => ['amount' => 2000000],
+            $comm->id      => ['amount' => 1000000],
+        ]);
+
+        // --- MANAGER ---
+        $manager = Position::create([
+            'uuid' => Str::uuid(),
+            'name' => 'Manager',
+            'base_salary' => 15000000,
+            'created_by_id' => $creatorId,
+        ]);
+        $manager->allowances()->attach([
+            $transport->id => ['amount' => 1000000],
+            $meal->id      => ['amount' => null], // Pakai default
+            $jabatan->id   => ['amount' => 15],
+            $comm->id      => ['amount' => 500000],
+        ]);
+
+        // --- HR & FINANCE (Level Staff Senior) ---
+        $seniorStaff = Position::create([
+            'uuid' => Str::uuid(),
+            'name' => 'Senior Staff',
+            'base_salary' => 10000000,
+            'created_by_id' => $creatorId,
+        ]);
+        $seniorStaff->allowances()->attach([
+            $transport->id => ['amount' => null],
+            $meal->id      => ['amount' => null],
+            $jabatan->id   => ['amount' => 5],
+            $comm->id      => ['amount' => 250000],
+        ]);
+
+        // --- STAFF (Standard) ---
+        $staff = Position::create([
+            'uuid' => Str::uuid(),
+            'name' => 'Staff',
+            'base_salary' => 7000000,
+            'created_by_id' => $creatorId,
+        ]);
         $staff->allowances()->attach([
             $transport->id => ['amount' => null],
-            $meal->id => ['amount' => null],
-            $jabatan->id => ['amount' => 5],
+            $meal->id      => ['amount' => null],
         ]);
 
+        // --- INTERN ---
+        $intern = Position::create([
+            'uuid' => Str::uuid(),
+            'name' => 'Intern',
+            'base_salary' => 2500000,
+            'created_by_id' => $creatorId,
+        ]);
         $intern->allowances()->attach([
-            $transport->id => ['amount' => 50000],
             $meal->id => ['amount' => null],
         ]);
     }

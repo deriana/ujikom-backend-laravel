@@ -12,7 +12,6 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -22,16 +21,23 @@ class EarlyLeaveService
     {
         $query = EarlyLeave::with([
             'employee.user',
-            'manager.user',
+            'attendance',
+            'approver', // Sesuaikan dengan nama relasi di model kamu
         ]);
 
-        // 1️⃣ EMPLOYEE → hanya milik sendiri
-        if ($user->hasRole(UserRole::EMPLOYEE)) {
-            $query->where('employee_id', $user->employee->id);
+        // 1️⃣ OWNER, DIRECTOR, HR, & FINANCE → Bisa lihat semua data
+        if ($user->hasAnyRole([
+            UserRole::ADMIN->value,
+            UserRole::OWNER->value,
+            UserRole::DIRECTOR->value,
+            UserRole::HR->value,
+            UserRole::FINANCE->value,
+        ])) {
+            // Tanpa filter, biarkan query mengambil semua
         }
 
-        // 2️⃣ MANAGER → milik sendiri + bawahan langsung
-        elseif ($user->hasRole(UserRole::MANAGER)) {
+        // 2️⃣ MANAGER → Milik sendiri + bawahan langsung (Staff/HR/Finance yang di bawahnya)
+        elseif ($user->hasRole(UserRole::MANAGER->value)) {
             $query->where(function ($q) use ($user) {
                 $q->where('employee_id', $user->employee->id)
                     ->orWhereHas('employee', function ($sq) use ($user) {
@@ -40,11 +46,9 @@ class EarlyLeaveService
             });
         }
 
-        // 3️⃣ HR → hanya milik manager
-        elseif ($user->hasRole(UserRole::HR)) {
-            $query->whereHas('employee', function ($q) {
-                $q->whereNotNull('manager_id');
-            });
+        // 3️⃣ EMPLOYEE → Hanya milik sendiri
+        else {
+            $query->where('employee_id', $user->employee->id);
         }
 
         return $query->latest()->get();
@@ -55,7 +59,7 @@ class EarlyLeaveService
         $earlyLeave->load([
             'attendance',
             'employee.user',
-            'manager.user',
+            'approver.user',
         ]);
 
         return new EarlyLeaveDetailResource($earlyLeave);
@@ -101,12 +105,12 @@ class EarlyLeaveService
             if (
                 $earlyLeave->status !== ApprovalStatus::PENDING->value && ! $user->hasAnyRole([UserRole::HR, UserRole::ADMIN])
             ) {
-                throw new Exception('Early leave yang sudah diproses tidak dapat diubah.');
+                throw new Exception('Processed early leave requests cannot be modified.');
             }
 
             if ($earlyLeave->attendance?->date->isPast() &&
                 ! $earlyLeave->attendance->date->isToday()) {
-                throw new Exception('Early leave hanya bisa diubah di hari yang sama.');
+                throw new Exception('Early leave requests can only be modified on the same day.');
             }
 
             $attachmentPath = $earlyLeave->attachment;
@@ -138,7 +142,7 @@ class EarlyLeaveService
 
             // 1️⃣ Pastikan masih pending
             if ($earlyLeave->status !== ApprovalStatus::PENDING->value) {
-                throw new Exception('Early leave sudah diproses.');
+                throw new Exception('Early leave request has already been processed.');
             }
 
             // 2️⃣ Hanya manager langsung atau HR/Admin yang boleh approve
@@ -146,9 +150,9 @@ class EarlyLeaveService
 
             if (
                 ! $isManager &&
-                ! $user->hasAnyRole([UserRole::HR, UserRole::ADMIN])
+                ! $user->hasAnyRole([UserRole::HR, UserRole::ADMIN, UserRole::DIRECTOR])
             ) {
-                throw new Exception('Anda tidak memiliki izin untuk memproses early leave ini.');
+                throw new Exception('You do not have permission to process this early leave request.');
             }
 
             // 3️⃣ Update status
@@ -165,22 +169,7 @@ class EarlyLeaveService
 
     public function delete(EarlyLeave $earlyLeave, $user): bool
     {
-        return DB::transaction(function () use ($earlyLeave, $user) {
-
-            // 1️⃣ Hanya boleh hapus jika masih pending
-            if ($earlyLeave->status !== ApprovalStatus::PENDING->value) {
-                throw new Exception('Hanya early leave pending yang bisa dihapus.');
-            }
-
-            // 2️⃣ Hanya owner atau HR/Admin
-            $userEmployeeId = optional($user->employee)->id;
-
-            if (
-                ! $user->hasAnyRole([UserRole::ADMIN, UserRole::HR]) &&
-                $earlyLeave->employee_id !== $userEmployeeId
-            ) {
-                throw new Exception('Anda tidak memiliki izin untuk menghapus data ini.');
-            }
+        return DB::transaction(function () use ($earlyLeave) {
 
             // 3️⃣ Hapus attachment jika ada
             if ($earlyLeave->attachment) {
@@ -196,19 +185,19 @@ class EarlyLeaveService
     private function validateEarlyLeaveEligibility(Attendance $attendance): void
     {
         if (! $attendance->clock_in) {
-            throw new Exception('Belum melakukan clock in.');
+            throw new Exception('You have not clocked in yet.');
         }
 
         if ($attendance->clock_out) {
-            throw new Exception('Early leave tidak dapat diajukan setelah clock out.');
+            throw new Exception('Early leave cannot be requested after clocking out.');
         }
 
         if ($attendance->early_leave_minutes <= 0) {
-            throw new Exception('Tidak ada early leave pada tanggal tersebut.');
+            throw new Exception('No early leave detected for this date.');
         }
 
         if (EarlyLeave::where('attendance_id', $attendance->id)->exists()) {
-            throw new Exception('Early leave sudah diajukan untuk attendance ini.');
+            throw new Exception('An early leave request has already been submitted for this attendance.');
         }
     }
 }

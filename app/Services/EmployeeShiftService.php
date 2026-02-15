@@ -33,7 +33,7 @@ class EmployeeShiftService
 
             if (! $isWorkday) {
                 // Jika isWorkday = false, kita STOP di sini
-                throw new \Exception("Gagal: Tanggal {$data['shift_date']} adalah hari libur (Holiday/Weekend).");
+                throw new \Exception("Failed: Date {$data['shift_date']} is a holiday or weekend.");
             }
 
             $employee = Employee::where('nik', $data['employee_nik'])->firstOrFail();
@@ -45,7 +45,7 @@ class EmployeeShiftService
                 ->exists();
 
             if ($exists) {
-                throw new \Exception('Employee sudah memiliki shift pada tanggal tersebut.');
+                throw new \Exception('Employee already has a shift assigned on this date.');
             }
             // TESTING
             return EmployeeShift::create([
@@ -64,7 +64,7 @@ class EmployeeShiftService
             $isWorkday = $this->workdayService->isWorkday($date);
 
             if (! $isWorkday) {
-                throw new \Exception("Gagal: Tanggal {$data['shift_date']} adalah hari libur (Holiday/Weekend).");
+                throw new \Exception("Failed: Date {$data['shift_date']} is a holiday or weekend.");
             }
 
             $template = ShiftTemplate::where('uuid', $data['shift_template_uuid'])->firstOrFail();
