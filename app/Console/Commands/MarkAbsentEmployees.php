@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\ApprovalStatus;
 use App\Models\Attendance;
 use App\Models\Employee;
 use App\Models\Setting;
@@ -46,7 +47,13 @@ class MarkAbsentEmployees extends Command
 
         $employees = Employee::whereDoesntHave('attendances', function ($q) use ($today) {
             $q->whereDate('date', $today);
-        })->get();
+        })
+            ->whereDoesntHave('leaves', function ($q) use ($today) {
+                $q->where('approval_status', ApprovalStatus::APPROVED->value)
+                    ->whereDate('date_start', '<=', $today)
+                    ->whereDate('date_end', '>=', $today);
+            })
+            ->get();
 
         foreach ($employees as $employee) {
             Attendance::create([

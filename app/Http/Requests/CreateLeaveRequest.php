@@ -5,7 +5,9 @@ namespace App\Http\Requests;
 use App\Enums\UserRole;
 use App\Models\EmployeeLeaveBalance;
 use App\Models\LeaveType;
+use App\Services\WorkdayService;
 use Carbon\Carbon;
+use Carbon\CarbonPeriod;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Log;
 
@@ -47,13 +49,7 @@ class CreateLeaveRequest extends FormRequest
     {
         $validator->after(function ($validator) {
 
-            Log::info('CreateLeaveRequest: masuk after validator');
-
             if ($validator->errors()->any()) {
-                Log::warning('CreateLeaveRequest: sudah ada error awal', [
-                    'errors' => $validator->errors()->toArray(),
-                ]);
-
                 return;
             }
 
@@ -82,11 +78,23 @@ class CreateLeaveRequest extends FormRequest
             }
 
             // 3️⃣ Hitung Durasi
+            $workdayService = app(\App\Services\WorkdayService::class);
+
             $daysRequested = $this->calculateWorkDays(
                 $this->date_start,
                 $this->date_end,
-                $this->is_half_day
+                $this->is_half_day,
+                $workdayService
             );
+
+            if ($daysRequested === 0) {
+                $validator->errors()->add(
+                    'date_start',
+                    'Cuti tidak bisa diajukan pada hari non-kerja (weekend atau holiday).'
+                );
+
+                return;
+            }
 
             Log::info('Durasi dihitung', [
                 'days_requested' => $daysRequested,
@@ -97,15 +105,8 @@ class CreateLeaveRequest extends FormRequest
                 ? \App\Models\Employee::where('nik', $this->input('employee_nik'))->first()
                 : $this->user()->employee;
 
-            Log::info('Employee resolved', [
-                'employee_nik_input' => $this->input('employee_nik'),
-                'user_employee_id' => optional($this->user()->employee)->id,
-                'resolved_employee_id' => optional($employee)->id,
-            ]);
-
             if (! $employee) {
-                $validator->errors()->add('employee_nik', 'Employee tidak ditemukan.');
-                Log::warning('Employee null - request dihentikan');
+                $validator->errors()->add('employee_nik', 'Pekerja tidak ditemukan.');
 
                 return;
             }
@@ -119,28 +120,15 @@ class CreateLeaveRequest extends FormRequest
 
                 $remaining = $balance ? $balance->remaining_days : 0;
 
-                Log::info('Balance check', [
-                    'remaining' => $remaining,
-                    'requested' => $daysRequested,
-                ]);
-
                 if ($daysRequested > $remaining) {
                     $validator->errors()->add(
                         'date_end',
                         "Saldo tidak cukup. Sisa: $remaining hari, Diminta: $daysRequested hari."
                     );
-                    Log::warning('Saldo tidak cukup');
 
                     return;
                 }
             }
-
-            // Merge debug
-            Log::info('Merge data ke request', [
-                'employee_id' => $employee->id,
-                'leave_type_id' => $leaveType->id,
-                'duration' => $daysRequested,
-            ]);
 
             $this->merge([
                 'employee_id' => $employee->id,
@@ -153,19 +141,33 @@ class CreateLeaveRequest extends FormRequest
     /**
      * Menghitung hari kerja (Senin-Jumat)
      */
-    private function calculateWorkDays($start, $end, $isHalfDay = false): float
-    {
-        if ($isHalfDay) {
-            return 0.5;
+    private function calculateWorkDays(
+        string $start,
+        string $end,
+        bool $isHalfDay,
+        WorkdayService $workdayService
+    ): float {
+        $startDate = Carbon::parse($start)->startOfDay();
+        $endDate = Carbon::parse($end)->startOfDay();
+
+        if ($startDate->gt($endDate)) {
+            return 0;
         }
 
-        $startDate = Carbon::parse($start);
-        $endDate = Carbon::parse($end);
+        if ($isHalfDay) {
+            return $workdayService->isWorkday($startDate) ? 0.5 : 0;
+        }
 
-        // Versi simpel: diffInDays + 1
-        // Versi Pro: Hanya hitung hari kerja (exclude weekend)
-        return (float) $startDate->diffInDaysFiltered(function (Carbon $date) {
-            return ! $date->isWeekend();
-        }, $endDate) + 1;
+        $days = 0;
+        foreach (CarbonPeriod::create($startDate, $endDate) as $date) {
+            $check = $workdayService->isWorkday($date);
+            Log::info('Checking date: '.$date->toDateString().' - Is Workday: '.($check ? 'YES' : 'NO'));
+
+            if ($check) {
+                $days++;
+            }
+        }
+
+        return (float) $days;
     }
 }

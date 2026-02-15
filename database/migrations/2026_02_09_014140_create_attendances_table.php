@@ -16,8 +16,7 @@ return new class extends Migration
             $table->foreignId('employee_id')->constrained()->cascadeOnDelete();
             $table->date('date');
 
-            $table->enum('status', ['present', 'absent', 'leave', 'off']);
-
+            $table->enum('status', ['present', 'absent', ]);
             $table->dateTime('clock_in')->nullable();
             $table->dateTime('clock_out')->nullable();
 

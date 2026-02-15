@@ -9,7 +9,6 @@ use App\Http\Resources\LeaveResource;
 use App\Models\Employee;
 use App\Models\EmployeeLeave;
 use App\Models\EmployeeLeaveBalance;
-use App\Models\Holiday;
 use App\Models\Leave;
 use App\Models\LeaveApproval;
 use Carbon\Carbon;
@@ -23,6 +22,13 @@ use Illuminate\Support\Str;
 
 class LeaveService
 {
+    protected WorkdayService $workdayService;
+
+    public function __construct(WorkdayService $workdayService)
+    {
+        $this->workdayService = $workdayService;
+    }
+
     /**
      * List leave untuk index/table
      */
@@ -85,8 +91,13 @@ class LeaveService
             $daysRequested = $this->calculateWorkDays(
                 $start->toDateString(),
                 $end->toDateString(),
-                $isHalfDay
+                $isHalfDay,
+                $this->workdayService
             );
+
+            if ($daysRequested <= 0) {
+                throw new \Exception('Tidak ada hari kerja pada rentang tanggal yang dipilih (Weekend/Libur).');
+            }
 
             // 🔒 Lock & Check Saldo
             $balance = EmployeeLeaveBalance::where('employee_id', $employeeId)
@@ -177,7 +188,9 @@ class LeaveService
             $newDuration = $this->calculateWorkDays(
                 $data['date_start'],
                 $data['date_end'],
-                $data['is_half_day'] ?? false
+                $data['is_half_day'] ?? false,
+                $this->workdayService
+
             );
 
             // 4️⃣ Jika tanggal berubah → reset approval
@@ -224,7 +237,6 @@ class LeaveService
                 throw new \Exception('Approval sudah diproses');
             }
 
-            // 1. Update status approval yang sedang diproses
             $approval->update([
                 'status' => $approve ? ApprovalStatus::APPROVED->value : ApprovalStatus::REJECTED->value,
                 'approved_at' => now(),
@@ -233,22 +245,27 @@ class LeaveService
 
             $leave = $approval->leave;
 
-            // 2. Cek apakah ada yang menolak? Jika satu saja REJECTED, maka Leave Gagal
             if (! $approve) {
                 $leave->update(['approval_status' => ApprovalStatus::REJECTED->value]);
 
                 return $approval;
             }
 
-            // 3. Cek apakah masih ada approval lain yang PENDING?
             $hasPending = $leave->approvals()->where('status', ApprovalStatus::PENDING->value)->exists();
 
             if (! $hasPending) {
-                // Jika tidak ada pending lagi, berarti semua level sudah APPROVED
                 $leave->update(['approval_status' => ApprovalStatus::APPROVED->value]);
 
-                // LOGIKA EXECUTOR (Potong Cuti & Buat Record)
-                $days = $this->calculateWorkDays($leave->date_start, $leave->date_end, $leave->is_half_day);
+                $days = $leave->duration;
+
+                if (is_null($days)) {
+                    $days = $this->calculateWorkDays(
+                        $leave->date_start->toDateString(),
+                        $leave->date_end->toDateString(),
+                        $leave->is_half_day,
+                        $this->workdayService
+                    );
+                }
 
                 EmployeeLeave::create([
                     'employee_id' => $leave->employee_id,
@@ -259,11 +276,27 @@ class LeaveService
                     'status' => ApprovalStatus::APPROVED->value,
                 ]);
 
-                $balance = EmployeeLeaveBalance::firstOrCreate(
-                    ['employee_id' => $leave->employee_id, 'leave_type_id' => $leave->leave_type_id, 'year' => now()->year],
-                    ['total_days' => $leave->leaveType->default_days, 'used_days' => 0]
-                );
+                $leaveYear = Carbon::parse($leave->date_start)->year;
 
+                $balance = EmployeeLeaveBalance::where([
+                    'employee_id' => $leave->employee_id,
+                    'leave_type_id' => $leave->leave_type_id,
+                    'year' => $leaveYear,
+                ])
+                    ->lockForUpdate()
+                    ->first();
+
+                if (! $balance) {
+                    $balance = EmployeeLeaveBalance::create([
+                        'employee_id' => $leave->employee_id,
+                        'leave_type_id' => $leave->leave_type_id,
+                        'year' => $leaveYear,
+                        'total_days' => $leave->leaveType->default_days ?? 0,
+                        'used_days' => 0,
+                    ]);
+                }
+
+                // Eksekusi potong saldo
                 $balance->useDays($days);
             }
 
@@ -302,7 +335,7 @@ class LeaveService
         });
     }
 
-    private function calculateWorkDays(string $start, string $end, bool $isHalfDay = false): float
+    private function calculateWorkDays(string $start, string $end, bool $isHalfDay, WorkdayService $workdayService): float
     {
         if ($isHalfDay) {
             return 0.5;
@@ -315,65 +348,13 @@ class LeaveService
             return 0;
         }
 
-        $year = $startDate->year;
-
-        // Ambil holiday yang overlap range
-        $holidays = Holiday::where(function ($query) use ($startDate, $endDate) {
-            $query->whereBetween('start_date', [$startDate, $endDate])
-                ->orWhereBetween('end_date', [$startDate, $endDate])
-                ->orWhere(function ($q) use ($startDate, $endDate) {
-                    $q->where('start_date', '<=', $startDate)
-                        ->where('end_date', '>=', $endDate);
-                });
-        })->get();
-
-        // Expand semua holiday menjadi array tanggal
-        $holidayDates = [];
-
-        foreach ($holidays as $holiday) {
-
-            if ($holiday->is_recurring) {
-                // Recurring: pakai bulan & tanggal, ganti tahun sesuai request
-                $startRecurring = Carbon::create(
-                    $year,
-                    Carbon::parse($holiday->start_date)->month,
-                    Carbon::parse($holiday->start_date)->day
-                );
-
-                $endRecurring = Carbon::create(
-                    $year,
-                    Carbon::parse($holiday->end_date)->month,
-                    Carbon::parse($holiday->end_date)->day
-                );
-
-                $period = CarbonPeriod::create($startRecurring, $endRecurring);
-            } else {
-                $period = CarbonPeriod::create(
-                    Carbon::parse($holiday->start_date),
-                    Carbon::parse($holiday->end_date)
-                );
-            }
-
-            foreach ($period as $date) {
-                $holidayDates[$date->toDateString()] = true;
-            }
-        }
-
-        // Hitung hari kerja
         $days = 0;
         $period = CarbonPeriod::create($startDate, $endDate);
 
         foreach ($period as $date) {
-
-            if ($date->isWeekend()) {
-                continue;
+            if ($workdayService->isWorkday($date)) {
+                $days++;
             }
-
-            if (isset($holidayDates[$date->toDateString()])) {
-                continue;
-            }
-
-            $days++;
         }
 
         return (float) $days;
