@@ -7,7 +7,6 @@ use App\Models\EmployeeShift;
 use App\Models\ShiftTemplate;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class EmployeeShiftService
 {
@@ -32,9 +31,6 @@ class EmployeeShiftService
 
             $isWorkday = $this->workdayService->isWorkday($date);
 
-            Log::info($isWorkday);
-            // dd($isWorkday);
-
             if (! $isWorkday) {
                 // Jika isWorkday = false, kita STOP di sini
                 throw new \Exception("Gagal: Tanggal {$data['shift_date']} adalah hari libur (Holiday/Weekend).");
@@ -51,7 +47,7 @@ class EmployeeShiftService
             if ($exists) {
                 throw new \Exception('Employee sudah memiliki shift pada tanggal tersebut.');
             }
-
+            // TESTING
             return EmployeeShift::create([
                 'employee_id' => $employee->id,
                 'shift_template_id' => $template->id,
@@ -65,9 +61,10 @@ class EmployeeShiftService
         return DB::transaction(function () use ($shift, $data) {
             $date = Carbon::parse($data['shift_date']);
 
-            // Validasi hari kerja saat update
-            if (! $this->workdayService->isWorkday($date)) {
-                throw new \Exception('Perubahan shift gagal. Tanggal terpilih adalah hari libur/weekend.');
+            $isWorkday = $this->workdayService->isWorkday($date);
+
+            if (! $isWorkday) {
+                throw new \Exception("Gagal: Tanggal {$data['shift_date']} adalah hari libur (Holiday/Weekend).");
             }
 
             $template = ShiftTemplate::where('uuid', $data['shift_template_uuid'])->firstOrFail();
