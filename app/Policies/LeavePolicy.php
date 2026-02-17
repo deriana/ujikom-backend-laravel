@@ -43,7 +43,7 @@ class LeavePolicy
     {
         return $user->can('leave.edit') &&
                !$leave->system_reserve &&
-               $leave->approval_status === ApprovalStatus::PENDING->value && // Tambahan: Hanya bisa edit jika Pending
+               $leave->approval_status === ApprovalStatus::PENDING->value &&
                $this->isOwnerOrStaff($user, $leave);
     }
 
@@ -51,7 +51,7 @@ class LeavePolicy
     {
         return $user->can('leave.destroy') &&
                !$leave->system_reserve &&
-               $leave->approval_status === ApprovalStatus::PENDING->value && // Sudah benar: Hanya bisa hapus jika Pending
+               $leave->approval_status === ApprovalStatus::PENDING->value &&
                $this->isOwnerOrStaff($user, $leave);
     }
 

@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
+use App\Enums\PriorityEnum;
 use App\Models\Employee;
 use App\Models\EmployeeWorkSchedule;
 use App\Models\WorkSchedule;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\DB;
 
@@ -23,11 +25,25 @@ class EmployeeWorkScheduleService
             $employee = Employee::where('nik', $data['employee_nik'])->firstOrFail();
             $workSchedule = WorkSchedule::where('uuid', $data['work_schedule_uuid'])->firstOrFail();
 
-            // CEK BENTROK UNTUK CREATE
+            // Jika ada end_date = Level 2 (Temporary)
+            // Jika tidak ada end_date = Level 1 (Regular/Permanent)
+            $priority = isset($data['end_date']) ? PriorityEnum::LEVEL_2->value : PriorityEnum::LEVEL_1->value;
+
+            // 🔥 LOGIKA BARU: Jika Ganti Permanen (Level 1), Tutup Jadwal Level 1 yang lama
+            if ($priority === PriorityEnum::LEVEL_1->value) {
+                EmployeeWorkSchedule::where('employee_id', $employee->id)
+                    ->level1()
+                    ->whereNull('end_date')
+                    ->update([
+                        'end_date' => Carbon::parse($data['start_date'])->subDay()->toDateString(),
+                    ]);
+            }
+
             $this->validateDateConflict(
                 $employee->id,
                 $data['start_date'],
-                $data['end_date'] ?? null
+                $data['end_date'] ?? null,
+                $priority
             );
 
             return EmployeeWorkSchedule::create([
@@ -35,6 +51,7 @@ class EmployeeWorkScheduleService
                 'work_schedule_id' => $workSchedule->id,
                 'start_date' => $data['start_date'],
                 'end_date' => $data['end_date'] ?? null,
+                'priority' => $priority,
             ]);
         });
     }
@@ -42,31 +59,28 @@ class EmployeeWorkScheduleService
     public function update(EmployeeWorkSchedule $assignment, array $data)
     {
         return DB::transaction(function () use ($assignment, $data) {
-            $employeeId = $assignment->employee_id;
             $workSchedule = WorkSchedule::where('uuid', $data['work_schedule_uuid'])->firstOrFail();
 
-            // 1. Tentukan tanggal baru
             $startDate = $data['start_date'];
             $endDate = $data['end_date'] ?? null;
+            $priority = $endDate ? PriorityEnum::LEVEL_2->value : PriorityEnum::LEVEL_1->value;
 
-            // 2. Cek bentrok tapi **abaikan record lama yang sedang diupdate**
             $this->validateDateConflict(
-                $employeeId,
+                $assignment->employee_id,
                 $startDate,
                 $endDate,
+                $priority,
                 $assignment->id
             );
 
-            // 3. Tutup record lama (set end_date ke startDate-1)
-            $assignment->update(['end_date' => now()->toDateString()]);
-
-            // 4. Buat record baru
-            return EmployeeWorkSchedule::create([
-                'employee_id' => $employeeId,
+            $assignment->update([
                 'work_schedule_id' => $workSchedule->id,
                 'start_date' => $startDate,
                 'end_date' => $endDate,
-            ])->load(['employee', 'workSchedule']);
+                'priority' => $priority,
+            ]);
+
+            return $assignment->load(['employee', 'workSchedule']);
         });
     }
 
@@ -86,30 +100,32 @@ class EmployeeWorkScheduleService
         int $employeeId,
         string $startDate,
         ?string $endDate,
+        int $priority,
         ?int $ignoreId = null
     ): void {
-
-        $query = EmployeeWorkSchedule::where('employee_id', $employeeId);
+        // Gunakan scope yang kamu buat tadi!
+        $query = EmployeeWorkSchedule::where('employee_id', $employeeId)
+            ->where('priority', $priority);
 
         if ($ignoreId) {
             $query->where('id', '!=', $ignoreId);
         }
 
         $query->where(function ($q) use ($startDate, $endDate) {
+            // Kita pakai bantuan Carbon untuk mempermudah logika 'akhir zaman'
+            $actualEnd = $endDate ?? '9999-12-31';
 
-            $q->whereBetween('start_date', [$startDate, $endDate ?? $startDate])
-                ->orWhereBetween('end_date', [$startDate, $endDate ?? $startDate])
-                ->orWhere(function ($q2) use ($startDate, $endDate) {
-                    $q2->where('start_date', '<=', $startDate)
-                        ->where(function ($q3) use ($startDate, $endDate) {
-                            $q3->whereNull('end_date')
-                                ->orWhere('end_date', '>=', $endDate ?? $startDate);
-                        });
-                });
+            $q->where(function ($query) use ($startDate, $actualEnd) {
+                $query->where('start_date', '<=', $actualEnd)
+                    ->where(function ($sub) use ($startDate) {
+                        $sub->whereNull('end_date')
+                            ->orWhere('end_date', '>=', $startDate);
+                    });
+            });
         });
 
         if ($query->exists()) {
-            throw new Exception('Schedule conflict detected for this employee');
+            throw new Exception("Schedule conflict detected for Priority Level $priority");
         }
     }
 }

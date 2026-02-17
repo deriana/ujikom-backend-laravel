@@ -22,6 +22,9 @@ class WorkScheduleResource extends JsonResource
 
             'work_start_time' => $this->work_start_time,
             'work_end_time' => $this->work_end_time,
+            'break_start_time' => $this->break_start_time,
+            'break_end_time' => $this->break_end_time,
+            'late_tolerance_minutes' => $this->late_tolerance_minutes,
             'requires_office_location' => (bool) $this->requires_office_location,
 
             'creator' => $this->whenLoaded('creator', function () {

@@ -78,5 +78,28 @@ class UserSeeder extends Seeder
             'password' => Hash::make('password'),
         ]);
         $employee->assignRole(UserRole::EMPLOYEE->value);
+
+        // $rolesDistribution = [
+        //     UserRole::EMPLOYEE->value => 70,
+        //     UserRole::MANAGER->value => 15,
+        //     UserRole::HR->value => 5,
+        //     UserRole::FINANCE->value => 5,
+        //     UserRole::DIRECTOR->value => 4,
+        // ];
+
+        // foreach ($rolesDistribution as $role => $total) {
+
+        //     for ($i = 1; $i <= $total; $i++) {
+
+        //         $user = User::create([
+        //             'uuid' => (string) \Illuminate\Support\Str::uuid(),
+        //             'name' => fake()->name(),
+        //             'email' => strtolower($role).$i.'@app.com',
+        //             'password' => Hash::make('password'),
+        //         ]);
+
+        //         $user->assignRole($role);
+        //     }
+        // }
     }
 }

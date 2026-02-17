@@ -11,7 +11,7 @@ use App\Models\EmployeeLeave;
 use App\Models\EmployeeLeaveBalance;
 use App\Models\Leave;
 use App\Models\LeaveApproval;
-use App\Models\User;
+use App\Models\LeaveType;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Exception;
@@ -37,18 +37,19 @@ class LeaveService
     {
         $query = Leave::with(['employee.user', 'leaveType', 'approvals.approver.user']);
 
-        // 1️⃣ OWNER, DIRECTOR, HR, & FINANCE → Akses Full (Seluruh Perusahaan)
+        // 1️⃣ ROLE AUDITOR/ADMIN (OWNER, DIRECTOR, HR, FINANCE)
+        // Mereka bisa lihat SEMUA data untuk monitoring & laporan
         if ($user->hasAnyRole([
             UserRole::ADMIN->value,
             UserRole::OWNER->value,
             UserRole::DIRECTOR->value,
-            UserRole::HR->value,
             UserRole::FINANCE->value,
+            UserRole::HR->value,
         ])) {
-            // Tanpa filter tambahan agar bisa monitor seluruh cuti karyawan
+            // Tanpa filter query tambahan
         }
 
-        // 2️⃣ MANAGER → Milik sendiri + Seluruh bawahan langsung
+        // 2️⃣ MANAGER
         elseif ($user->hasRole(UserRole::MANAGER->value)) {
             $query->where(function ($q) use ($user) {
                 $q->where('employee_id', $user->employee->id)
@@ -58,12 +59,38 @@ class LeaveService
             });
         }
 
-        // 3️⃣ EMPLOYEE (Default) → Hanya milik sendiri
+        // 3️⃣ EMPLOYEE
         else {
             $query->where('employee_id', $user->employee->id);
         }
 
         return LeaveResource::collection($query->latest()->get());
+    }
+
+    public function indexApprovals($user)
+    {
+        if (! $user->employee) {
+            throw new \Exception('Employee profile not found.');
+        }
+
+        $employeeId = $user->employee->id;
+
+        $leaves = Leave::with([
+            'employee.user',
+            'leaveType',
+            'approvals.approver.user',
+        ])
+            ->pending()
+            ->get()
+            ->filter(function ($leave) use ($employeeId) {
+                return $leave->approvals->contains(function ($approval) use ($employeeId) {
+                    return $approval->approver_id === $employeeId
+                        && $approval->status === ApprovalStatus::PENDING->value;
+                });
+            });
+
+        // Tambahkan return di sini
+        return LeaveResource::collection($leaves->values());
     }
 
     public function show(Leave $leave)
@@ -78,13 +105,18 @@ class LeaveService
      */
     public function store(array $data, $user)
     {
-        return DB::transaction(function () use ($data) {
+        return DB::transaction(function () use ($data, $user) {
             $employeeId = $data['employee_id'];
             $leaveTypeId = $data['leave_type_id'];
             $isHalfDay = $data['is_half_day'] ?? false;
 
             $start = Carbon::parse($data['date_start']);
             $end = Carbon::parse($data['date_end']);
+
+            $employee = $user->employee;
+            if (! $employee) {
+                throw new \Exception('Employee profile not found.');
+            }
 
             // 1. Hitung Hari Kerja (Skip Libur/Weekend)
             $daysRequested = $this->calculateWorkDays(
@@ -99,16 +131,26 @@ class LeaveService
             }
 
             // 🔒 Lock & Check Saldo
-            $balance = EmployeeLeaveBalance::where('employee_id', $employeeId)
-                ->where('leave_type_id', $leaveTypeId)
-                ->lockForUpdate()
-                ->first();
+            // 1. Ambil data tipe cuti untuk cek apakah ini 'Infinite' atau tidak
+            $leaveType = LeaveType::findOrFail($leaveTypeId);
 
-            if (! $balance) {
-                throw new \Exception('Leave balance not found.');
-            }
-            if ($balance->remaining_days < $daysRequested) {
-                throw new \Exception('Insufficient leave balance.');
+            // 2. Logika pengecekan saldo
+            if ($leaveType->is_unlimited) { // Pastikan Anda punya kolom boolean 'is_unlimited' di tabel leave_types
+                $balance = null; // Tidak perlu cek saldo jika unlimited
+            } else {
+                // Hanya cari dan kunci saldo jika cuti ini BERKUOTA
+                $balance = EmployeeLeaveBalance::where('employee_id', $employeeId)
+                    ->where('leave_type_id', $leaveTypeId)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (! $balance) {
+                    throw new \Exception('Leave balance record not found for this leave type.');
+                }
+
+                if ($balance->remaining_days < $daysRequested) {
+                    throw new \Exception('Insufficient leave balance. Remaining: '.$balance->remaining_days.' days.');
+                }
             }
 
             // Attachment Logic
@@ -140,47 +182,66 @@ class LeaveService
             // --- SKENARIO A: DIRECTOR mengajukan cuti ---
             // --- DI DALAM FUNGSI STORE ---
 
+            // --- SKENARIO A: DIRECTOR mengajukan cuti ---
             if ($requestorUser->hasRole(UserRole::DIRECTOR->value)) {
-                $owner = User::role(UserRole::OWNER->value)->first();
 
-                // 1. Update status Leave utama jadi APPROVED
+                // ambil employee owner
+                $ownerEmployee = Employee::whereHas('user', function ($q) {
+                    $q->role(UserRole::OWNER->value);
+                })->first();
+
+                // update status leave jadi APPROVED
                 $leave->update(['approval_status' => ApprovalStatus::APPROVED->value]);
 
-                // 2. Buat record approval (Kirim parameter ke-4: ApprovalStatus::APPROVED)
-                if ($owner) {
+                // buat record approval
+                if ($ownerEmployee) {
                     $this->createApproval(
                         $leave->id,
-                        $owner->id,
+                        $ownerEmployee->id,   // ✅ pakai employee_id
                         0,
-                        ApprovalStatus::APPROVED->value // <-- WAJIB TAMBAH INI
+                        ApprovalStatus::APPROVED->value
                     );
                 }
 
-                // 3. Eksekusi potong saldo & realisasi
                 $this->finalizeLeave($leave, $daysRequested);
             }
 
             // --- SKENARIO B: MANAGER, HR, atau FINANCE mengajukan cuti ---
-            elseif ($requestorUser->hasAnyRole([UserRole::MANAGER->value, UserRole::HR->value, UserRole::FINANCE->value])) {
-                $director = User::role(UserRole::DIRECTOR->value)->first();
-                if ($director) {
-                    $this->createApproval($leave->id, $director->id, 0);
+            elseif ($requestorUser->hasAnyRole([
+                UserRole::MANAGER->value,
+                UserRole::HR->value,
+                UserRole::FINANCE->value,
+            ])) {
+
+                $directorEmployee = Employee::whereHas('user', function ($q) {
+                    $q->role(UserRole::DIRECTOR->value);
+                })->first();
+
+                if ($directorEmployee) {
+                    $this->createApproval(
+                        $leave->id,
+                        $directorEmployee->id, // ✅ pakai employee_id
+                        0
+                    );
                 }
             }
 
             // --- SKENARIO C: STAFF (EMPLOYEE) mengajukan cuti ---
             else {
-                // Level 0: Manager Langsung (jika ada)
-                if (! empty($employee->manager_id)) {
-                    $managerUser = Employee::find($employee->manager_id)->user_id;
-                    $this->createApproval($leave->id, $managerUser, 0);
+
+                if (! $employee->manager_id) {
+                    throw new \Exception('Manager not assigned.');
                 }
 
-                // Level 1: HR (Sebagai verifikator akhir)
-                $hrUser = User::role(UserRole::HR->value)->first();
-                if ($hrUser) {
-                    $this->createApproval($leave->id, $hrUser->id, 1);
-                }
+                // Level 0 → Manager
+                $this->createApproval(
+                    $leave->id,
+                    $employee->manager_id, // ✅ pakai employee_id
+                    0
+                );
+
+                // Level 1 → HR (tetap jangan dibuat sekarang kalau mau flow bersih)
+                // bisa dibuat nanti saat manager approve
             }
 
             return $leave;
@@ -259,6 +320,7 @@ class LeaveService
     public function approve(LeaveApproval $approval, $user, bool $approve, ?string $note = null)
     {
         return DB::transaction(function () use ($approval, $approve, $note) {
+
             if ($approval->status !== ApprovalStatus::PENDING->value) {
                 throw new \Exception('Approval sudah diproses');
             }
@@ -271,28 +333,45 @@ class LeaveService
 
             $leave = $approval->leave;
 
+            // Jika ditolak, langsung update leave
             if (! $approve) {
                 $leave->update(['approval_status' => ApprovalStatus::REJECTED->value]);
 
                 return $approval;
             }
 
-            $hasPending = $leave->approvals()->where('status', ApprovalStatus::PENDING->value)->exists();
+            // ✅ Logic: buat HR approval jika yang approve manager (level 0)
+            if ($approval->level === 0 && $leave->employee->manager_id === $approval->approver_id) {
+                $hrEmployee = Employee::whereHas('user', function ($q) {
+                    $q->role(UserRole::HR->value);
+                })->first();
 
+                if ($hrEmployee) {
+                    $this->createApproval(
+                        $leave->id,
+                        $hrEmployee->id, // pakai employee_id
+                        1 // level HR
+                    );
+                }
+            }
+
+            // Cek apakah masih ada pending approval
+            $hasPending = $leave->approvals()
+                ->where('status', ApprovalStatus::PENDING->value)
+                ->exists();
+
+            // Jika semua sudah approve → final approval
             if (! $hasPending) {
                 $leave->update(['approval_status' => ApprovalStatus::APPROVED->value]);
 
-                $days = $leave->duration;
+                $days = $leave->duration ?? $this->calculateWorkDays(
+                    $leave->date_start->toDateString(),
+                    $leave->date_end->toDateString(),
+                    $leave->is_half_day,
+                    $this->workdayService
+                );
 
-                if (is_null($days)) {
-                    $days = $this->calculateWorkDays(
-                        $leave->date_start->toDateString(),
-                        $leave->date_end->toDateString(),
-                        $leave->is_half_day,
-                        $this->workdayService
-                    );
-                }
-
+                // Buat data realisasi untuk Payroll
                 EmployeeLeave::create([
                     'employee_id' => $leave->employee_id,
                     'leave_type_id' => $leave->leave_type_id,
@@ -302,28 +381,28 @@ class LeaveService
                     'status' => ApprovalStatus::APPROVED->value,
                 ]);
 
-                $leaveYear = Carbon::parse($leave->date_start)->year;
+                // Potong saldo jika cuti berkuota
+                if (! $leave->leaveType->is_unlimited) {
+                    $leaveYear = Carbon::parse($leave->date_start)->year;
 
-                $balance = EmployeeLeaveBalance::where([
-                    'employee_id' => $leave->employee_id,
-                    'leave_type_id' => $leave->leave_type_id,
-                    'year' => $leaveYear,
-                ])
-                    ->lockForUpdate()
-                    ->first();
-
-                if (! $balance) {
-                    $balance = EmployeeLeaveBalance::create([
+                    $balance = EmployeeLeaveBalance::where([
                         'employee_id' => $leave->employee_id,
                         'leave_type_id' => $leave->leave_type_id,
                         'year' => $leaveYear,
-                        'total_days' => $leave->leaveType->default_days ?? 0,
-                        'used_days' => 0,
-                    ]);
-                }
+                    ])->lockForUpdate()->first();
 
-                // Eksekusi potong saldo
-                $balance->useDays($days);
+                    if (! $balance) {
+                        $balance = EmployeeLeaveBalance::create([
+                            'employee_id' => $leave->employee_id,
+                            'leave_type_id' => $leave->leave_type_id,
+                            'year' => $leaveYear,
+                            'total_days' => $leave->leaveType->default_days ?? 0,
+                            'used_days' => 0,
+                        ]);
+                    }
+
+                    $balance->useDays($days);
+                }
             }
 
             return $approval;
@@ -393,7 +472,6 @@ class LeaveService
     {
         // Simpan ke data realisasi untuk kebutuhan Payroll
         EmployeeLeave::create([
-            'uuid' => (string) \Illuminate\Support\Str::uuid(),
             'employee_id' => $leave->employee_id,
             'leave_type_id' => $leave->leave_type_id,
             'start_date' => $leave->date_start,
@@ -420,7 +498,6 @@ class LeaveService
     private function createApproval($leaveId, $approverId, $level, $status = null)
     {
         return LeaveApproval::create([
-            'uuid' => (string) \Illuminate\Support\Str::uuid(),
             'leave_id' => $leaveId,
             'approver_id' => $approverId,
             'level' => $level,

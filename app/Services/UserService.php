@@ -30,11 +30,11 @@ class UserService
             ->latest();
 
         if ($user->hasAnyRole([UserRole::ADMIN->value, UserRole::DIRECTOR->value, UserRole::OWNER->value, UserRole::HR->value, UserRole::FINANCE->value])) {
-        } elseif ($user->hasRole('MANAGER')) {
+        } elseif ($user->hasRole(UserRole::MANAGER->value)) {
             $query->whereHas('employee', function ($q) use ($user) {
                 $q->where('manager_id', $user->id);
             });
-        } elseif ($user->hasRole('EMPLOYEE')) {
+        } elseif ($user->hasRole(UserRole::EMPLOYEE->value)) {
             $query->where('id', $user->id);
         } else {
             return response()->json([], 200);

@@ -35,6 +35,16 @@ class EarlyLeaveController extends Controller
         );
     }
 
+    public function indexApproval(): JsonResponse
+    {
+        $approvals = $this->earlyLeaveService->indexApproval(Auth::user());
+
+        return $this->successResponse(
+            EarlyLeaveResource::collection($approvals),
+            'Leave approvals fetched successfully'
+        );
+    }
+
     /**
      * Show detail leave
      */

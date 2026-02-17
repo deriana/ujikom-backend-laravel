@@ -16,6 +16,8 @@ return new class extends Migration
             $table->uuid('uuid')->unique();
             $table->string('name')->unique();
             $table->integer('default_days')->nullable();
+            $table->string('description')->nullable();
+            $table->boolean('is_unlimited')->default(false);
             $table->boolean('is_active')->default(true);
             $table->enum('gender', ['male', 'female', 'all'])->default('all');
             $table->boolean('requires_family_status')->default(false);

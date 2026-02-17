@@ -4,16 +4,19 @@ namespace App\Services\Attendance\Validators;
 
 use App\Exceptions\Attendance\FaceValidationException;
 use App\Models\BiometricUser;
-use App\Models\Employee;
 
 class FaceValidator
 {
-    protected float $threshold = 0.75;
+    protected float $threshold = 0.90;
+    protected float $minGap = 0.03;
 
     public function validate(?array $inputDescriptor): array
     {
         if (empty($inputDescriptor)) {
-            throw new FaceValidationException('Descriptor wajah tidak ditemukan.', ['reason' => 'descriptor_missing']);
+            throw new FaceValidationException(
+                'Descriptor wajah tidak ditemukan.',
+                ['reason' => 'descriptor_missing']
+            );
         }
 
         $match = $this->findBestMatch($inputDescriptor);
@@ -27,40 +30,54 @@ class FaceValidator
 
     protected function findBestMatch(array $inputDescriptor): array
     {
-        // Eager load employee to avoid N+1
-        $biometrics = BiometricUser::with('employee')->get();
+        $descriptors = BiometricUser::with('employee')->get();
 
-        $bestScore = -1;
-        $matchedEmployee = null;
+        $scores = [];
 
-        foreach ($biometrics as $bio) {
-            $storedDescriptor = $bio->descriptor;
+        foreach ($descriptors as $desc) {
+            $stored = $desc->descriptor;
 
-            // Ensure format is compatible
-            if (! is_array($storedDescriptor) || count($storedDescriptor) !== count($inputDescriptor)) {
+            if (!is_array($stored) || count($stored) !== count($inputDescriptor)) {
                 continue;
             }
 
-            $score = $this->cosineSimilarity($inputDescriptor, $storedDescriptor);
+            $score = $this->cosineSimilarity($inputDescriptor, $stored);
+            $employeeId = $desc->employee_id;
 
-            if ($score > $bestScore) {
-                $bestScore = $score;
-                $matchedEmployee = $bio->employee;
+            // Simpan skor tertinggi per employee
+            if (!isset($scores[$employeeId]) || $score > $scores[$employeeId]['score']) {
+                $scores[$employeeId] = [
+                    'employee' => $desc->employee,
+                    'score' => $score,
+                ];
             }
         }
 
+        if (empty($scores)) {
+            return ['employee' => null, 'score' => 0];
+        }
+
+        // Urutkan skor tertinggi
+        usort($scores, fn($a, $b) => $b['score'] <=> $a['score']);
+
+        $top1 = $scores[0];
+        $top2 = $scores[1] ?? null;
+
+        if (
+            $top1['score'] >= $this->threshold &&
+            (!$top2 || ($top1['score'] - $top2['score']) > $this->minGap)
+        ) {
+            return $top1;
+        }
+
         return [
-            'employee' => ($bestScore > $this->threshold) ? $matchedEmployee : null,
-            'score' => $bestScore,
+            'employee' => null,
+            'score' => $top1['score']
         ];
     }
 
     protected function cosineSimilarity(array $a, array $b): float
     {
-        if (count($a) !== count($b)) {
-            return 0;
-        }
-
         $dot = 0;
         $normA = 0;
         $normB = 0;

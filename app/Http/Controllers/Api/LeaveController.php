@@ -101,6 +101,16 @@ class LeaveController extends Controller
         );
     }
 
+    public function indexApproval(): JsonResponse
+    {
+        $approvals = $this->leaveService->indexApprovals(Auth::user());
+
+        return $this->successResponse(
+            $approvals,
+            'Leave approvals fetched successfully'
+        );
+    }
+
     /**
      * Approval
      */

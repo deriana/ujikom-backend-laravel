@@ -22,10 +22,10 @@ class EarlyLeaveService
         $query = EarlyLeave::with([
             'employee.user',
             'attendance',
-            'approver', // Sesuaikan dengan nama relasi di model kamu
+            'employee.manager', // Tambahkan ini untuk mempermudah pengecekan di Resource
         ]);
 
-        // 1️⃣ OWNER, DIRECTOR, HR, & FINANCE → Bisa lihat semua data
+        // 1️⃣ OWNER, DIRECTOR, HR, & FINANCE → Melihat SEUA data perusahaan
         if ($user->hasAnyRole([
             UserRole::ADMIN->value,
             UserRole::OWNER->value,
@@ -33,10 +33,10 @@ class EarlyLeaveService
             UserRole::HR->value,
             UserRole::FINANCE->value,
         ])) {
-            // Tanpa filter, biarkan query mengambil semua
+            // Biarkan tanpa filter agar mereka bisa monitor seluruh karyawan
         }
 
-        // 2️⃣ MANAGER → Milik sendiri + bawahan langsung (Staff/HR/Finance yang di bawahnya)
+        // 2️⃣ MANAGER → Melihat miliknya sendiri + milik bawahan yang dia manageri
         elseif ($user->hasRole(UserRole::MANAGER->value)) {
             $query->where(function ($q) use ($user) {
                 $q->where('employee_id', $user->employee->id)
@@ -46,9 +46,53 @@ class EarlyLeaveService
             });
         }
 
-        // 3️⃣ EMPLOYEE → Hanya milik sendiri
+        // 3️⃣ EMPLOYEE → Hanya melihat miliknya sendiri
         else {
             $query->where('employee_id', $user->employee->id);
+        }
+
+        // Return menggunakan Resource agar format JSON konsisten
+        return $query->latest()->get();
+    }
+
+    public function indexApproval($user)
+    {
+        if (! $user->employee) {
+            return collect(); // kosong jika tidak punya employee
+        }
+
+        $employeeId = $user->employee->id;
+
+        $query = EarlyLeave::with([
+            'employee.user',
+            'attendance',
+            'approver.user',
+        ])
+            ->pending() // hanya status pending
+            ->whereNull('approved_by_id'); // belum diapprove
+
+        // Manager → hanya bisa approve bawahan, bukan manager/HR
+        if ($user->hasRole(UserRole::MANAGER->value)) {
+            $query->whereHas('employee.user', function ($q) {
+                $q->whereDoesntHave('roles', function ($q2) {
+                    $q2->whereIn('name', ['manager', 'hr']); // pakai Spatie roles
+                });
+            })->whereHas('employee', function ($q) use ($employeeId) {
+                $q->where('manager_id', $employeeId);
+            });
+        }
+        // Director / HR / Finance / Owner → bisa approve semua
+        elseif ($user->hasAnyRole([
+            UserRole::DIRECTOR->value,
+            UserRole::HR->value,
+            UserRole::FINANCE->value,
+            UserRole::OWNER->value,
+        ])) {
+            // tidak ada filter tambahan
+        }
+        // Employee biasa → tidak bisa approve
+        else {
+            return collect();
         }
 
         return $query->latest()->get();

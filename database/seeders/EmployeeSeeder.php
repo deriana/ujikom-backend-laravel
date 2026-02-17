@@ -3,10 +3,11 @@
 namespace Database\Seeders;
 
 use App\Enums\EmployeeStatus;
+use App\Enums\UserRole;
 use App\Models\Employee;
-use App\Models\User;
+use App\Models\Position;
 use App\Models\Team;
-use App\Models\Position; // Tambahkan ini
+use App\Models\User; // Tambahkan ini
 use Illuminate\Database\Seeder;
 
 class EmployeeSeeder extends Seeder
@@ -163,5 +164,37 @@ class EmployeeSeeder extends Seeder
             'join_date' => now()->subMonths(6),
             'created_by_id' => $admin->id,
         ]);
+
+        // $admin = User::where('email', 'admin@app.com')->first();
+
+        // $teams = Team::pluck('id')->toArray();
+
+        // $managers = Employee::whereHas('user.roles', function ($q) {
+        //     $q->where('name', 'manager');
+        // })->pluck('id')->toArray();
+
+        // $users = User::role(UserRole::EMPLOYEE->value)->get();
+
+        // foreach ($users as $index => $user) {
+
+        //     Employee::create([
+        //         'nik' => 'EMP'.str_pad($index + 1, 4, '0', STR_PAD_LEFT),
+        //         'user_id' => $user->id,
+        //         'team_id' => fake()->randomElement($teams),
+        //         'position_id' => $posStaff,
+        //         'manager_id' => fake()->randomElement($managers),
+        //         'employee_status' => fake()->randomElement([
+        //             EmployeeStatus::PERMANENT,
+        //             EmployeeStatus::CONTRACT,
+        //         ]),
+        //         'base_salary' => fake()->numberBetween(6000000, 9000000),
+        //         'phone' => fake()->phoneNumber(),
+        //         'gender' => fake()->randomElement(['male', 'female']),
+        //         'date_of_birth' => fake()->date('Y-m-d', '2000-01-01'),
+        //         'address' => fake()->address(),
+        //         'join_date' => now()->subMonths(rand(1, 60)),
+        //         'created_by_id' => $admin->id,
+        //     ]);
+        // }
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Enums\ApprovalStatus;
+use App\Enums\UserRole;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Auth;
 
@@ -17,6 +18,10 @@ class EarlyLeaveResource extends JsonResource
         $requesterManagerId = $this->employee?->manager_id;
 
         $isApprover = ($requesterManagerId == $myEmployeeId) && ($this->status === ApprovalStatus::PENDING->value);
+        $isManager = ($this->employee?->manager_id == $myEmployeeId);
+        $isDirector = $user->hasRole(UserRole::DIRECTOR->value);
+
+        $canApprove = ($this->status === ApprovalStatus::PENDING->value) && ($isManager || $isDirector);
 
         return [
             'uuid' => $this->uuid,
@@ -29,7 +34,8 @@ class EarlyLeaveResource extends JsonResource
             'can' => [
                 'update' => $user->can('update', $this->resource),
                 'delete' => $user->can('delete', $this->resource),
-                'approve' => $user->can('approve', $this->resource) && $isApprover,
+                // 'approve' => $user->can('approve', $this->resource) && $isApprover,
+                'approve' => $canApprove
             ],
             'approved_at' => $this->approved_at?->format('Y-m-d H:i'),
             'created_at' => $this->created_at?->format('Y-m-d'),

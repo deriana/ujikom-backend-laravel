@@ -20,6 +20,7 @@ class WorkSchedule extends Model
         'work_end_time',
         'break_start_time',
         'break_end_time',
+        'late_tolerance_minutes',
         'requires_office_location',
         'created_by_id',
         'updated_by_id',

@@ -30,17 +30,9 @@ class CreateEarlyLeaveRequest extends FormRequest
 
         $user = $this->user();
 
-        // ADMIN / HR → boleh isi employee_nik
         if ($user->hasAnyRole([UserRole::ADMIN, UserRole::HR])) {
-            $rules['employee_nik'] = ['required', 'exists:employees,nik'];
+            $rules['employee_nik'] = ['nullable', 'exists:employees,nik'];
         }
-
-        // MANAGER → wajib isi, tapi akan divalidasi sebagai bawahan
-        elseif ($user->hasRole(UserRole::MANAGER)) {
-            $rules['employee_nik'] = ['required', 'exists:employees,nik'];
-        }
-
-        // EMPLOYEE → dilarang kirim employee_nik
         else {
             $rules['employee_nik'] = ['prohibited'];
         }
@@ -51,45 +43,28 @@ class CreateEarlyLeaveRequest extends FormRequest
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
-
             if ($validator->errors()->any()) {
                 return;
             }
 
             $user = $this->user();
 
-            // EMPLOYEE → otomatis dirinya sendiri
-            if ($user->hasRole(UserRole::EMPLOYEE)) {
-                $this->merge([
-                    'employee_id' => $user->employee?->id,
-                ]);
-
-                return;
+            if ($user->hasAnyRole([UserRole::ADMIN, UserRole::HR])) {
+                $employee = \App\Models\Employee::where('nik', $this->employee_nik)->first();
+            } else {
+                $employee = $user->employee;
             }
-
-            $employee = Employee::where('nik', $this->employee_nik)->first();
 
             if (! $employee) {
-                $validator->errors()->add('employee_nik', 'Employee tidak ditemukan.');
+                $validator->errors()->add('employee_nik', 'Data karyawan tidak ditemukan atau akun Anda tidak terhubung dengan data karyawan.');
 
                 return;
-            }
-
-            // MANAGER → hanya boleh bawahan langsung
-            if ($user->hasRole(UserRole::MANAGER)) {
-                if ($employee->manager_id !== $user->employee?->id) {
-                    $validator->errors()->add(
-                        'employee_nik',
-                        'Manager hanya dapat mengajukan early leave untuk bawahan langsung.'
-                    );
-
-                    return;
-                }
             }
 
             $this->merge([
                 'employee_id' => $employee->id,
             ]);
         });
+
     }
 }

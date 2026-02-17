@@ -301,7 +301,7 @@ class PermissionSeeder extends Seeder
                 ],
                 'roles' => [
                     UserRole::ADMIN->value => ['index', 'show', 'create', 'edit', 'destroy', 'approve', 'export'],
-                    UserRole::HR->value => ['index', 'show', 'create', 'edit', 'destroy', 'approve', 'export'],
+                    UserRole::HR->value => ['index', 'show', 'create', 'edit', 'destroy', 'export'],
                     UserRole::MANAGER->value => ['index', 'show', 'create', 'edit', 'destroy', 'approve'],
                     UserRole::EMPLOYEE->value => ['index', 'show', 'create', 'edit', 'destroy'],
                     UserRole::DIRECTOR->value => ['index', 'show', 'approve', 'export'],
@@ -309,6 +309,28 @@ class PermissionSeeder extends Seeder
                     UserRole::FINANCE->value => ['index', 'show', 'export'],
                 ],
             ],
+
+            'attendance_requests' => [
+                'actions' => [
+                    'index' => 'attendance-request.index',
+                    'show' => 'attendance-request.show',
+                    'create' => 'attendance-request.create',
+                    'edit' => 'attendance-request.edit',
+                    'destroy' => 'attendance-request.destroy',
+                    'approve' => 'attendance-request.approve',
+                    'export' => 'attendance-request.export',
+                ],
+                'roles' => [
+                    UserRole::ADMIN->value => ['index', 'show', 'edit', 'destroy', 'approve', 'export'],
+                    UserRole::HR->value => ['index', 'show', 'create', 'edit', 'destroy', 'approve', 'export'],
+                    UserRole::MANAGER->value => ['index', 'show', 'create', 'edit', 'destroy', 'approve'],
+                    UserRole::EMPLOYEE->value => ['index', 'show', 'create', 'edit', 'destroy'],
+                    UserRole::DIRECTOR->value => ['index', 'show', 'approve', 'export'],
+                    UserRole::OWNER->value => ['index', 'show', 'export'],
+                    UserRole::FINANCE->value => ['index', 'show', 'create', 'edit', 'destroy', 'export'],
+                ],
+            ],
+
             'overtimes' => [
                 'actions' => [
                     'index' => 'overtime.index',

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AllowanceController;
 use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\AttendanceDetailController;
+use App\Http\Controllers\Api\AttendanceRequestController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DivisionController;
 use App\Http\Controllers\Api\EarlyLeaveController;
@@ -108,6 +109,12 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::apiResource('employee_shift', EmployeeShiftController::class);
     Route::apiResource('leave_types', LeaveTypeController::class);
 
+    Route::prefix('approvals')->group(function () {
+        Route::get('/leaves', [LeaveController::class, 'indexApproval']);
+        Route::get('/early_leaves', [EarlyLeaveController::class, 'indexApproval']);
+        Route::get('/attendance_request', [AttendanceRequestController::class, 'indexApproval']);
+    });
+
     Route::prefix('leaves')->group(function () {
         Route::get('/', [LeaveController::class, 'index']);
         Route::post('/', [LeaveController::class, 'store']);
@@ -127,4 +134,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::put('/approvals/{early_leave:uuid}/approve', [EarlyLeaveController::class, 'approve']);
         Route::get('/download-attachment/{filename}', [EarlyLeaveController::class, 'downloadAttachment']);
     });
+
+    Route::apiResource('attendance_request', AttendanceRequestController::class);
+    Route::put('/attendance_request/{attendance_request:uuid}/approve', [AttendanceRequestController::class, 'approve']);
 });

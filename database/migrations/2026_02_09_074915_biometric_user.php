@@ -10,12 +10,14 @@ return new class extends Migration
     {
         Schema::create('biometric_users', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('employee_id')->constrained()->onDelete('cascade');
-            $table->enum('view', ['front', 'side', 'back']);
+            $table->foreignId('employee_id')
+                ->constrained()
+                ->cascadeOnDelete();
+
             $table->json('descriptor');
             $table->timestamps();
 
-            $table->unique(['employee_id', 'view']);
+            $table->index('employee_id');
         });
 
     }
