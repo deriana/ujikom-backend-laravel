@@ -13,16 +13,29 @@ class EmployeeLeaveBalanceSeeder extends Seeder
     {
         $employees = Employee::all();
         $leaveTypes = LeaveType::all();
+        $currentYear = now()->year;
 
         foreach ($employees as $employee) {
+            // --- PROTEKSI UNTUK OWNER ---
+            // Pastikan user terkait tidak punya role 'owner'
+            if ($employee->user->hasRole(\App\Enums\UserRole::OWNER->value)) {
+                continue;
+            }
+            // ----------------------------
+
             foreach ($leaveTypes as $type) {
-                // hanya buat balance jika default_days ada
-                if ($type->default_days !== null) {
-                    EmployeeLeaveBalance::updateOrCreate(
-                        ['employee_id' => $employee->id, 'leave_type_id' => $type->id, 'year' => now()->year],
-                        ['total_days' => $type->default_days, 'used_days' => 0]
-                    );
+                if ($type->default_days === null) {
+                    continue;
                 }
+
+                if ($type->gender !== 'all' && $type->gender !== $employee->gender) {
+                    continue;
+                }
+
+                EmployeeLeaveBalance::updateOrCreate(
+                    ['employee_id' => $employee->id, 'leave_type_id' => $type->id, 'year' => $currentYear],
+                    ['total_days' => $type->default_days, 'used_days' => 0]
+                );
             }
         }
     }

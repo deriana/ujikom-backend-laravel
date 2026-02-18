@@ -6,7 +6,7 @@ class GeoLocationException extends AttendanceException
 {
     public static function outsideRadius(float $distance, float $radius, float $lat, float $lon): self
     {
-        return new self('Anda berada di luar area absensi.', [
+        return new self('You are outside the attendance area.', [
             'reason' => 'outside_geofence',
             'distance_meters' => $distance,
             'allowed_radius' => $radius,
@@ -17,11 +17,11 @@ class GeoLocationException extends AttendanceException
 
     public static function missingCoordinates(): self
     {
-        return new self('Lokasi GPS wajib diaktifkan.', ['reason' => 'gps_missing']);
+        return new self('GPS location must be enabled.', ['reason' => 'gps_missing']);
     }
 
     public static function invalidCoordinates(): self
     {
-        return new self('Format koordinat tidak valid.', ['reason' => 'gps_invalid_format']);
+        return new self('Invalid coordinate format.', ['reason' => 'gps_invalid_format']);
     }
 }

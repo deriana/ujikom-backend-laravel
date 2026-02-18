@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\ApprovalStatus;
 use App\Models\Attendance;
 use App\Models\Employee;
 use App\Models\Setting;
@@ -21,7 +22,6 @@ class MarkAbsentEmployees extends Command
 
         if (! $setting) {
             $this->error('Attendance setting not found.');
-
             return self::FAILURE;
         }
 
@@ -29,34 +29,48 @@ class MarkAbsentEmployees extends Command
 
         if (! $workdayService->isWorkday($today)) {
             $this->info('Today is not a workday. No absent generated.');
-
             return self::SUCCESS;
         }
 
         $now = Carbon::now();
-
         $workEnd = Carbon::createFromFormat('H:i', $setting['work_end_time'])
             ->setDateFrom($today);
 
         if ($now->lt($workEnd)) {
             $this->info('Work end time has not passed yet.');
-
             return self::SUCCESS;
         }
 
-        $employees = Employee::whereDoesntHave('attendances', function ($q) use ($today) {
-            $q->whereDate('date', $today);
-        })->get();
+        $employees = Employee::query()
+            // --- FILTER TAMBAHAN: KECUALI OWNER DAN DIRECTOR ---
+            ->whereHas('user', function ($q) {
+                $q->withoutRole([
+                    \App\Enums\UserRole::OWNER->value,
+                    \App\Enums\UserRole::DIRECTOR->value
+                ]);
+            })
+            // --------------------------------------------------
+            ->whereDoesntHave('attendances', function ($q) use ($today) {
+                $q->whereDate('date', $today);
+            })
+            ->whereDoesntHave('leaves', function ($q) use ($today) {
+                $q->where('approval_status', ApprovalStatus::APPROVED->value)
+                    ->whereDate('date_start', '<=', $today)
+                    ->whereDate('date_end', '>=', $today);
+            })
+            ->get();
 
         foreach ($employees as $employee) {
             Attendance::create([
                 'employee_id' => $employee->id,
                 'date' => $today,
                 'status' => 'absent',
+                // Tambahkan UUID jika model kamu mewajibkannya
+                'uuid' => (string) \Illuminate\Support\Str::uuid(),
             ]);
         }
 
-        $this->info("Inserted {$employees->count()} absent records.");
+        $this->info("Inserted {$employees->count()} absent records (Skipped Owner & Director).");
 
         return self::SUCCESS;
     }

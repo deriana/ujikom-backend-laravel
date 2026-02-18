@@ -18,15 +18,29 @@ class UserService
 {
     public function index()
     {
-        return User::with([
+        $user = Auth::user();
+
+        $query = User::with([
             'employee.position',
             'employee.team.division',
             'employee.manager.user',
             'roles',
         ])
-            ->where('id', '!=', Auth::id())
-            ->latest()
-            ->get();
+            ->where('id', '!=', $user->id)
+            ->latest();
+
+        if ($user->hasAnyRole([UserRole::ADMIN->value, UserRole::DIRECTOR->value, UserRole::OWNER->value, UserRole::HR->value, UserRole::FINANCE->value])) {
+        } elseif ($user->hasRole(UserRole::MANAGER->value)) {
+            $query->whereHas('employee', function ($q) use ($user) {
+                $q->where('manager_id', $user->id);
+            });
+        } elseif ($user->hasRole(UserRole::EMPLOYEE->value)) {
+            $query->where('id', $user->id);
+        } else {
+            return response()->json([], 200);
+        }
+
+        return $query->get();
     }
 
     public function store(array $data, int $creatorId): User
@@ -94,6 +108,10 @@ class UserService
     {
         return DB::transaction(function () use ($user, $data, $updaterId) {
 
+            if ($user->system_reserve) {
+                throw new Exception('Cannot update a system reserve user');
+            }
+
             $user->update([
                 'name' => $data['name'],
                 'email' => $data['email'],
@@ -160,6 +178,10 @@ class UserService
 
     public function delete(User $user): bool
     {
+        if ($user->system_reserve) {
+            throw new Exception('Cannot delete a system reserve user');
+        }
+
         if ($user->trashed()) {
             throw new Exception('Cannot delete a user');
         }
@@ -322,15 +344,20 @@ class UserService
 
     public function getManagers()
     {
-        return User::with('employee')
+        return User::with(['employee.position', 'roles'])
             ->whereHas('roles', function ($q) {
-                $q->where('name', 'manager');
+                $q->whereIn('name', [
+                    \App\Enums\UserRole::DIRECTOR->value,
+                    \App\Enums\UserRole::MANAGER->value,
+                ]);
             })
             ->get();
     }
 
     public function getEmployeesLite()
     {
-        return Employee::with('user')->get();
+        return Employee::whereHas('user', function ($query) {
+            $query->where('system_reserve', false);
+        })->with('user')->get();
     }
 }

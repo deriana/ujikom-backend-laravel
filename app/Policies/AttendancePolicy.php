@@ -17,6 +17,6 @@ class AttendancePolicy
 
     public function view(User $user, Attendance $attendance): bool
     {
-        return $user->can('attendance.index');
+        return $user->can('attendance.show');
     }
 }

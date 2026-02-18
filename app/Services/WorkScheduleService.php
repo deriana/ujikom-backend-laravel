@@ -22,6 +22,9 @@ class WorkScheduleService
                 'work_mode_id' => $data['work_mode_id'],
                 'work_start_time' => $data['work_start_time'],
                 'work_end_time' => $data['work_end_time'],
+                'break_start_time' => $data['break_start_time'],
+                'break_end_time' => $data['break_end_time'],
+                'late_tolerance_minutes' => $data['late_tolerance_minutes'],
                 'requires_office_location' => $data['requires_office_location'],
             ]);
         });
@@ -40,6 +43,9 @@ class WorkScheduleService
                 'work_mode_id' => $data['work_mode_id'] ?? $schedule->work_mode_id,
                 'work_start_time' => $data['work_start_time'] ?? $schedule->work_start_time,
                 'work_end_time' => $data['work_end_time'] ?? $schedule->work_end_time,
+                'break_start_time' => $data['break_start_time'] ?? $schedule->break_start_time,
+                'break_end_time' => $data['break_end_time'] ?? $schedule->break_end_time,
+                'late_tolerance_minutes' => $data['late_tolerance_minutes'] ?? $schedule->late_tolerance_minutes,
                 'requires_office_location' => $data['requires_office_location'] ?? $schedule->requires_office_location,
             ]);
 

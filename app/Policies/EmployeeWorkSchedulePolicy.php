@@ -3,33 +3,51 @@
 namespace App\Policies;
 
 use App\Models\EmployeeWorkSchedule;
+use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class EmployeeWorkSchedulePolicy
 {
+    use HandlesAuthorization;
 
-    public function viewAny(EmployeeWorkSchedule $employeeWorkSchedule): bool
+    /**
+     * Determine whether the user can view any employee work schedules.
+     */
+    public function viewAny(User $user): bool
     {
-        return $employeeWorkSchedule->can('employee-work-schedule.index');
+        return $user->can('employee-work-schedule.index');
     }
 
-    public function view(EmployeeWorkSchedule $employeeWorkSchedule, EmployeeWorkSchedule $model): bool
+    /**
+     * Determine whether the user can view a specific employee work schedule.
+     */
+    public function view(User $user, EmployeeWorkSchedule $schedule): bool
     {
-        return $employeeWorkSchedule->can('employee-work-schedule.show') || $employeeWorkSchedule->id === $model->id;
+        // Bisa diakses jika user punya permission atau dia pembuat jadwal
+        return $user->can('employee-work-schedule.show') || $user->id === $schedule->creator_id;
     }
 
-    public function create(EmployeeWorkSchedule $employeeWorkSchedule): bool
+    /**
+     * Determine whether the user can create employee work schedules.
+     */
+    public function create(User $user): bool
     {
-        return $employeeWorkSchedule->can('employee-work-schedule.create');
+        return $user->can('employee-work-schedule.create');
     }
 
-    public function update(EmployeeWorkSchedule $employeeWorkSchedule, EmployeeWorkSchedule $model): bool
+    /**
+     * Determine whether the user can update a specific employee work schedule.
+     */
+    public function update(User $user, EmployeeWorkSchedule $schedule): bool
     {
-        return $employeeWorkSchedule->can('employee-work-schedule.edit');
+        return $user->can('employee-work-schedule.edit') || $user->id === $schedule->creator_id;
     }
 
-    public function delete(EmployeeWorkSchedule $employeeWorkSchedule, EmployeeWorkSchedule $model): bool
+    /**
+     * Determine whether the user can delete a specific employee work schedule.
+     */
+    public function delete(User $user, EmployeeWorkSchedule $schedule): bool
     {
-        return $employeeWorkSchedule->can('employee-work-schedule.destroy');
+        return $user->can('employee-work-schedule.destroy') || $user->id === $schedule->creator_id;
     }
 }

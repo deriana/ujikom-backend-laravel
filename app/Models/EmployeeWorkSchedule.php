@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PriorityEnum;
 use App\Traits\Blameable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -17,11 +18,14 @@ class EmployeeWorkSchedule extends Model
         'work_schedule_id',
         'start_date',
         'end_date',
+        'priority',
     ];
 
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
+        'priority' => PriorityEnum::class,
+
     ];
 
     protected $hidden = [
@@ -66,5 +70,34 @@ class EmployeeWorkSchedule extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by_id');
+    }
+
+    public function scopeLevel1($query)
+    {
+        return $query->where('priority', PriorityEnum::LEVEL_1->value);
+    }
+
+    public function scopeLevel2($query)
+    {
+        return $query->where('priority', PriorityEnum::LEVEL_2->value);
+    }
+
+    public function scopePriority($query, int $level)
+    {
+        return $query->where('priority', $level);
+    }
+
+    public static function getActiveSchedule($employeeId, $date = null)
+    {
+        $date = $date ?? now()->toDateString();
+
+        return self::where('employee_id', $employeeId)
+            ->where('start_date', '<=', $date)
+            ->where(function ($q) use ($date) {
+                $q->whereNull('end_date')->orWhere('end_date', '>=', $date);
+            })
+            ->orderBy('priority', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->first();
     }
 }

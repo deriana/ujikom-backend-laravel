@@ -17,6 +17,14 @@ class EmployeeWorkScheduleResource extends JsonResource
                 'name' => $this->employee?->user?->name,
                 'nik' => $this->employee?->nik,
                 'profile_photo' => $this->employee?->getFirstMediaUrl('profile_photo') ?? null,
+                'position' => [
+                    'name' => $this->employee?->position?->name,
+                ],
+                'team' => [
+                    'name' => $this->employee?->team?->name,
+                    'division' => $this->employee?->team?->division?->name,
+                ],
+                'system_reserve' => $this->employee?->user?->system_reserve,
             ],
 
             'work_schedule' => [
@@ -27,6 +35,7 @@ class EmployeeWorkScheduleResource extends JsonResource
 
             'start_date' => $this->start_date?->toDateString(),
             'end_date' => $this->end_date?->toDateString(),
+            'priority' => $this->priority,
 
             'is_active_today' => $this->start_date <= now() &&
                 (is_null($this->end_date) || $this->end_date >= now()),

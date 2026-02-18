@@ -8,7 +8,7 @@ class TimeValidationException extends AttendanceException
 {
     public static function notWorkday(Carbon $date): self
     {
-        return new self('Hari ini bukan hari kerja.', [
+        return new self('Today is not a working day.', [
             'reason' => 'non_working_day',
             'date' => $date->toDateString()
         ]);
@@ -16,7 +16,7 @@ class TimeValidationException extends AttendanceException
 
     public static function clockInLate(Carbon $now, Carbon $maxTime): self
     {
-        return new self('Melewati batas waktu absen masuk.', [
+        return new self('Clock-in time limit exceeded.', [
             'reason' => 'clock_in_over_limit',
             'time' => $now->toTimeString(),
             'limit' => $maxTime->toTimeString()
@@ -25,7 +25,7 @@ class TimeValidationException extends AttendanceException
 
     public static function clockOutTooEarly(Carbon $now, Carbon $minTime): self
     {
-        return new self('Belum boleh absen pulang.', [
+        return new self('Not allowed to clock out yet.', [
             'reason' => 'clock_out_too_early',
             'time' => $now->toTimeString(),
             'limit' => $minTime->toTimeString()

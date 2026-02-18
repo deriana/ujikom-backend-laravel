@@ -3,13 +3,16 @@
 use App\Http\Controllers\Api\AllowanceController;
 use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\AttendanceDetailController;
+use App\Http\Controllers\Api\AttendanceRequestController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DivisionController;
+use App\Http\Controllers\Api\EarlyLeaveController;
 use App\Http\Controllers\Api\EmployeeShiftController;
 use App\Http\Controllers\Api\EmployeeWorkScheduleController;
 use App\Http\Controllers\Api\HolidayController;
 use App\Http\Controllers\Api\LeaveController;
 use App\Http\Controllers\Api\LeaveTypeController;
+use App\Http\Controllers\Api\OvertimeController;
 use App\Http\Controllers\Api\PositionController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\SettingController;
@@ -107,6 +110,13 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::apiResource('employee_shift', EmployeeShiftController::class);
     Route::apiResource('leave_types', LeaveTypeController::class);
 
+    Route::prefix('approvals')->group(function () {
+        Route::get('/leaves', [LeaveController::class, 'indexApproval']);
+        Route::get('/early_leaves', [EarlyLeaveController::class, 'indexApproval']);
+        Route::get('/attendance_request', [AttendanceRequestController::class, 'indexApproval']);
+        Route::get('/overtime', [OvertimeController::class, 'indexApproval']);
+    });
+
     Route::prefix('leaves')->group(function () {
         Route::get('/', [LeaveController::class, 'index']);
         Route::post('/', [LeaveController::class, 'store']);
@@ -116,4 +126,20 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::put('/approvals/{approval:uuid}/approve', [LeaveController::class, 'approve']);
         Route::get('/download-attachment/{filename}', [LeaveController::class, 'downloadAttachment']);
     });
+
+    Route::prefix('early_leaves')->group(function () {
+        Route::get('/', [EarlyLeaveController::class, 'index']);
+        Route::post('/', [EarlyLeaveController::class, 'store']);
+        Route::get('/{early_leave}', [EarlyLeaveController::class, 'show']);
+        Route::post('/{early_leave}', [EarlyLeaveController::class, 'update']);
+        Route::delete('/{early_leave}', [EarlyLeaveController::class, 'destroy']);
+        Route::put('/approvals/{early_leave:uuid}/approve', [EarlyLeaveController::class, 'approve']);
+        Route::get('/download-attachment/{filename}', [EarlyLeaveController::class, 'downloadAttachment']);
+    });
+
+    Route::apiResource('attendance_request', AttendanceRequestController::class);
+    Route::put('/attendance_request/{attendance_request:uuid}/approve', [AttendanceRequestController::class, 'approve']);
+
+    Route::apiResource('overtime', OvertimeController::class);
+    Route::put('/overtime/{overtime:uuid}/approve', [OvertimeController::class, 'approve']);
 });

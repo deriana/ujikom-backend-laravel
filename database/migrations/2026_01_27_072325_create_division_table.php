@@ -16,6 +16,7 @@ return new class extends Migration
             $table->uuid('uuid')->unique();
             $table->string('name', 100);
             $table->char('code', 10)->unique();
+            $table->boolean('system_reserve')->default(false);
             $table->timestamps();
             $table->foreignId('created_by_id')
                 ->nullable()

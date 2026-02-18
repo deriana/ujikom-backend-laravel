@@ -28,6 +28,8 @@ class User extends Authenticatable
         'password',
         'uuid',
         'is_active',
+        'system_reserve',
+        'remember_token'
         // 'created_by_id',
     ];
 
@@ -49,6 +51,12 @@ class User extends Authenticatable
         parent::boot();
         static::creating(function ($model) {
             $model->uuid = (string) Str::uuid();
+        });
+
+        static::deleting(function ($model) {
+            if ($model->hasRole(\App\Enums\UserRole::OWNER->value)) {
+                throw new \Exception('Akun Owner adalah System Reserved dan tidak dapat dihapus.');
+            }
         });
     }
 

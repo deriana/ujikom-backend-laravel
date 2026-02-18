@@ -12,7 +12,7 @@ class LeaveType extends Model
 
     protected $fillable = [
         'name', 'is_active', 'default_days', 'gender', 'requires_family_status',
-        'created_by_id', 'updated_by_id',
+        'created_by_id', 'updated_by_id', 'is_unlimited', 'description'
     ];
 
     protected $hidden = [
@@ -23,6 +23,7 @@ class LeaveType extends Model
         'default_days' => 'integer',
         'is_active' => 'boolean',
         'requires_family_status' => 'boolean',
+        'is_unlimited' => 'boolean'
     ];
 
     public function creator()

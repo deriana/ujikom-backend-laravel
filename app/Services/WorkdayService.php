@@ -9,37 +9,28 @@ class WorkdayService
 {
     public function isWorkday(Carbon $date): bool
     {
-        $date = $date->copy();
+        $date = $date->copy()->startOfDay();
+        $currentMD = $date->format('m-d');
 
-        // 1. Weekend
         if ($date->isWeekend()) {
             return false;
         }
 
-        // 2. Libur tidak berulang (range tanggal)
-        $isHoliday = Holiday::where('is_recurring', false)
+        $isSpecificHoliday = Holiday::where('is_recurring', false)
             ->whereDate('start_date', '<=', $date)
             ->whereDate('end_date', '>=', $date)
             ->exists();
 
-        if ($isHoliday) {
+        if ($isSpecificHoliday) {
             return false;
         }
 
-        // 3. Libur berulang tiap tahun (cek bulan & hari dalam range)
-        $isRecurringHoliday = Holiday::where('is_recurring', true)
-            ->get()
-            ->contains(function ($holiday) use ($date) {
-                $start = Carbon::parse($holiday->start_date)->year($date->year);
-                $end   = Carbon::parse($holiday->end_date)->year($date->year);
+        $isYearlyHoliday = Holiday::where(function ($query) use ($currentMD) {
+            $query->whereRaw("DATE_FORMAT(start_date, '%m-%d') = ?", [$currentMD])
+                ->orWhereRaw("DATE_FORMAT(end_date, '%m-%d') = ?", [$currentMD]);
+        })
+            ->exists();
 
-                return $date->between($start, $end);
-            });
-
-        if ($isRecurringHoliday) {
-            return false;
-        }
-
-        return true;
+        return ! $isYearlyHoliday;
     }
 }

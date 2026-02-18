@@ -18,6 +18,7 @@ return new class extends Migration
             $table->foreignId('work_schedule_id')->constrained()->cascadeOnDelete();
             $table->date('start_date');
             $table->date('end_date')->nullable();
+            $table->integer('priority')->default(1); // 1: Rutin/Permanen, 2: Tugas/Sakit, 3: Khusus
             $table->foreignId('created_by_id')
                 ->nullable()
                 ->constrained('users')
