@@ -93,6 +93,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::post('/geo_fencing', [SettingController::class, 'updateGeoFencing']);
         Route::post('/general', [SettingController::class, 'updateGeneral']);
     });
+    Route::get('/attendances/export', [AttendanceDetailController::class, 'export']);
     Route::apiResource('attendances', AttendanceDetailController::class)->only('index', 'show');
     Route::apiResource('holidays', HolidayController::class);
     Route::prefix('work_schedules')->group(function () {
