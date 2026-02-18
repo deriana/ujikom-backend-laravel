@@ -55,4 +55,9 @@ class EarlyLeavePolicy
     {
         return $user->can('early-leave.approve');
     }
+
+    public function export(User $user, EarlyLeave $earlyLeave): bool
+    {
+        return $user->can('early-leave.export');
+    }
 }

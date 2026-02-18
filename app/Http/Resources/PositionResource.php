@@ -24,13 +24,11 @@ class PositionResource extends JsonResource
                 ];
             }),
             'allowances' => $this->whenLoaded('allowances', function () {
-                return $this->allowances->map(function ($position) {
+                return $this->allowances->map(function ($allowance) {
                     return [
-                        'uuid' => $position->uuid,
-                        'name' => $position->name,
-                        'amount' => isset($position->pivot->amount)
-                            ? (float) $position->pivot->amount
-                            : (float) $this->amount,
+                        'uuid' => $allowance->uuid,
+                        'name' => $allowance->name,
+                        'amount' => (float) ($allowance->pivot?->amount ?? $allowance->amount),
                     ];
                 });
             }),

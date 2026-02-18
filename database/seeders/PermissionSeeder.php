@@ -388,21 +388,6 @@ class PermissionSeeder extends Seeder
                     UserRole::EMPLOYEE->value => ['employee'],
                 ],
             ],
-
-            'company_balances' => [
-                'actions' => [
-                    'index' => 'balance.index',
-                    'show' => 'balance.show',
-                    'update' => 'balance.update',
-                    'history' => 'balance.history',
-                ],
-                'roles' => [
-                    UserRole::ADMIN->value => ['index'],
-                    UserRole::FINANCE->value => ['index', 'show', 'update', 'history'],
-                    UserRole::DIRECTOR->value => ['index', 'show', 'update'],
-                    UserRole::OWNER->value => ['index', 'show', 'history'],
-                ],
-            ],
         ];
 
         DB::transaction(function () use ($modules) {

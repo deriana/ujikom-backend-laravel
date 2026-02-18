@@ -50,4 +50,9 @@ class EmployeeWorkSchedulePolicy
     {
         return $user->can('employee-work-schedule.destroy') || $user->id === $schedule->creator_id;
     }
+
+    public function export(User $user, EmployeeWorkSchedule $schedule): bool
+    {
+        return $user->can('employee-work-schedule.export');
+    }
 }

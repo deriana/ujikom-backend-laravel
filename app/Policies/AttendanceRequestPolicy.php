@@ -2,10 +2,10 @@
 
 namespace App\Policies;
 
+use App\Enums\ApprovalStatus;
+use App\Enums\UserRole;
 use App\Models\AttendanceRequest;
 use App\Models\User;
-use App\Enums\UserRole;
-use App\Enums\ApprovalStatus;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class AttendanceRequestPolicy
@@ -38,7 +38,7 @@ class AttendanceRequestPolicy
     public function update(User $user, AttendanceRequest $attendanceRequest): bool
     {
         return $user->can('attendance-request.edit') &&
-               !$attendanceRequest->system_reserve &&
+               ! $attendanceRequest->system_reserve &&
                $attendanceRequest->status === ApprovalStatus::PENDING->value &&
                $this->isOwnerOrStaff($user, $attendanceRequest);
     }
@@ -46,7 +46,7 @@ class AttendanceRequestPolicy
     public function delete(User $user, AttendanceRequest $attendanceRequest): bool
     {
         return $user->can('attendance-request.destroy') &&
-               !$attendanceRequest->system_reserve &&
+               ! $attendanceRequest->system_reserve &&
                $attendanceRequest->status === ApprovalStatus::PENDING->value &&
                $this->isOwnerOrStaff($user, $attendanceRequest);
     }
@@ -54,5 +54,10 @@ class AttendanceRequestPolicy
     public function approve(User $user, AttendanceRequest $attendanceRequest): bool
     {
         return $user->can('attendance-request.approve');
+    }
+
+    public function export(User $user, AttendanceRequest $attendanceRequest): bool
+    {
+        return $user->can('attendance-request.export');
     }
 }

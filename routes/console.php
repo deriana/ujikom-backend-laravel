@@ -12,3 +12,4 @@ Schedule::command('attendance:mark-absent')
     ->withoutOverlapping();
 Schedule::command('holidays:refresh')->yearlyOn(1, 1, '00:00');
 Schedule::command('leave:reset-balances')->yearlyOn(1, 1, '00:00');
+Schedule::command('payroll:generate')->monthlyOn(26, '00:00');

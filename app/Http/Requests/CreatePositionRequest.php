@@ -26,7 +26,7 @@ class CreatePositionRequest extends FormRequest
             'base_salary' => 'required|numeric|min:0|decimal:0,2',
             'allowances' => 'nullable|array',
             'allowances.*.uuid' => 'nullable|exists:allowances,uuid',
-            'allowances.*.amount' => 'nullable|numeric|min:0|decimal:0,2',
+            'allowances.*.amount' => 'nullable|numeric|decimal:0,2',
         ];
     }
 }

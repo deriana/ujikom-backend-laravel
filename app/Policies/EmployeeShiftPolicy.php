@@ -34,4 +34,9 @@ class EmployeeShiftPolicy
     {
         return $user->can('employee-shift.destroy') && ! $employeeShift->system_reserve;
     }
+
+    public function export(User $user, EmployeeShift $employeeShift): bool
+    {
+        return $user->can('employee-shift.export');
+    }
 }

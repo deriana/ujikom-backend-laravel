@@ -55,4 +55,9 @@ class OvertimePolicy
     {
         return $user->can('overtime.approve');
     }
+
+    public function export(User $user, Overtime $overtime): bool
+    {
+        return $user->can('overtime.export');
+    }
 }

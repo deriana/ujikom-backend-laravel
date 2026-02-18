@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\HolidayController;
 use App\Http\Controllers\Api\LeaveController;
 use App\Http\Controllers\Api\LeaveTypeController;
 use App\Http\Controllers\Api\OvertimeController;
+use App\Http\Controllers\Api\PayrollController;
 use App\Http\Controllers\Api\PositionController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\SettingController;
@@ -142,4 +143,12 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
 
     Route::apiResource('overtime', OvertimeController::class);
     Route::put('/overtime/{overtime:uuid}/approve', [OvertimeController::class, 'approve']);
+
+    Route::prefix('payrolls')->group(function () {
+        Route::get('/', [PayrollController::class, 'index']);
+        Route::get('/{payroll}', [PayrollController::class, 'show']);
+        Route::put('/{payroll}', [PayrollController::class, 'update']);
+        Route::put('/{payroll:uuid}/finalize', [PayrollController::class, 'finalize']);
+        Route::put('/{payroll:uuid}/void', [PayrollController::class, 'void']);
+    });
 });

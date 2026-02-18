@@ -59,4 +59,9 @@ class LeavePolicy
     {
         return $user->can('leave.approve');
     }
+
+    public function export(User $user, Leave $leave): bool
+    {
+        return $user->can('leave.export');
+    }
 }

@@ -34,7 +34,7 @@ class Employee extends Model implements HasMedia
         'deleted_by_id',
         'employment_state',
         'termination_date',
-        'termination_reason'
+        'termination_reason',
     ];
 
     protected $hidden = [
@@ -202,6 +202,11 @@ class Employee extends Model implements HasMedia
     {
 
         return $this->hasMany(EmployeeLeaveBalance::class, 'employee_id');
+    }
+
+    public function overtimes()
+    {
+        return $this->hasMany(Overtime::class);
     }
 
     public function getRouteKeyName()
