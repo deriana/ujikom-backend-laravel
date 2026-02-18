@@ -24,7 +24,7 @@ class CreateAllowanceRequest extends FormRequest
         return [
             'name' => 'required|string',
             'type' => 'required|string|in:fixed,percentage',
-            'amount' => 'required|numeric|min:0|decimal:0,2',
+            'amount' => 'required|numeric|decimal:0,2',
         ];
     }
 }

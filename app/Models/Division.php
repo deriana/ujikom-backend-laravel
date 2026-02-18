@@ -15,6 +15,7 @@ class Division extends Model
         'uuid',
         'name',
         'code',
+        'system_reserve',
         'created_by_id',
         'updated_by_id',
         'deleted_by_id',

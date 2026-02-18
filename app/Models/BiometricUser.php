@@ -8,7 +8,6 @@ class BiometricUser extends Model
 {
     protected $fillable = [
         'employee_id',
-        'view',
         'descriptor',
     ];
 

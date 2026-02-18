@@ -3,12 +3,23 @@
 use App\Http\Controllers\Api\AllowanceController;
 use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\AttendanceDetailController;
+use App\Http\Controllers\Api\AttendanceRequestController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DivisionController;
+use App\Http\Controllers\Api\EarlyLeaveController;
+use App\Http\Controllers\Api\EmployeeShiftController;
+use App\Http\Controllers\Api\EmployeeWorkScheduleController;
+use App\Http\Controllers\Api\HolidayController;
+use App\Http\Controllers\Api\LeaveController;
+use App\Http\Controllers\Api\LeaveTypeController;
+use App\Http\Controllers\Api\OvertimeController;
+use App\Http\Controllers\Api\PayrollController;
 use App\Http\Controllers\Api\PositionController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\SettingController;
+use App\Http\Controllers\Api\ShiftTemplateController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\WorkScheduleController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -54,6 +65,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::get('/trashed', [UserController::class, 'getTrashed']);
         Route::post('/upload-profile-photo/{uuid}', [UserController::class, 'uploadProfilePhoto']);
         Route::get('/managers', [UserController::class, 'getManagers']);
+        Route::get('/employees-lite', [UserController::class, 'getEmployeesLite']);
     });
     Route::apiResource('users', UserController::class);
     Route::prefix('divisions')->group(function () {
@@ -81,5 +93,64 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::post('/geo_fencing', [SettingController::class, 'updateGeoFencing']);
         Route::post('/general', [SettingController::class, 'updateGeneral']);
     });
+    Route::get('/attendances/export', [AttendanceDetailController::class, 'export']);
     Route::apiResource('attendances', AttendanceDetailController::class)->only('index', 'show');
+    Route::apiResource('holidays', HolidayController::class);
+    Route::prefix('work_schedules')->group(function () {
+        Route::post('/restore/{uuid}', [WorkScheduleController::class, 'restore']);
+        Route::delete('/force-delete/{uuid}', [WorkScheduleController::class, 'forceDelete']);
+        Route::get('/trashed', [WorkScheduleController::class, 'getTrashed']);
+    });
+    Route::apiResource('work_schedules', WorkScheduleController::class);
+    Route::apiResource('employee_work_schedules', EmployeeWorkScheduleController::class);
+    Route::prefix('shift_templates')->group(function () {
+        Route::post('/restore/{uuid}', [ShiftTemplateController::class, 'restore']);
+        Route::delete('/force-delete/{uuid}', [ShiftTemplateController::class, 'forceDelete']);
+        Route::get('/trashed', [ShiftTemplateController::class, 'getTrashed']);
+    });
+    Route::apiResource('shift_templates', ShiftTemplateController::class);
+    Route::apiResource('employee_shift', EmployeeShiftController::class);
+    Route::apiResource('leave_types', LeaveTypeController::class);
+
+    Route::prefix('approvals')->group(function () {
+        Route::get('/leaves', [LeaveController::class, 'indexApproval']);
+        Route::get('/early_leaves', [EarlyLeaveController::class, 'indexApproval']);
+        Route::get('/attendance_request', [AttendanceRequestController::class, 'indexApproval']);
+        Route::get('/overtime', [OvertimeController::class, 'indexApproval']);
+    });
+
+    Route::prefix('leaves')->group(function () {
+        Route::get('/', [LeaveController::class, 'index']);
+        Route::post('/', [LeaveController::class, 'store']);
+        Route::get('/{leave}', [LeaveController::class, 'show']);
+        Route::post('/{leave}', [LeaveController::class, 'update']);
+        Route::delete('/{leave}', [LeaveController::class, 'destroy']);
+        Route::put('/approvals/{approval:uuid}/approve', [LeaveController::class, 'approve']);
+        Route::get('/download-attachment/{filename}', [LeaveController::class, 'downloadAttachment']);
+    });
+
+    Route::prefix('early_leaves')->group(function () {
+        Route::get('/', [EarlyLeaveController::class, 'index']);
+        Route::post('/', [EarlyLeaveController::class, 'store']);
+        Route::get('/{early_leave}', [EarlyLeaveController::class, 'show']);
+        Route::post('/{early_leave}', [EarlyLeaveController::class, 'update']);
+        Route::delete('/{early_leave}', [EarlyLeaveController::class, 'destroy']);
+        Route::put('/approvals/{early_leave:uuid}/approve', [EarlyLeaveController::class, 'approve']);
+        Route::get('/download-attachment/{filename}', [EarlyLeaveController::class, 'downloadAttachment']);
+    });
+
+    Route::apiResource('attendance_request', AttendanceRequestController::class);
+    Route::put('/attendance_request/{attendance_request:uuid}/approve', [AttendanceRequestController::class, 'approve']);
+
+    Route::apiResource('overtime', OvertimeController::class);
+    Route::put('/overtime/{overtime:uuid}/approve', [OvertimeController::class, 'approve']);
+
+    Route::prefix('payrolls')->group(function () {
+        Route::get('/', [PayrollController::class, 'index']);
+        Route::get('/{payroll}', [PayrollController::class, 'show']);
+        Route::put('/{payroll}', [PayrollController::class, 'update']);
+        Route::put('/{payroll:uuid}/finalize', [PayrollController::class, 'finalize']);
+        Route::put('/{payroll:uuid}/void', [PayrollController::class, 'void']);
+        Route::get('/{payroll:uuid}/download', [PayrollController::class, 'downloadSlip']);
+    });
 });

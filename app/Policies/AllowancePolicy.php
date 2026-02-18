@@ -17,7 +17,7 @@ class AllowancePolicy
 
     public function view(User $user, Allowance $allowance): bool
     {
-        return $user->can('allowance.index');
+        return $user->can('allowance.show');
     }
 
     public function create(User $user): bool

@@ -2,132 +2,183 @@
 
 namespace App\Services;
 
+use App\Enums\ApprovalStatus;
+use App\Exceptions\Attendance\AttendanceException;
 use App\Models\Attendance;
-use App\Models\AttendanceLog;
-use App\Models\BiometricUser;
-use App\Models\Employee;
-use App\Models\Setting;
+use App\Models\EarlyLeave;
+use App\Services\Attendance\Internal\AttendanceLogger;
+use App\Services\Attendance\Internal\AttendanceUploader;
+use App\Services\Attendance\Validators\FaceValidator;
+use App\Services\Attendance\Validators\GeoFenceValidator;
+use App\Services\Attendance\Validators\TimeValidator;
 use Carbon\Carbon;
-use Illuminate\Http\UploadedFile;
+use Exception;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 
 class AttendanceService
 {
+    public function __construct(
+        protected FaceValidator $faceValidator,
+        protected GeoFenceValidator $geoValidator,
+        protected TimeValidator $timeValidator,
+        protected AttendanceUploader $uploader,
+        protected AttendanceLogger $logger,
+        protected OvertimeService $overtimeService
+
+    ) {}
+
     /**
-     * Match descriptor dari FE dengan semua employee
-     * Mengembalikan employee_id jika match, null jika tidak
+     * Handle single attendance request
      */
-    protected function matchDescriptor(array $inputDescriptor): array
+    public function handleAttendance(array $data, string $userAgent): array
     {
-        $biometrics = BiometricUser::with('employee')->get();
+        DB::beginTransaction();
+        try {
+            // 1. Validate Face
+            $descriptor = is_array($data['descriptor'] ?? null)
+                ? $data['descriptor']
+                : json_decode($data['descriptor'] ?? '[]', true);
 
-        $bestScore = -1;
-        $matchedEmployee = null;
+            $faceResult = $this->faceValidator->validate($descriptor);
+            $employee = $faceResult['employee'];
+            $score = $faceResult['score'];
 
-        foreach ($biometrics as $bio) {
-            $desc = $bio->descriptor;
-            if (! is_array($desc)) {
-                continue;
+            $user = $employee->user;
+
+            if ($user->hasRole([\App\Enums\UserRole::DIRECTOR->value, \App\Enums\UserRole::OWNER->value])) {
+                throw new AttendanceException('This position is exempt from daily attendance', [
+                    'reason' => 'role_exempted',
+                ]);
             }
 
-            $score = $this->cosineSimilarity($inputDescriptor, $desc);
+            // 2. Validate Geo Location (if applicable)
+            $this->geoValidator->validate(
+                (float) ($data['latitude'] ?? 0),
+                (float) ($data['longitude'] ?? 0)
+            );
 
-            if ($score > $bestScore) {
-                $bestScore = $score;
-                $matchedEmployee = $bio->employee;
+            // 3. Validate Workday
+            $today = Carbon::today();
+            $this->timeValidator->validateWorkday($today);
+
+            // 4. Get or Create Attendance Record
+            $attendance = Attendance::firstOrCreate(
+                ['employee_id' => $employee->id, 'date' => $today],
+                ['status' => 'present']
+            );
+
+            $now = Carbon::now();
+            $photoPath = isset($data['photo'])
+                ? $this->uploader->upload($data['photo'], $employee->id, $today)
+                : null;
+
+            $resultMessage = 'Already attended today'; // Default if both filled
+
+            // 5. Process Clock-In or Clock-Out
+            $actionType = null;
+            if (! $attendance->clock_in) {
+                $actionType = 'clock_in';
+                $status = $this->processClockIn($attendance, $now, $data, $photoPath);
+                $resultMessage = 'Clock-in successful';
+            } elseif (! $attendance->clock_out) {
+                $actionType = 'clock_out';
+                $status = $this->processClockOut($attendance, $now, $data, $photoPath);
+                $resultMessage = 'Clock-out successful';
+            } else {
+                throw new AttendanceException('Already clocked in and out today', ['reason' => 'already_clocked_in_out']);
             }
-        }
 
-        Log::info($bestScore);
-
-        return [
-            'employee' => ($bestScore > 0.75) ? $matchedEmployee : null,
-            'score' => $bestScore, // ✅
-        ];
-    }
-
-    /**
-     * Cosine similarity untuk descriptor
-     */
-    protected function cosineSimilarity(array $a, array $b): float
-    {
-        if (count($a) !== count($b)) {
-            return 0;
-        }
-
-        $dot = 0;
-        $normA = 0;
-        $normB = 0;
-
-        for ($i = 0; $i < count($a); $i++) {
-            $dot += $a[$i] * $b[$i];
-            $normA += $a[$i] ** 2;
-            $normB += $b[$i] ** 2;
-        }
-
-        if ($normA == 0 || $normB == 0) {
-            return 0;
-        }
-
-        return $dot / (sqrt($normA) * sqrt($normB));
-    }
-
-    /**
-     * Handle 1 attendance
-     */
-    public function handleAttendance(array $data, string $userAgent)
-    {
-        if (! isset($data['descriptor'])) {
-            $this->logAttendance([
-                'status' => 'failed',
-                'reason' => 'descriptor_missing',
-                'user_agent' => $userAgent,
-            ]);
-
-            return ['success' => false, 'message' => 'Descriptor tidak ditemukan'];
-        }
-
-        $inputDescriptor = is_array($data['descriptor'])
-            ? $data['descriptor']
-            : json_decode($data['descriptor'], true);
-
-        if (! is_array($inputDescriptor)) {
-            $this->logAttendance([
-                'status' => 'failed',
-                'reason' => 'descriptor_invalid_format',
-                'user_agent' => $userAgent,
-            ]);
-
-            return ['success' => false, 'message' => 'Format descriptor tidak valid'];
-        }
-
-        $match = $this->matchDescriptor($inputDescriptor);
-        $employee = $match['employee'];
-        $score = $match['score'];
-
-        if (! $employee) {
-            $this->logAttendance([
-                'status' => 'failed',
-                'reason' => 'face_not_recognized',
+            // 6. Log Success
+            $this->logger->logSuccess($actionType, [
+                'employee_id' => $employee->id,
+                'employee_nik' => $employee->nik,
                 'similarity_score' => $score,
                 'latitude' => $data['latitude'] ?? null,
                 'longitude' => $data['longitude'] ?? null,
                 'user_agent' => $userAgent,
             ]);
 
-            return ['success' => false, 'message' => 'Wajah tidak dikenali'];
+            DB::commit();
+
+            return [
+                'success' => true,
+                'message' => $resultMessage,
+                'data' => $attendance,
+            ];
+
+        } catch (AttendanceException $e) {
+            DB::rollBack();
+            // Log failure explicitly
+            $this->logger->logFailure($e->getMessage(), array_merge($e->getContext(), [
+                'user_agent' => $userAgent,
+                'employee_id' => $employee->id ?? null, // Attempt to get ID if available
+            ]));
+
+            return [
+                'success' => false,
+                'message' => $e->getMessage(),
+            ];
+
+        } catch (Exception $e) {
+            DB::rollBack();
+            $this->logger->logFailure('System Error: '.$e->getMessage(), ['user_agent' => $userAgent]);
+
+            Log::error('System Error: '.$e->getMessage());
+
+            return [
+                'success' => false,
+                'message' => 'A system error occurred',
+            ];
+        }
+    }
+
+    protected function processClockIn(Attendance $attendance, Carbon $now, array $data, ?string $photoPath): void
+    {
+        $timeValidation = $this->timeValidator->validateClockInWindow($attendance->employee, $now);
+
+        $attendance->update([
+            'clock_in' => $now,
+            'late_minutes' => $timeValidation['late_minutes'], // TimeValidator returns 0 if within tolerance
+            'latitude_in' => $data['latitude'] ?? null,
+            'longitude_in' => $data['longitude'] ?? null,
+            'clock_in_photo' => $photoPath,
+        ]);
+    }
+
+    protected function processClockOut(Attendance $attendance, Carbon $now, array $data, ?string $photoPath): void
+    {
+        $timeValidation = $this->timeValidator->validateClockOutWindow($attendance->employee, $now);
+
+        $attendance->update([
+            'clock_out' => $now,
+            'early_leave_minutes' => $timeValidation['early_leave_minutes'],
+            'is_early_leave_approved' => $timeValidation['is_early_leave_approved'],
+            'overtime_minutes' => $timeValidation['overtime_minutes'],
+            'work_minutes' => $attendance->clock_in->diffInMinutes($now),
+            'latitude_out' => $data['latitude'] ?? null,
+            'longitude_out' => $data['longitude'] ?? null,
+            'clock_out_photo' => $photoPath,
+        ]);
+
+        $earlyLeave = EarlyLeave::where('attendance_id', $attendance->id)
+            ->where('status', ApprovalStatus::APPROVED->value)
+            ->first();
+
+        if ($earlyLeave && $timeValidation['early_leave_minutes'] > 0) {
+            $earlyLeave->update([
+                'minutes_early' => $timeValidation['early_leave_minutes'],
+            ]);
         }
 
-        $result = $this->recordAttendance($employee, $data, $score, $userAgent);
+        $this->overtimeService->updateDurationAfterClockOut($attendance);
 
-        return $result;
     }
 
     /**
      * Handle bulk attendance
      */
-    public function handleBulkAttendance(array $data, string $userAgent)
+    public function handleBulkAttendance(array $data, string $userAgent): array
     {
         $summary = [
             'success_count' => 0,
@@ -135,231 +186,24 @@ class AttendanceService
             'details' => [],
         ];
 
-        foreach ($data['attendances'] as $index => $item) {
+        foreach ($data['attendances'] as $item) {
+            // Merge global lat/long if not present in item
             $singleData = array_merge($item, [
-                'latitude' => $data['latitude'] ?? null,
-                'longitude' => $data['longitude'] ?? null,
+                'latitude' => $data['latitude'] ?? ($item['latitude'] ?? null),
+                'longitude' => $data['longitude'] ?? ($item['longitude'] ?? null),
             ]);
 
             $res = $this->handleAttendance($singleData, $userAgent);
 
             if ($res['success']) {
                 $summary['success_count']++;
-                $summary['details'][] = [
-                    'status' => 'Success',
-                    'message' => $res['message'],
-                ];
+                $summary['details'][] = ['status' => 'Success', 'message' => $res['message']];
             } else {
                 $summary['failed_count']++;
-                $summary['details'][] = [
-                    'status' => 'Failed',
-                    'message' => $res['message'],
-                ];
+                $summary['details'][] = ['status' => 'Failed', 'message' => $res['message']];
             }
         }
 
         return ['success' => true, 'summary' => $summary];
-    }
-
-    /**
-     * Simpan record attendance + foto
-     */
-    protected function recordAttendance($employee, array $data, float $score, string $userAgent)
-    {
-        $today = Carbon::today();
-        $now = Carbon::now();
-        $setting = $this->getAttendanceSetting();
-
-        $workStart = Carbon::createFromFormat('H:i', $setting['work_start_time']);
-        $workEnd = Carbon::createFromFormat('H:i', $setting['work_end_time']);
-        $lateTolerance = (int) $setting['late_tolerance_minutes'];
-
-        $maxClockIn = (clone $workStart)->addHours(2);
-        $minClockOut = (clone $workStart)->addHours($workStart->diffInHours($workEnd) / 2);
-
-        $attendance = Attendance::firstOrCreate(
-            ['employee_id' => $employee->id, 'date' => $today],
-            ['status' => 'present']
-        );
-
-        // ================= CLOCK IN =================
-        if (! $attendance->clock_in) {
-
-            if ($now->gt($maxClockIn)) {
-                $this->logAttendance([
-                    'status' => 'failed',
-                    'employee_id' => $employee->id,
-                    'employee_nik' => $employee->nik,
-                    'reason' => 'clock_in_over_limit',
-                    'similarity_score' => $score,
-                    'user_agent' => $userAgent,
-                ]);
-
-                return ['success' => false, 'message' => 'Melewati batas waktu absen masuk'];
-            }
-
-            $lateMinutes = max(0, $workStart->diffInMinutes($now, false));
-            if ($lateMinutes <= $lateTolerance) {
-                $lateMinutes = 0;
-            }
-
-            $photoInPath = isset($data['photo'])
-            ? $this->storeAttendancePhoto($data['photo'], $employee->id, $today)
-            : null;
-
-            $attendance->update([
-                'clock_in' => $now,
-                'late_minutes' => $lateMinutes,
-                'latitude_in' => $data['latitude'] ?? null,
-                'longitude_in' => $data['longitude'] ?? null,
-                'clock_in_photo' => $photoInPath,
-            ]);
-
-            $this->logAttendance([
-                'status' => 'success',
-                'action' => 'clock_in',
-                'employee_id' => $employee->id,
-                'employee_nik' => $employee->nik,
-                'similarity_score' => $score,
-                'latitude' => $data['latitude'] ?? null,
-                'longitude' => $data['longitude'] ?? null,
-                'user_agent' => $userAgent,
-            ]);
-
-            return ['success' => true, 'message' => 'Clock-in berhasil', 'data' => $attendance];
-        }
-
-        // ================= CLOCK OUT =================
-        if (! $attendance->clock_out) {
-
-            if ($now->lt($minClockOut)) {
-                $this->logAttendance([
-                    'status' => 'failed',
-                    'employee_id' => $employee->id,
-                    'employee_nik' => $employee->nik,
-                    'reason' => 'clock_out_too_early',
-                    'similarity_score' => $score,
-                    'user_agent' => $userAgent,
-                ]);
-
-                return ['success' => false, 'message' => 'Belum boleh absen pulang'];
-            }
-
-            $earlyLeaveMinutes = $now->lt($workEnd) ? $now->diffInMinutes($workEnd) : 0;
-            $overtimeMinutes = $now->gt($workEnd) ? $workEnd->diffInMinutes($now) : 0;
-
-            $photoOutPath = isset($data['photo'])
-            ? $this->storeAttendancePhoto($data['photo'], $employee->id, $today)
-            : null;
-
-            $attendance->update([
-                'clock_out' => $now,
-                'early_leave_minutes' => $earlyLeaveMinutes,
-                'overtime_minutes' => $overtimeMinutes,
-                'work_minutes' => $attendance->clock_in->diffInMinutes($now),
-                'latitude_out' => $data['latitude'] ?? null,
-                'longitude_out' => $data['longitude'] ?? null,
-                'clock_out_photo' => $photoOutPath,
-            ]);
-
-            $this->logAttendance([
-                'status' => 'success',
-                'action' => 'clock_out',
-                'employee_id' => $employee->id,
-                'employee_nik' => $employee->nik,
-                'similarity_score' => $score,
-                'latitude' => $data['latitude'] ?? null,
-                'longitude' => $data['longitude'] ?? null,
-                'user_agent' => $userAgent,
-            ]);
-
-            return ['success' => true, 'message' => 'Clock-out berhasil', 'data' => $attendance];
-        }
-
-        $this->logAttendance([
-            'status' => 'failed',
-            'employee_id' => $employee->id,
-            'employee_nik' => $employee->nik,
-            'reason' => 'already_clocked_in_out',
-            'similarity_score' => $score,
-            'user_agent' => $userAgent,
-        ]);
-
-        return ['success' => false, 'message' => 'Sudah absen hari ini'];
-    }
-
-    protected function logAttendance(array $context): void
-    {
-        AttendanceLog::create([
-            'employee_id' => $context['employee_id'] ?? null,
-            'employee_nik' => $context['employee_nik'] ?? null,
-            'status' => $context['status'],
-            'action' => $context['action'] ?? null,
-            'reason' => $context['reason'] ?? null,
-            'similarity_score' => $context['similarity_score'] ?? null,
-            'ip_address' => request()->ip(),
-            'user_agent' => $context['user_agent'] ?? null,
-            'latitude' => $context['latitude'] ?? null,
-            'longitude' => $context['longitude'] ?? null,
-        ]);
-
-        Log::info('ATTENDANCE_EVENT', $context);
-    }
-
-    protected function getAttendanceSetting(): array
-    {
-        $setting = Setting::where('key', 'attendance')->first();
-
-        return $setting?->values ?? [
-            'late_tolerance_minutes' => 10,
-            'work_start_time' => '09:00',
-            'work_end_time' => '17:00',
-        ];
-    }
-
-    protected function storeAttendancePhoto($photo, $employeeId, Carbon $date): ?string
-    {
-        $folderPath = 'attendance/'.$date->format('Y/m/d');
-        $fileName = 'photo_'.$employeeId.'_'.now()->timestamp.'_'.uniqid();
-
-        // ================= FILE UPLOAD (DARI FORM DATA) =================
-        if ($photo instanceof UploadedFile) {
-            $ext = $photo->getClientOriginalExtension() ?: 'jpg';
-            $path = $photo->storeAs($folderPath, $fileName.'.'.$ext, 'public');
-
-            return Storage::url($path);
-        }
-
-        // ================= BASE64 (LEGACY SUPPORT) =================
-        if (is_string($photo) && str_contains($photo, 'base64')) {
-            $base64 = explode(',', $photo)[1] ?? null;
-            if (! $base64) {
-                return null;
-            }
-
-            $decoded = base64_decode($base64);
-
-            $finfo = finfo_open();
-            $mime = finfo_buffer($finfo, $decoded, FILEINFO_MIME_TYPE);
-
-            $ext = match ($mime) {
-                'image/jpeg' => 'jpg',
-                'image/png' => 'png',
-                'image/webp' => 'webp',
-                default => null
-            };
-
-            if (! $ext) {
-                Log::warning('Invalid attendance photo mime type', ['mime' => $mime]);
-
-                return null;
-            }
-
-            Storage::disk('public')->put($folderPath.'/'.$fileName.'.'.$ext, $decoded);
-
-            return $folderPath.'/'.$fileName.'.'.$ext;
-        }
-
-        return null;
     }
 }

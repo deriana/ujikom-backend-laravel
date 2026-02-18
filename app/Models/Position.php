@@ -14,6 +14,7 @@ class Position extends Model
     protected $fillable = [
         'name',
         'base_salary',
+        'system_reserve',
         'created_by_id',
         'updated_by_id',
         'deleted_by_id',

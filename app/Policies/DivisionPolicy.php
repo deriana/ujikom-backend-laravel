@@ -17,7 +17,7 @@ class DivisionPolicy
 
     public function view(User $user, Division $division): bool
     {
-        return $user->can('division.index');
+        return $user->can('division.show');
     }
 
     public function create(User $user): bool

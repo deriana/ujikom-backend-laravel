@@ -17,7 +17,7 @@ class PositionPolicy
 
     public function view(User $user, Position $position): bool
     {
-        return $user->can('position.index');
+        return $user->can('position.show');
     }
 
     public function create(User $user): bool

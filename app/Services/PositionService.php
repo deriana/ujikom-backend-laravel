@@ -35,6 +35,10 @@ class PositionService
             throw new Exception('Cannot update a deleted position');
         }
 
+        if ($position->system_reserve) {
+            throw new Exception('Cannot update a system reserve position');
+        }
+
         return DB::transaction(function () use ($position, $data) {
 
             $position->update([
@@ -52,6 +56,10 @@ class PositionService
     {
         if ($position->trashed()) {
             throw new Exception('Cannot delete a deleted position');
+        }
+
+        if ($position->system_reserve) {
+            throw new Exception('Cannot delete a system reserve position');
         }
 
         return DB::transaction(fn () => $position->delete());

@@ -13,6 +13,7 @@ class PositionResource extends JsonResource
             'uuid' => $this->uuid,
             'name' => $this->name,
             'base_salary' => (float) $this->base_salary,
+            'system_reserve' => $this->system_reserve,
             'created_at' => $this->created_at?->format('Y-m-d H:i:s'),
             'updated_at' => $this->updated_at?->format('Y-m-d H:i:s'),
             'creator' => $this->whenLoaded('creator', function () {
@@ -23,13 +24,11 @@ class PositionResource extends JsonResource
                 ];
             }),
             'allowances' => $this->whenLoaded('allowances', function () {
-                return $this->allowances->map(function ($position) {
+                return $this->allowances->map(function ($allowance) {
                     return [
-                        'uuid' => $position->uuid,
-                        'name' => $position->name,
-                        'amount' => isset($position->pivot->amount)
-                            ? (float) $position->pivot->amount
-                            : (float) $this->amount,
+                        'uuid' => $allowance->uuid,
+                        'name' => $allowance->name,
+                        'amount' => (float) ($allowance->pivot?->amount ?? $allowance->amount),
                     ];
                 });
             }),

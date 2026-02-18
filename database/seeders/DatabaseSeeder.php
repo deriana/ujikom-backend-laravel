@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -23,8 +22,22 @@ class DatabaseSeeder extends Seeder
             PositionAllowanceSeeder::class,
             AllowanceSeeder::class,
             EmployeeSeeder::class,
-            AttendanceSeeder::class,
-            BiometricSeeder::class,
+            AttendanceSeeder::class, // Developing
+            // BiometricSeeder::class,
+            BiometricUserSeeder::class,
+            HolidaySeeder::class,
+            WorkModeSeeder::class,
+            WorkScheduleSeeder::class,
+            EmployeeWorkScheduleSeeder::class,
+            ShiftTemplateSeeder::class,
+            EmployeeShiftSeeder::class,
+            LeaveTypeSeeder::class,
+            EmployeeLeaveBalanceSeeder::class,
+            LeaveSeeder::class,
+            EmployeeLeaveSeeder::class,
+            EarlyLeaveSeeder::class,
+            AttendanceRequestSeeder::class,
+            OvertimeSeeder::class,
         ]);
     }
 }

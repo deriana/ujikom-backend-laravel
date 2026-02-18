@@ -16,6 +16,7 @@ return new class extends Migration
             $table->uuid('uuid')->unique();
             $table->string('name', 100);
             $table->decimal('base_salary', 15, 2);
+            $table->boolean('system_reserve')->default(false);
             $table->foreignId('created_by_id')
                 ->nullable()
                 ->constrained('users')

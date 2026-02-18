@@ -21,7 +21,7 @@ class SettingController extends Controller
             'geo_fencing',
         ]);
 
-        $this->authorize('viewAny', Setting::class);
+        // $this->authorize('viewAny', Setting::class);
 
         return $this->successResponse(
             SettingResource::collection($settings),

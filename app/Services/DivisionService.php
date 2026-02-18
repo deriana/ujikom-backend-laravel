@@ -31,6 +31,10 @@ class DivisionService
 
     public function update(Division $division, array $data, int $userId)
     {
+        if ($division->system_reserve) {
+            throw new Exception('Cannot update a system reserve division');
+        }
+
         if ($division->trashed()) {
             throw new Exception('Cannot update a deleted division');
         }
@@ -52,6 +56,9 @@ class DivisionService
 
     public function delete(Division $division): bool
     {
+        if ($division->system_reserve) {
+            throw new Exception('Cannot delete a system reserve division');
+        }
         if ($division->trashed()) {
             throw new Exception('Cannot delete a deleted division');
         }
@@ -148,4 +155,3 @@ class DivisionService
             ->delete();
     }
 }
-

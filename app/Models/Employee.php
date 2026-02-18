@@ -32,6 +32,9 @@ class Employee extends Model implements HasMedia
         'created_by_id',
         'updated_by_id',
         'deleted_by_id',
+        'employment_state',
+        'termination_date',
+        'termination_reason',
     ];
 
     protected $hidden = [
@@ -55,6 +58,30 @@ class Employee extends Model implements HasMedia
                 $employee->nik = self::generateNik();
             }
         });
+        static::created(function ($employee) {
+
+            $currentYear = now()->year;
+
+            $leaveTypes = LeaveType::whereNotNull('default_days')
+                ->where('is_active', true)
+                ->get();
+
+            foreach ($leaveTypes as $type) {
+                EmployeeLeaveBalance::firstOrCreate(
+                    [
+                        'employee_id' => $employee->id,
+                        'leave_type_id' => $type->id,
+                        'year' => $currentYear,
+                    ],
+                    [
+                        'total_days' => $type->default_days,
+                        'used_days' => 0,
+                        'remaining_days' => $type->default_days,
+                    ]
+                );
+            }
+        });
+
     }
 
     public static function generateNik(): string
@@ -141,6 +168,64 @@ class Employee extends Model implements HasMedia
         return $this->hasMany(BiometricUser::class);
     }
 
+    public function attendances()
+    {
+        return $this->hasMany(Attendance::class);
+    }
+
+    public function workSchedules()
+    {
+        return $this->hasMany(EmployeeWorkSchedule::class);
+    }
+
+    public function shifts()
+    {
+        return $this->hasMany(EmployeeShift::class);
+    }
+
+    public function leaves()
+    {
+        return $this->hasMany(Leave::class);
+    }
+
+    public function leaveApprovals()
+    {
+        return $this->hasMany(LeaveApproval::class);
+    }
+
+    public function employeeLeaves()
+    {
+        return $this->hasMany(EmployeeLeave::class);
+    }
+
+    public function leaveBalances()
+    {
+
+        return $this->hasMany(EmployeeLeaveBalance::class, 'employee_id');
+    }
+
+    public function overtimes()
+    {
+        return $this->hasMany(Overtime::class);
+    }
+
+    public function getRouteKeyName()
+    {
+        return 'nik';
+    }
+
+    public function activeWorkSchedule($date = null)
+    {
+        $date = $date ?? now()->toDateString();
+
+        return $this->hasOne(EmployeeWorkSchedule::class)
+            ->whereDate('start_date', '<=', $date)
+            ->where(function ($q) use ($date) {
+                $q->whereNull('end_date')
+                    ->orWhereDate('end_date', '>=', $date);
+            })
+            ->with('workSchedule.workMode');
+    }
 
     public function getStatusLabelAttribute(): string
     {

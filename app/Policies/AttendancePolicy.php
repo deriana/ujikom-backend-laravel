@@ -17,6 +17,16 @@ class AttendancePolicy
 
     public function view(User $user, Attendance $attendance): bool
     {
-        return $user->can('attendance.index');
+        return $user->can('attendance.show');
+    }
+
+    public function sync(User $user): bool
+    {
+        return $user->can('attendance.sync');
+    }
+
+    public function export(User $user): bool
+    {
+        return $user->can('attendance.export');
     }
 }
