@@ -57,40 +57,45 @@ class EarlyLeaveService
 
     public function indexApproval($user)
     {
-        if (! $user->employee) {
-            return collect(); // kosong jika tidak punya employee
-        }
-
-        $employeeId = $user->employee->id;
-
+        // 1. Inisialisasi query dasar
         $query = EarlyLeave::with([
             'employee.user',
             'attendance',
             'approver.user',
         ])
-            ->pending() // hanya status pending
-            ->whereNull('approved_by_id'); // belum diapprove
+            ->pending()
+            ->whereNull('approved_by_id');
 
-        // Manager → hanya bisa approve bawahan, bukan manager/HR
+        // 2. Cek Role Manager (Hanya bisa approve bawahan)
         if ($user->hasRole(UserRole::MANAGER->value)) {
+            // Khusus Manager, WAJIB punya profil employee untuk filter manager_id
+            if (! $user->employee) {
+                return collect();
+            }
+
+            $employeeId = $user->employee->id;
+
             $query->whereHas('employee.user', function ($q) {
                 $q->whereDoesntHave('roles', function ($q2) {
-                    $q2->whereIn('name', ['manager', 'hr']); // pakai Spatie roles
+                    $q2->whereIn('name', ['manager', 'hr']);
                 });
             })->whereHas('employee', function ($q) use ($employeeId) {
                 $q->where('manager_id', $employeeId);
             });
         }
-        // Director / HR / Finance / Owner → bisa approve semua
+
+        // 3. Cek Role Tinggi (Director / HR / Finance / Owner)
         elseif ($user->hasAnyRole([
             UserRole::DIRECTOR->value,
             UserRole::HR->value,
             UserRole::FINANCE->value,
             UserRole::OWNER->value,
+            UserRole::ADMIN->value, // Tambahkan Admin jika perlu
         ])) {
-            // tidak ada filter tambahan
+            // Tidak ada filter tambahan (Akses Full)
         }
-        // Employee biasa → tidak bisa approve
+
+        // 4. Role lain (Employee biasa)
         else {
             return collect();
         }
@@ -236,9 +241,9 @@ class EarlyLeaveService
             throw new Exception('Early leave cannot be requested after clocking out.');
         }
 
-        if ($attendance->early_leave_minutes <= 0) {
-            throw new Exception('No early leave detected for this date.');
-        }
+        // if ($attendance->early_leave_minutes <= 0) {
+        //     throw new Exception('No early leave detected for this date.');
+        // }
 
         if (EarlyLeave::where('attendance_id', $attendance->id)->exists()) {
             throw new Exception('An early leave request has already been submitted for this attendance.');

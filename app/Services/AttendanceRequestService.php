@@ -67,11 +67,7 @@ class AttendanceRequestService
 
     public function indexApproval($user)
     {
-        if (! $user->employee) {
-            return collect(); // kosong jika tidak punya employee
-        }
-
-        $employeeId = $user->employee->id;
+        // 1. Inisialisasi query dasar
         $query = AttendanceRequest::with([
             'employee.user',
             'approver.user',
@@ -79,29 +75,44 @@ class AttendanceRequestService
             'workSchedule',
         ])
             ->pending() // hanya status pending
-            ->where('employee_id', '!=', $employeeId) // jangan ambil yang sendiri
             ->whereNull('approved_by_id'); // belum diapprove
 
-        // Manager → hanya bisa approve bawahan, bukan manager/HR
+        // 2. Logika Berdasarkan Role
         if ($user->hasRole(UserRole::MANAGER->value)) {
-            $query->whereHas('employee.user', function ($q) {
-                $q->whereDoesntHave('roles', function ($q2) {
-                    $q2->whereIn('name', ['manager', 'hr']); // pakai Spatie roles
+            // Manager WAJIB punya employee profile
+            if (! $user->employee) {
+                return collect();
+            }
+
+            $employeeId = $user->employee->id;
+
+            $query->where('employee_id', '!=', $employeeId) // Jangan approve diri sendiri
+                ->whereHas('employee.user', function ($q) {
+                    $q->whereDoesntHave('roles', function ($q2) {
+                        $q2->whereIn('name', ['manager', 'hr']);
+                    });
+                })
+                ->whereHas('employee', function ($q) use ($employeeId) {
+                    $q->where('manager_id', $employeeId);
                 });
-            })->whereHas('employee', function ($q) use ($employeeId) {
-                $q->where('manager_id', $employeeId);
-            });
         }
-        // Director / HR / Finance / Owner → bisa approve semua
+
+        // 3. Role Tinggi (Director / HR / Finance / Owner / Admin)
         elseif ($user->hasAnyRole([
             UserRole::DIRECTOR->value,
             UserRole::HR->value,
             UserRole::FINANCE->value,
             UserRole::OWNER->value,
+            UserRole::ADMIN->value,
         ])) {
-            // tidak ada filter tambahan
+            // Jika Admin punya profil employee, tambahkan filter jangan ambil diri sendiri
+            // Jika tidak punya (null), maka abaikan filter ini (bisa lihat semua)
+            if ($user->employee) {
+                $query->where('employee_id', '!=', $user->employee->id);
+            }
         }
-        // Employee biasa → tidak bisa approve
+
+        // 4. Jika bukan siapa-siapa
         else {
             return collect();
         }

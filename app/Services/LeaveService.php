@@ -69,28 +69,47 @@ class LeaveService
 
     public function indexApprovals($user)
     {
-        if (! $user->employee) {
-            throw new \Exception('Employee profile not found.');
-        }
-
-        $employeeId = $user->employee->id;
-
-        $leaves = Leave::with([
+        // 1. Inisialisasi Query Dasar
+        $query = Leave::with([
             'employee.user',
             'leaveType',
             'approvals.approver.user',
-        ])
-            ->pending()
-            ->get()
-            ->filter(function ($leave) use ($employeeId) {
-                return $leave->approvals->contains(function ($approval) use ($employeeId) {
-                    return $approval->approver_id === $employeeId
-                        && $approval->status === ApprovalStatus::PENDING->value;
-                });
-            });
+        ])->pending();
 
-        // Tambahkan return di sini
-        return LeaveResource::collection($leaves->values());
+        // 2. Cek Role Manager (Hanya melihat approval milik bawahannya)
+        if ($user->hasRole(UserRole::MANAGER->value)) {
+            // Manager WAJIB punya profil employee untuk identifikasi ID-nya di tabel approvals
+            if (! $user->employee) {
+                return collect();
+            }
+
+            $employeeId = $user->employee->id;
+
+            // Filter: Hanya ambil leave di mana user ini terdaftar sebagai approver yang PENDING
+            $query->whereHas('approvals', function ($q) use ($employeeId) {
+                $q->where('approver_id', $employeeId)
+                    ->where('status', ApprovalStatus::PENDING->value);
+            });
+        }
+
+        // 3. Cek Role Tinggi / Admin (Akses Full / Tanpa Filter Approver ID)
+        elseif ($user->hasAnyRole([
+            UserRole::DIRECTOR->value,
+            UserRole::HR->value,
+            UserRole::FINANCE->value,
+            UserRole::OWNER->value,
+            UserRole::ADMIN->value,
+        ])) {
+            // Admin/HR bisa melihat semua yang statusnya 'pending' secara global
+            // Tanpa filter whereHas('approvals')
+        }
+
+        // 4. Role lain (Employee biasa) tidak punya akses approval
+        else {
+            return collect();
+        }
+
+        return $query->latest()->get();
     }
 
     public function show(Leave $leave)

@@ -106,7 +106,7 @@ class LeaveController extends Controller
         $approvals = $this->leaveService->indexApprovals(Auth::user());
 
         return $this->successResponse(
-            $approvals,
+            LeaveResource::collection($approvals),
             'Leave approvals fetched successfully'
         );
     }

@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\EmployeeWorkScheduleController;
 use App\Http\Controllers\Api\HolidayController;
 use App\Http\Controllers\Api\LeaveController;
 use App\Http\Controllers\Api\LeaveTypeController;
+use App\Http\Controllers\Api\OvertimeController;
 use App\Http\Controllers\Api\PositionController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\SettingController;
@@ -113,6 +114,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::get('/leaves', [LeaveController::class, 'indexApproval']);
         Route::get('/early_leaves', [EarlyLeaveController::class, 'indexApproval']);
         Route::get('/attendance_request', [AttendanceRequestController::class, 'indexApproval']);
+        Route::get('/overtime', [OvertimeController::class, 'indexApproval']);
     });
 
     Route::prefix('leaves')->group(function () {
@@ -137,4 +139,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
 
     Route::apiResource('attendance_request', AttendanceRequestController::class);
     Route::put('/attendance_request/{attendance_request:uuid}/approve', [AttendanceRequestController::class, 'approve']);
+
+    Route::apiResource('overtime', OvertimeController::class);
+    Route::put('/overtime/{overtime:uuid}/approve', [OvertimeController::class, 'approve']);
 });

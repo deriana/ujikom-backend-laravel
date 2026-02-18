@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\BiometricUser;
-use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class BiometricSeeder extends Seeder
@@ -16,12 +15,14 @@ class BiometricSeeder extends Seeder
      */
     public function run(): void
     {
-        $employeeId = 4;
+        $employeeId = 7;
 
-        BiometricUser::updateOrCreate(
-            ['employee_id' => $employeeId],
-            ['descriptor' => $this->front()]
-        );
+        for ($i = 0; $i < 5; $i++) {
+            BiometricUser::create([
+                'employee_id' => $employeeId,
+                'descriptor' => $this->front()
+            ]);
+        }
     }
 
     private function front(): array

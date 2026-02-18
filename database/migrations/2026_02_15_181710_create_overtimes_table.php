@@ -21,7 +21,7 @@ return new class extends Migration
             $table->foreignId('employee_id')->constrained('employees')->onDelete('cascade');
 
             // Data Lembur
-            $table->integer('duration_minutes'); // Diambil otomatis dari overtime_minutes di tabel attendance
+            $table->integer('duration_minutes')->default(0); // Diambil otomatis dari overtime_minutes di tabel attendance
             $table->text('reason'); // Alasan yang diisi karyawan di mobile
 
             // Status & Approval

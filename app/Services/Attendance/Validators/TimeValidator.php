@@ -76,18 +76,26 @@ class TimeValidator
         $workStart = $times['work_start_time'];
         $workEnd = $times['work_end_time'];
 
-        // 1. Batas minimal boleh Clock Out (50% durasi kerja)
         $totalWorkDuration = $workStart->diffInMinutes($workEnd);
         $earliestClockOut = (clone $workStart)->addMinutes(intval($totalWorkDuration / 2));
 
-        if ($now->lt($earliestClockOut)) {
+        // 1️⃣ Cek approval
+        $isApproved = EarlyLeave::where('employee_id', $employee->id)
+            ->where('status', ApprovalStatus::APPROVED->value)
+            ->whereHas('attendance', function ($q) use ($now) {
+                $q->whereDate('date', $now->toDateString());
+            })
+            ->exists();
+
+        // 2️⃣ Jika TIDAK approved → baru cek batas 50%
+        if (! $isApproved && $now->lt($earliestClockOut)) {
             throw new AttendanceException(
                 'Belum saatnya absen pulang. Minimal pukul '.$earliestClockOut->format('H:i'),
                 ['reason' => 'too_early_for_clockout']
             );
         }
 
-        // 2. Hitung Early Leave & Overtime (Attendance adalah sumber kebenaran)
+        // 3️⃣ Hitung early leave & overtime
         $earlyLeaveMinutes = $now->lt($workEnd)
             ? $now->diffInMinutes($workEnd)
             : 0;
@@ -95,14 +103,6 @@ class TimeValidator
         $overtimeMinutes = $now->gt($workEnd)
             ? $workEnd->diffInMinutes($now)
             : 0;
-
-        // 3. Cek Approval Early Leave (tanpa tergantung > 0)
-        $isApproved = EarlyLeave::where('employee_id', $employee->id)
-            ->where('approval_status', ApprovalStatus::APPROVED->value)
-            ->whereHas('attendance', function ($q) use ($now) {
-                $q->whereDate('date', $now->toDateString());
-            })
-            ->exists();
 
         return [
             'early_leave_minutes' => $earlyLeaveMinutes,

@@ -20,8 +20,9 @@ class EarlyLeaveResource extends JsonResource
         $isApprover = ($requesterManagerId == $myEmployeeId) && ($this->status === ApprovalStatus::PENDING->value);
         $isManager = ($this->employee?->manager_id == $myEmployeeId);
         $isDirector = $user->hasRole(UserRole::DIRECTOR->value);
+        $isHr = $user->hasRole(UserRole::HR->value);
 
-        $canApprove = ($this->status === ApprovalStatus::PENDING->value) && ($isManager || $isDirector);
+        $canApprove = ($this->status === ApprovalStatus::PENDING->value) && ($isManager || $isDirector || $isHr);
 
         return [
             'uuid' => $this->uuid,
@@ -35,7 +36,7 @@ class EarlyLeaveResource extends JsonResource
                 'update' => $user->can('update', $this->resource),
                 'delete' => $user->can('delete', $this->resource),
                 // 'approve' => $user->can('approve', $this->resource) && $isApprover,
-                'approve' => $canApprove
+                'approve' => $user->can('approve', $this->resource)
             ],
             'approved_at' => $this->approved_at?->format('Y-m-d H:i'),
             'created_at' => $this->created_at?->format('Y-m-d'),

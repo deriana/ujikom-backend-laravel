@@ -23,7 +23,9 @@ class AttendanceService
         protected GeoFenceValidator $geoValidator,
         protected TimeValidator $timeValidator,
         protected AttendanceUploader $uploader,
-        protected AttendanceLogger $logger
+        protected AttendanceLogger $logger,
+        protected OvertimeService $overtimeService
+
     ) {}
 
     /**
@@ -168,6 +170,8 @@ class AttendanceService
                 'minutes_early' => $timeValidation['early_leave_minutes'],
             ]);
         }
+
+        $this->overtimeService->updateDurationAfterClockOut($attendance);
 
     }
 

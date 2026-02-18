@@ -22,6 +22,10 @@ class LeaveApproval extends Model
         'approved_at' => 'datetime',
     ];
 
+    protected $hidden = [
+        'id',
+    ];
+
     protected static function boot()
     {
         parent::boot();

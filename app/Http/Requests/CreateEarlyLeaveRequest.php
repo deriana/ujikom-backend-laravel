@@ -56,7 +56,7 @@ class CreateEarlyLeaveRequest extends FormRequest
             }
 
             if (! $employee) {
-                $validator->errors()->add('employee_nik', 'Data karyawan tidak ditemukan atau akun Anda tidak terhubung dengan data karyawan.');
+                $validator->errors()->add('employee_nik', 'Employee data not found or your account is not linked to an employee record.');
 
                 return;
             }
