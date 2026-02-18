@@ -14,7 +14,7 @@ class FaceValidator
     {
         if (empty($inputDescriptor)) {
             throw new FaceValidationException(
-                'Descriptor wajah tidak ditemukan.',
+                'Face descriptor not found.',
                 ['reason' => 'descriptor_missing']
             );
         }

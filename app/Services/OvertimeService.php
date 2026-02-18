@@ -125,13 +125,13 @@ class OvertimeService
     {
         return DB::transaction(function () use ($overtime, $user, $approve, $note) {
             if ($overtime->status !== ApprovalStatus::PENDING->value) {
-                throw new Exception('Overtime sudah diproses.');
+                throw new Exception('Overtime has already been processed.');
             }
 
             $isManager = $overtime->employee?->manager_id === optional($user->employee)->id;
 
             if (! $isManager && ! $user->hasAnyRole([UserRole::HR, UserRole::ADMIN, UserRole::DIRECTOR, UserRole::OWNER])) {
-                throw new Exception('Tidak punya akses untuk approve lembur ini.');
+                throw new Exception('You do not have permission to approve this overtime.');
             }
 
             $overtime->update([

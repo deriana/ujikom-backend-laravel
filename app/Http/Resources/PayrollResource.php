@@ -17,6 +17,8 @@ class PayrollResource extends JsonResource
     {
         $user = Auth::user();
 
+        $statusDraft = 0;
+
         return [
             'uuid' => $this->uuid,
             'employee_name' => $this->employee?->user?->name,
@@ -30,7 +32,7 @@ class PayrollResource extends JsonResource
             'finalized_at' => $this->finalized_at,
             'can' => [
                 'update' => $user->can('update', $this->resource),
-                'pay' => $user->can('pay', $this->resource),
+                'pay' => $this->status == $statusDraft && $user->can('pay', $this->resource),
             ],
         ];
     }

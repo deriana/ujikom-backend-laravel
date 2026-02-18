@@ -2,8 +2,12 @@
 
 namespace App\Services;
 
+use App\Http\Resources\PayrollDetailResource;
 use App\Models\Payroll;
+use App\Models\Setting;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class PayrollService
 {
@@ -89,6 +93,7 @@ class PayrollService
             }
 
             $payroll->finalize();
+            $this->generateSlip($payroll);
 
             return $payroll;
         });
@@ -114,5 +119,38 @@ class PayrollService
 
             return $payroll;
         });
+    }
+
+    public function generateSlip(Payroll $payroll)
+    {
+        if (! $payroll->isFinalized()) {
+            throw new \Exception('Payroll must be finalized.');
+        }
+
+        $payroll->load(
+            'employee.user',
+            'employee.position.allowances'
+        );
+
+        $data = (new PayrollDetailResource($payroll))->resolve();
+
+        $setting = Setting::where('key', 'general')->first();
+        $general = $setting?->values ?? [];
+
+        $pdf = Pdf::loadView('pdf.payroll-slip', [
+            'data' => $data,
+            'company' => $general,
+        ]);
+
+        $fileName = "slips/{$payroll->uuid}.pdf";
+
+        Storage::put($fileName, $pdf->output());
+
+        $payroll->update([
+            'slip_path' => $fileName,
+            'slip_generated_at' => now(),
+        ]);
+
+        return $payroll;
     }
 }

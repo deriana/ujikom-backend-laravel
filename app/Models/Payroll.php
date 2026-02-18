@@ -6,6 +6,7 @@ use App\Traits\Blameable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 
 class Payroll extends Model
 {
@@ -38,6 +39,7 @@ class Payroll extends Model
         'slip_path',
         'is_void',
         'void_note',
+        'slip_generated_at',
     ];
 
     protected $casts = [
@@ -59,6 +61,7 @@ class Payroll extends Model
         'ptkp' => 'decimal:2',
         'status' => 'integer',
         'finalized_at' => 'datetime',
+        'slip_generated_at' => 'datetime',
     ];
 
     protected $hidden = [
@@ -72,15 +75,6 @@ class Payroll extends Model
         static::creating(function ($model) {
             $model->uuid = (string) Str::uuid();
         });
-
-        // Prevent edit if finalized
-        static::updating(function ($model) {
-            if ($model->getOriginal('status') == self::STATUS_FINALIZED) {
-                throw new \Exception('Payroll already finalized and cannot be modified.');
-            }
-
-        });
-
     }
 
     public function getRouteKeyName()

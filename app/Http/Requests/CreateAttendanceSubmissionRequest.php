@@ -8,7 +8,7 @@ class CreateAttendanceSubmissionRequest extends FormRequest
 {
     public function authorize()
     {
-        return $this->user()->employee !== null;
+        return true;
     }
 
     public function rules(): array
@@ -37,7 +37,7 @@ class CreateAttendanceSubmissionRequest extends FormRequest
             if (! $user->employee) {
                 $validator->errors()->add(
                     'employee',
-                    'User tidak terhubung ke employee.'
+                    'User is not linked to an employee.'
                 );
 
                 return;

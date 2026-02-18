@@ -31,11 +31,11 @@ class PayrollDetailResource extends JsonResource
             | Employee Information
             |--------------------------------------------------------------------------
             */
-            'employee' => [ 
+            'employee' => [
                 'nik' => $employee?->nik,
                 'name' => $employee?->user?->name,
                 'phone' => $employee?->phone,
-                'employment_status' => $employee?->employee_status,
+                'employment_status' => $employee?->employee_status?->label(),
                 'join_date' => $employee?->join_date,
                 'position' => [
                     'name' => $position?->name,
@@ -88,8 +88,7 @@ class PayrollDetailResource extends JsonResource
             'deductions' => [
                 'late_deduction' => $this->late_deduction,
                 'early_leave_deduction' => $this->early_leave_deduction,
-                'total_attendance_deduction' =>
-                    ($this->late_deduction ?? 0) +
+                'total_attendance_deduction' => ($this->late_deduction ?? 0) +
                     ($this->early_leave_deduction ?? 0),
 
                 'tax_amount' => $this->tax_amount,

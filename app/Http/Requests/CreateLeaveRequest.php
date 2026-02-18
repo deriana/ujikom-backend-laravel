@@ -13,18 +13,9 @@ use Illuminate\Support\Facades\Log;
 
 class CreateLeaveRequest extends FormRequest
 {
-    public function authorize(): bool
+    public function authorize()
     {
-        // Menggunakan standard Laravel 'hasAnyRole' jika tersedia di model User
-        return $this->user()->hasAnyRole([
-            UserRole::ADMIN,
-            UserRole::HR,
-            UserRole::MANAGER,
-            UserRole::EMPLOYEE,
-            UserRole::DIRECTOR,
-            UserRole::OWNER,
-            UserRole::FINANCE,
-        ]);
+        return true;
     }
 
     public function rules(): array
@@ -66,7 +57,7 @@ class CreateLeaveRequest extends FormRequest
             ]);
 
             if (! $leaveType || ! $leaveType->is_active) {
-                $validator->errors()->add('leave_type_uuid', 'Jenis cuti tidak tersedia atau tidak aktif.');
+                $validator->errors()->add('leave_type_uuid', 'The selected leave type is unavailable or inactive.');
                 Log::warning('LeaveType invalid');
 
                 return;
@@ -74,7 +65,7 @@ class CreateLeaveRequest extends FormRequest
 
             // 2️⃣ Half Day Validation
             if ($this->is_half_day && $this->date_start !== $this->date_end) {
-                $validator->errors()->add('is_half_day', 'Cuti setengah hari harus pada tanggal yang sama.');
+                $validator->errors()->add('is_half_day', 'Half-day leave must be on the same date.');
                 Log::warning('Half day invalid range');
 
                 return;
@@ -93,7 +84,7 @@ class CreateLeaveRequest extends FormRequest
             if ($daysRequested === 0) {
                 $validator->errors()->add(
                     'date_start',
-                    'Cuti tidak bisa diajukan pada hari non-kerja (weekend atau holiday).'
+                    'Leave cannot be requested on non-working days (weekends or holidays).'
                 );
 
                 return;
@@ -109,7 +100,7 @@ class CreateLeaveRequest extends FormRequest
                 : $this->user()->employee;
 
             if (! $employee) {
-                $validator->errors()->add('employee_nik', 'Pekerja tidak ditemukan.');
+                $validator->errors()->add('employee_nik', 'Employee not found.');
 
                 return;
             }
@@ -126,7 +117,7 @@ class CreateLeaveRequest extends FormRequest
                 if ($daysRequested > $remaining) {
                     $validator->errors()->add(
                         'date_end',
-                        "Saldo tidak cukup. Sisa: $remaining hari, Diminta: $daysRequested hari."
+                        "Insufficient balance. Remaining: $remaining days, Requested: $daysRequested days."
                     );
 
                     return;

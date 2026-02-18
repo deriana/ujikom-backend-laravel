@@ -45,7 +45,7 @@ class TimeValidator
         $maxEarlyMinutes = 120; // 2 jam
         if ($now->lt($workStart->copy()->subMinutes($maxEarlyMinutes))) {
             throw new AttendanceException(
-                'Belum waktunya masuk. Shift Anda dimulai pukul '.$workStart->format('H:i'),
+                'It is not time to clock in yet. Your shift starts at '.$workStart->format('H:i'),
                 ['reason' => 'too_early_for_clockin']
             );
         }
@@ -90,7 +90,7 @@ class TimeValidator
         // 2️⃣ Jika TIDAK approved → baru cek batas 50%
         if (! $isApproved && $now->lt($earliestClockOut)) {
             throw new AttendanceException(
-                'Belum saatnya absen pulang. Minimal pukul '.$earliestClockOut->format('H:i'),
+                'It is not time to clock out yet. Minimum clock out time is '.$earliestClockOut->format('H:i'),
                 ['reason' => 'too_early_for_clockout']
             );
         }

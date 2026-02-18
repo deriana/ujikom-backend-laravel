@@ -150,5 +150,6 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::put('/{payroll}', [PayrollController::class, 'update']);
         Route::put('/{payroll:uuid}/finalize', [PayrollController::class, 'finalize']);
         Route::put('/{payroll:uuid}/void', [PayrollController::class, 'void']);
+        Route::get('/{payroll:uuid}/download', [PayrollController::class, 'downloadSlip']);
     });
 });

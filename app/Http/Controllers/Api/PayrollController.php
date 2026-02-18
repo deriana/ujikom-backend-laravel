@@ -11,6 +11,7 @@ use App\Services\PayrollService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class PayrollController extends Controller
 {
@@ -84,5 +85,25 @@ class PayrollController extends Controller
         $voidedPayroll = $this->payrollService->void($payroll, $request->note, Auth::id());
 
         return $this->successResponse($voidedPayroll, 'Payroll voided successfully');
+    }
+
+    public function generateSlip(Payroll $payroll)
+    {
+        $payroll = $this->payrollService->generateSlip($payroll);
+
+        return response()->json([
+            'message' => 'Slip generated successfully',
+            'download_url' => Storage::url($payroll->slip_path),
+            'generated_at' => $payroll->slip_generated_at,
+        ]);
+    }
+
+    public function downloadSlip(Payroll $payroll)
+    {
+        if (! $payroll->slip_path) {
+            abort(404, 'Slip not generated.');
+        }
+
+        return Storage::download($payroll->slip_path);
     }
 }

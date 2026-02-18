@@ -9,19 +9,16 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class CreateOvertimeRequest extends FormRequest
 {
-    public function authorize(): bool
+    public function authorize()
     {
-        return $this->user()->hasAnyRole([
-            UserRole::ADMIN, UserRole::HR, UserRole::MANAGER,
-            UserRole::EMPLOYEE, UserRole::DIRECTOR, UserRole::OWNER, UserRole::FINANCE,
-        ]);
+        return true;
     }
 
     public function rules(): array
     {
         $rules = [
             'reason' => ['required', 'string', 'max:500'],
-            'date' => ['nullable', 'date'], 
+            'date' => ['nullable', 'date'],
         ];
 
         $user = $this->user();
@@ -51,8 +48,9 @@ class CreateOvertimeRequest extends FormRequest
                 $employee = $user->employee;
             }
 
-            if (!$employee) {
-                $validator->errors()->add('employee_nik', 'Data karyawan tidak ditemukan.');
+            if (! $employee) {
+                $validator->errors()->add('employee_nik', 'Employee data not found.');
+
                 return;
             }
 
@@ -64,8 +62,9 @@ class CreateOvertimeRequest extends FormRequest
                 ->whereDate('date', $targetDate)
                 ->first();
 
-            if (!$attendance) {
-                $validator->errors()->add('date', 'Data absensi tidak ditemukan untuk tanggal ' . $targetDate);
+            if (! $attendance) {
+                $validator->errors()->add('date', 'Attendance data not found for date '.$targetDate);
+
                 return;
             }
 

@@ -3,22 +3,13 @@
 namespace App\Http\Requests;
 
 use App\Enums\UserRole;
-use App\Models\Employee;
 use Illuminate\Foundation\Http\FormRequest;
 
 class CreateEarlyLeaveRequest extends FormRequest
 {
-    public function authorize(): bool
+    public function authorize()
     {
-        return $this->user()->hasAnyRole([
-            UserRole::ADMIN,
-            UserRole::HR,
-            UserRole::MANAGER,
-            UserRole::EMPLOYEE,
-            UserRole::DIRECTOR,
-            UserRole::OWNER,
-            UserRole::FINANCE,
-        ]);
+        return true;
     }
 
     public function rules(): array
@@ -32,8 +23,7 @@ class CreateEarlyLeaveRequest extends FormRequest
 
         if ($user->hasAnyRole([UserRole::ADMIN, UserRole::HR])) {
             $rules['employee_nik'] = ['nullable', 'exists:employees,nik'];
-        }
-        else {
+        } else {
             $rules['employee_nik'] = ['prohibited'];
         }
 
