@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\EmployeeWorkScheduleController;
 use App\Http\Controllers\Api\HolidayController;
 use App\Http\Controllers\Api\LeaveController;
 use App\Http\Controllers\Api\LeaveTypeController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\OvertimeController;
 use App\Http\Controllers\Api\PayrollController;
 use App\Http\Controllers\Api\PositionController;
@@ -152,5 +153,14 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::put('/{payroll:uuid}/finalize', [PayrollController::class, 'finalize']);
         Route::put('/{payroll:uuid}/void', [PayrollController::class, 'void']);
         Route::get('/{payroll:uuid}/download', [PayrollController::class, 'downloadSlip']);
+    });
+
+    Route::prefix('notifications')->group(function () {
+        Route::get('/', [NotificationController::class, 'getNotifications']);
+        Route::get('/unread', [NotificationController::class, 'getUnreadNotifications']);
+        Route::patch('/{id}/read', [NotificationController::class, 'markAsRead']);
+        Route::patch('/mark-all-read', [NotificationController::class, 'markAllAsRead']);
+        Route::delete('/{id}', [NotificationController::class, 'delete']);
+        Route::delete('/delete-all', [NotificationController::class, 'deleteAll']);
     });
 });

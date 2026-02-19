@@ -25,6 +25,16 @@ class NotificationController extends Controller
         return response()->json(['message' => 'Marked as read']);
     }
 
+    public function markAllAsRead()
+    {
+        Auth::user()->unreadNotifications->markAsRead();
+
+        return response()->json([
+            'message' => 'All notifications marked as read',
+            'unread_count' => 0,
+        ]);
+    }
+
     public function delete($id)
     {
         $notification = Auth::user()->notifications()->findOrFail($id);
@@ -32,4 +42,11 @@ class NotificationController extends Controller
 
         return response()->json(['message' => 'Deleted']);
     }
+
+    public function deleteAll()
+    {
+        Auth::user()->notifications()->delete();
+
+        return response()->json(['message' => 'All notifications deleted']);
+    }   
 }
