@@ -144,11 +144,22 @@ class AttendanceService
             'longitude_in' => $data['longitude'] ?? null,
             'clock_in_photo' => $photoPath,
         ]);
+
+        $lateMsg = $timeValidation['late_minutes'] > 0
+            ? " (Late by {$timeValidation['late_minutes']} minutes)"
+            : ' (On time)';
+
+        $attendance->notifyCustom(
+            title: 'Clock-In Successful',
+            message: "Hello {$attendance->employee->user->name}, you have successfully clocked in at {$now->format('H:i')}{$lateMsg}.",
+            customUsers: collect([$attendance->employee->user])
+        );
     }
 
     protected function processClockOut(Attendance $attendance, Carbon $now, array $data, ?string $photoPath): void
     {
         $timeValidation = $this->timeValidator->validateClockOutWindow($attendance->employee, $now);
+        $workMinutes = $attendance->clock_in->diffInMinutes($now);
 
         $attendance->update([
             'clock_out' => $now,
@@ -170,6 +181,15 @@ class AttendanceService
                 'minutes_early' => $timeValidation['early_leave_minutes'],
             ]);
         }
+
+        $hours = floor($workMinutes / 60);
+        $minutes = $workMinutes % 60;
+
+        $attendance->notifyCustom(
+            title: 'Clock-Out Successful',
+            message: "Thank you for your hard work today, {$attendance->employee->user->name}! You clocked out at {$now->format('H:i')}. Total work duration: {$hours} hours {$minutes} minutes.",
+            customUsers: collect([$attendance->employee->user])
+        );
 
         $this->overtimeService->updateDurationAfterClockOut($attendance);
 

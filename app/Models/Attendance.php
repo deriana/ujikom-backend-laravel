@@ -2,10 +2,18 @@
 
 namespace App\Models;
 
+use App\Traits\Notificationable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Notifications\Notifiable;
 
 class Attendance extends Model
 {
+    use Notifiable, Notificationable;
+
+    public $customNotification = [];
+
+    public $skipDefaultNotification = true;
+
     protected $fillable = [
         'employee_id', 'date', 'status',
         'clock_in', 'clock_out',

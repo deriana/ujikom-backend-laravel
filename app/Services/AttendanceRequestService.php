@@ -171,7 +171,7 @@ class AttendanceRequestService
                 }
             }
 
-            return AttendanceRequest::create([
+            $attendanceRequest = AttendanceRequest::create([
                 'employee_id' => $employee->id,
                 'request_type' => $data['request_type'],
                 'shift_template_id' => $shiftTemplateId,
@@ -181,6 +181,13 @@ class AttendanceRequestService
                 'reason' => $data['reason'],
                 'status' => ApprovalStatus::PENDING->value,
             ]);
+
+            $attendanceRequest->notifyCustom(
+                title: 'New Attendance Request',
+                message: "Employee {$employee->user->name} has submitted a new attendance request for {$data['start_date']}."
+            );
+
+            return $attendanceRequest;
         });
     }
 
@@ -229,6 +236,11 @@ class AttendanceRequestService
                 'reason' => $data['reason'] ?? $attendanceRequest->reason,
             ]);
 
+            $attendanceRequest->notifyCustom(
+                title: 'Attendance Request Updated',
+                message: "Employee {$attendanceRequest->employee->user->name} has updated their attendance request."
+            );
+
             return $attendanceRequest;
         });
     }
@@ -273,6 +285,11 @@ class AttendanceRequestService
                 }
             }
 
+            $attendanceRequest->notifyCustom(
+                title: $approve ? 'Attendance Request Approved' : 'Attendance Request Rejected',
+                message: "Your attendance request for {$attendanceRequest->start_date} has been " . ($approve ? 'approved' : 'rejected') . "."
+            );
+
             // 4️⃣ Update status request
             $attendanceRequest->update([
                 'status' => $approve ? ApprovalStatus::APPROVED->value : ApprovalStatus::REJECTED->value,
@@ -291,6 +308,10 @@ class AttendanceRequestService
     public function delete(AttendanceRequest $attendanceRequest): bool
     {
         return DB::transaction(function () use ($attendanceRequest) {
+            $attendanceRequest->notifyCustom(
+                title: 'Attendance Request Deleted',
+                message: "Employee {$attendanceRequest->employee->user->name} has deleted their attendance request for {$attendanceRequest->start_date}."
+            );
             // Optional: Tambahkan validasi hanya bisa hapus jika masih pending
             return $attendanceRequest->delete();
         });

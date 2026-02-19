@@ -90,12 +90,20 @@ class OvertimeService
         $this->validateOvertimeEligibility($attendance);
 
         return DB::transaction(function () use ($data) {
-            return Overtime::create([
+            $overtime = Overtime::create([
                 'attendance_id' => $data['attendance_id'],
                 'employee_id' => $data['employee_id'],
                 'reason' => $data['reason'],
                 'status' => ApprovalStatus::PENDING->value,
             ]);
+
+            // Notify employee about their new overtime request
+            $overtime->notifyCustom(
+                title: 'New Overtime Request Created',
+                message: 'Your overtime request has been submitted.'
+            );
+
+            return $overtime;
         });
     }
 
@@ -113,6 +121,11 @@ class OvertimeService
             $overtime->update([
                 'reason' => $data['reason'] ?? $overtime->reason,
             ]);
+
+            $overtime->notifyCustom(
+                title: 'Overtime Request Updated',
+                message: 'Your overtime request has been updated.'
+            );
 
             return $overtime;
         });
@@ -140,6 +153,13 @@ class OvertimeService
                 'approved_at' => now(),
                 'note' => $note,
             ]);
+
+            $overtime->notifyCustom(
+                title: $approve ? 'Overtime Approved' : 'Overtime Rejected',
+                message: $approve
+                    ? "Your overtime request has been approved by {$user->name}."
+                    : "Your overtime request has been rejected by {$user->name}."
+            );
 
             return $overtime;
         });
@@ -212,7 +232,14 @@ class OvertimeService
      */
     public function delete(Overtime $overtime): bool
     {
-        return DB::transaction(fn () => $overtime->delete());
+        return DB::transaction(function () use ($overtime) {
+            $overtime->notifyCustom(
+                title: 'Overtime Request Deleted',
+                message: "Employee {$overtime->employee->user->name} has deleted their overtime request for {$overtime->attendance->date->toFormattedDateString()}."
+            );
+
+            return $overtime->delete();
+        });
     }
 
     /**

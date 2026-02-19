@@ -67,7 +67,7 @@ class UserService
                 $managerId = Employee::where('nik', $data['manager_nik'])->value('id');
             }
 
-            Employee::create([
+            $employee = Employee::create([
                 'user_id' => $user->id,
                 'team_id' => $team->id,
                 'position_id' => $position->id,
@@ -84,6 +84,12 @@ class UserService
                 'resign_date' => $data['resign_date'] ?? null,
                 'created_by_id' => $creatorId,
             ]);
+
+            $employee->customNotification = [
+                'title' => 'Employee Created',
+                'message' => "Employee {$employee->user->name} (NIK: {$employee->nik}) has been successfully added to the system.",
+                'url' => "/users/{$employee->user->uuid}/show",
+            ];
 
             return $user->load([
                 'roles',
@@ -167,6 +173,12 @@ class UserService
                 'updated_by_id' => $updaterId,
             ]);
 
+            $employee->customNotification = [
+                'title' => 'Employee Updated',
+                'message' => "Employee {$employee->user->name} (NIK: {$employee->nik}) has been successfully updated.",
+                'url' => "/users/{$employee->user->uuid}/show",
+            ];
+
             return $user->load([
                 'roles',
                 'employee.position',
@@ -185,6 +197,12 @@ class UserService
         if ($user->trashed()) {
             throw new Exception('Cannot delete a user');
         }
+
+        $user->employee->customNotification = [
+            'title' => 'Employee Deleted',
+            'message' => "Employee {$user->employee->user->name} (NIK: {$user->employee->nik}) has been successfully deleted.",
+            'url' => "/users/{$user->uuid}/show",
+        ];
 
         return DB::transaction(function () use ($user) {
             $user->employee()->delete();
@@ -207,6 +225,12 @@ class UserService
             $user->restore();
             $user->employee()->onlyTrashed()->restore();
 
+            $user->employee->customNotification = [
+                'title' => 'Employee Restored',
+                'message' => "Employee {$user->employee->user->name} (NIK: {$user->employee->nik}) has been successfully restored.",
+                'url' => "/users/{$user->uuid}/show",
+            ];
+
             return $user->load([
                 'roles',
                 'employee.position',
@@ -221,6 +245,11 @@ class UserService
         return DB::transaction(function () use ($uuid) {
 
             $user = User::withTrashed()->whereUuid($uuid)->firstOrFail();
+
+            $user->employee->customNotification = [
+                'title' => 'Permanently Deleted Employee',
+                'message' => "Employee {$user->employee->user->name} (NIK: {$user->employee->nik}) has been permanently deleted.",
+            ];
 
             $user->employee()->withTrashed()->forceDelete();
             $user->forceDelete();

@@ -76,6 +76,11 @@ class PayrollService
                 'updated_by_id' => $userId, // Pastikan kolom ini ada di fillable model
             ]);
 
+            $payroll->notifyCustom(
+                title: 'Payroll Updated',
+                message: "The payroll for period {$payroll->period_start->format('M Y')} has been updated."
+            );
+
             return $payroll;
         });
     }
@@ -94,6 +99,11 @@ class PayrollService
 
             $payroll->finalize();
             $this->generateSlip($payroll);
+
+            $payroll->notifyCustom(
+                title: 'Payroll Finalized',
+                message: "The payroll for period {$payroll->period_start->format('M Y')} has been finalized."
+            );
 
             return $payroll;
         });
@@ -116,6 +126,11 @@ class PayrollService
                 'void_note' => $note,
                 'updated_by_id' => $userId,
             ]);
+
+            $payroll->notifyCustom(
+                title: 'Payroll Voided',
+                message: "The payroll for period {$payroll->period_start->format('M Y')} has been voided. Reason: {$note}"
+            );
 
             return $payroll;
         });

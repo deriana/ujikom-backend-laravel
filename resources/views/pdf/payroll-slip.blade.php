@@ -5,83 +5,93 @@
     <style>
         /* Tipografi & Dasar */
         body {
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            font-size: 11px;
-            color: #333;
-            line-height: 1.4;
+            font-family: 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-size: 10px;
+            color: #1e293b;
+            line-height: 1.5;
             margin: 0;
-            padding: 20px;
+            padding: 30px;
+            background-color: #fff;
         }
-        h2 { margin: 5px 0; color: #1a1a1a; text-transform: uppercase; letter-spacing: 1px; }
+        h2 { margin: 0; color: #0f172a; font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
         h4 {
-            margin: 0 0 10px 0;
-            padding-bottom: 5px;
-            border-bottom: 2px solid #444;
-            font-size: 12px;
-            color: #2c3e50;
+            margin: 0 0 12px 0;
+            font-size: 11px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 4px;
         }
 
         /* Layout Tabel */
-        table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
-        td { padding: 8px 5px; vertical-align: top; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        td { padding: 6px 0; vertical-align: top; }
 
         /* Utilitas */
         .text-right { text-align: right; }
-        .bold { font-weight: bold; }
+        .bold { font-weight: 700; color: #0f172a; }
         .center { text-align: center; }
-        .uppercase { text-transform: uppercase; }
+        .text-muted { color: #64748b; }
 
         /* Header Box */
-        .header-container { margin-bottom: 30px; border-bottom: 3px double #eee; padding-bottom: 10px; }
+        .header-container { margin-bottom: 40px; }
+        .badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .badge-success { background-color: #dcfce7; color: #166534; }
 
         /* Kolom Berdampingan (Earnings & Deductions) */
-        .split-section td { width: 50%; padding: 0 10px; border: none; }
+        .split-section > tbody > tr > td { width: 46%; padding: 0 2%; border: none; }
 
         /* Styling Baris Tabel Data */
-        .data-table tr { border-bottom: 1px solid #f2f2f2; }
-        .data-table tr.total-row { background-color: #f9f9f9; border-bottom: 2px solid #333; }
+        .data-table tr { border-bottom: 1px solid #f1f5f9; }
+        .data-table tr:last-child { border-bottom: none; }
+        .total-row { border-top: 2px solid #0f172a !important; }
 
         /* Net Salary Box */
         .net-salary-box {
-            background-color: #2c3e50;
-            color: white;
-            padding: 15px;
-            margin-top: 20px;
-            border-radius: 4px;
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 20px;
+            margin-top: 30px;
+            border-radius: 8px;
         }
-        .net-salary-box td { border: none !important; color: white; font-size: 14px; }
+        .net-salary-box td { border: none !important; padding: 0; }
 
         /* Footer */
-        .footer { margin-top: 50px; color: #7f8c8d; font-style: italic; }
+        .footer { margin-top: 60px; color: #94a3b8; font-size: 9px; border-top: 1px solid #f1f5f9; padding-top: 20px; }
     </style>
 </head>
 <body>
 
-{{-- HEADER UTAMA --}}
 <div class="header-container">
     <table style="margin-bottom: 0;">
         <tr>
             <td width="50%">
                 @if(!empty($company['logo']))
-                    <img src="{{ public_path(parse_url($company['logo'], PHP_URL_PATH)) }}" height="50">
+                    <img src="{{ public_path(parse_url($company['logo'], PHP_URL_PATH)) }}" height="40" style="margin-bottom: 10px;">
                 @endif
                 <h2>{{ $company['site_name'] ?? 'COMPANY NAME' }}</h2>
-                <p style="margin: 0; font-size: 10px;">Official Payslip</p>
+                <p style="margin: 4px 0 0 0; color: #64748b; font-weight: 500;">Official Payroll Statement</p>
             </td>
             <td width="50%" class="text-right">
-                <div style="font-size: 14px; font-weight: bold; color: #e74c3c;">SLIP GAJI / PAYSLIP</div>
-                <div style="margin-top: 5px;">ID: {{ $data['uuid'] }}</div>
-                <div>Status: <span style="color: green;">{{ $data['status']['label'] }}</span></div>
+                <div style="font-size: 12px; font-weight: 700; color: #0f172a; margin-bottom: 8px;">PAYSLIP #{{ substr($data['uuid'], 0, 8) }}</div>
+                <div style="margin-bottom: 8px;"><span class="badge badge-success">{{ $data['status']['label'] }}</span></div>
+                <div class="text-muted">Generated on {{ $data['finalized_at'] }}</div>
             </td>
         </tr>
     </table>
 </div>
 
-{{-- INFORMASI KARYAWAN & PERIODE --}}
 <table>
     <tr>
         <td width="50%">
-            <h4>KARYAWAN</h4>
+            <h4>EMPLOYEE INFORMATION</h4>
             <table class="data-table">
                 <tr><td>Nama</td><td class="bold">: {{ $data['employee']['name'] }}</td></tr>
                 <tr><td>NIK</td><td>: {{ $data['employee']['nik'] }}</td></tr>
@@ -90,25 +100,24 @@
             </table>
         </td>
         <td width="50%">
-            <h4>PERIODE</h4>
+            <h4>PAY PERIOD</h4>
             <table class="data-table">
-                <tr><td>Mulai</td><td>: {{ $data['period']['start'] }}</td></tr>
-                <tr><td>Selesai</td><td>: {{ $data['period']['end'] }}</td></tr>
-                <tr><td>Hari Kerja</td><td>: {{ $data['period']['days'] }} Hari</td></tr>
-                <tr><td>Tanggal Cetak</td><td>: {{ $data['finalized_at'] }}</td></tr>
+                <tr><td>Start Date</td><td>: {{ $data['period']['start'] }}</td></tr>
+                <tr><td>End Date</td><td>: {{ $data['period']['end'] }}</td></tr>
+                <tr><td>Working Days</td><td>: {{ $data['period']['days'] }} Days</td></tr>
+                <tr><td>Currency</td><td>: IDR</td></tr>
             </table>
         </td>
     </tr>
 </table>
 
-{{-- RINCIAN GAJI & POTONGAN --}}
 <table class="split-section">
     <tr>
         <td>
-            <h4>PENDAPATAN (EARNINGS)</h4>
+            <h4>EARNINGS</h4>
             <table class="data-table">
                 <tr>
-                    <td>Gaji Pokok</td>
+                    <td>Basic Salary</td>
                     <td class="text-right">{{ number_format($data['earnings']['base_salary'], 2) }}</td>
                 </tr>
                 @foreach($data['earnings']['allowances'] ?? [] as $allowance)
@@ -118,40 +127,40 @@
                     </tr>
                 @endforeach
                 <tr>
-                    <td>Lembur (Overtime)</td>
+                    <td>Overtime Pay</td>
                     <td class="text-right">{{ number_format($data['earnings']['overtime_pay'], 2) }}</td>
                 </tr>
                 <tr>
-                    <td>Penyesuaian</td>
+                    <td>Adjustments</td>
                     <td class="text-right">{{ number_format($data['earnings']['manual_adjustment'], 2) }}</td>
                 </tr>
                 <tr class="total-row bold">
-                    <td>TOTAL PENDAPATAN KOTOR</td>
+                    <td style="padding-top: 10px;">GROSS SALARY</td>
                     <td class="text-right">{{ number_format($data['earnings']['gross_salary'], 2) }}</td>
                 </tr>
             </table>
         </td>
 
         <td>
-            <h4>POTONGAN (DEDUCTIONS)</h4>
+            <h4>DEDUCTIONS</h4>
             <table class="data-table">
                 <tr>
-                    <td>Keterlambatan</td>
+                    <td>Late Arrival</td>
                     <td class="text-right">{{ number_format($data['deductions']['late_deduction'], 2) }}</td>
                 </tr>
                 <tr>
-                    <td>Pulang Awal</td>
+                    <td>Early Leave</td>
                     <td class="text-right">{{ number_format($data['deductions']['early_leave_deduction'], 2) }}</td>
                 </tr>
                 <tr>
-                    <td>Pajak (PPh 21)</td>
+                    <td>Income Tax (PPh 21)</td>
                     <td class="text-right">{{ number_format($data['deductions']['tax_amount'], 2) }}</td>
                 </tr>
                 {{-- Spacer untuk menjaga keseimbangan visual --}}
                 <tr><td>&nbsp;</td><td>&nbsp;</td></tr>
                 <tr><td>&nbsp;</td><td>&nbsp;</td></tr>
                 <tr class="total-row bold">
-                    <td>TOTAL POTONGAN</td>
+                    <td style="padding-top: 10px;">TOTAL DEDUCTIONS</td>
                     <td class="text-right">{{ number_format($data['deductions']['total_deduction'], 2) }}</td>
                 </tr>
             </table>
@@ -159,12 +168,11 @@
     </tr>
 </table>
 
-{{-- TOTAL BERSIH --}}
 <div class="net-salary-box">
     <table>
         <tr class="bold">
-            <td width="70%" style="font-size: 16px;">GAJI BERSIH (TAKE HOME PAY)</td>
-            <td class="text-right" style="font-size: 18px;">
+            <td width="60%" style="font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1px;">Take Home Pay</td>
+            <td class="text-right" style="font-size: 20px; color: #0f172a;">
                 IDR {{ number_format($data['summary']['net_salary'], 2) }}
             </td>
         </tr>
@@ -172,7 +180,7 @@
 </div>
 
 <div class="footer center">
-    <p>Ini adalah dokumen elektronik yang dihasilkan secara otomatis dan tidak memerlukan tanda tangan basah.</p>
+    <p>This is a computer-generated document. No signature is required.</p>
     <small>{{ $company['footer'] ?? '' }}</small>
 </div>
 

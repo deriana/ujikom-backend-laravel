@@ -4,14 +4,16 @@ namespace App\Models;
 
 use App\Enums\EmployeeStatus;
 use App\Traits\Blameable;
+use App\Traits\Notificationable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Notifications\Notifiable;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
 class Employee extends Model implements HasMedia
 {
-    use Blameable, InteractsWithMedia, SoftDeletes;
+    use Blameable, InteractsWithMedia, SoftDeletes, Notificationable, Notifiable;
 
     protected $fillable = [
         'nik',

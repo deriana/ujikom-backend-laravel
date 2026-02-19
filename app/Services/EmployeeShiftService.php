@@ -47,27 +47,40 @@ class EmployeeShiftService
             if ($exists) {
                 throw new \Exception('Employee already has a shift assigned on this date.');
             }
-            // TESTING
-            return EmployeeShift::create([
+
+            $shift = new EmployeeShift([
                 'employee_id' => $employee->id,
                 'shift_template_id' => $template->id,
                 'shift_date' => $data['shift_date'],
-            ])->load(['employee', 'shiftTemplate']);
+            ]);
+
+            $shift->customNotification = [
+                'title' => 'Shift Assigned',
+                'message' => "A new shift has been assigned to {$employee->user->name} on {$data['shift_date']} with template {$template->name}.",
+            ];
+
+            $shift->save();
+
+            return $shift->load(['employee', 'shiftTemplate']);
         });
     }
 
-    public function update(EmployeeShift $shift, array $data): EmployeeShift
+   public function update(EmployeeShift $shift, array $data): EmployeeShift
     {
         return DB::transaction(function () use ($shift, $data) {
             $date = Carbon::parse($data['shift_date']);
 
             $isWorkday = $this->workdayService->isWorkday($date);
-
             if (! $isWorkday) {
                 throw new \Exception("Failed: Date {$data['shift_date']} is a holiday or weekend.");
             }
 
             $template = ShiftTemplate::where('uuid', $data['shift_template_uuid'])->firstOrFail();
+
+            $shift->customNotification = [
+                'title' => 'Shift Updated',
+                'message' => "Shift schedule for {$shift->employee->user->name} has been updated to {$data['shift_date']} with template {$template->name}.",
+            ];
 
             $shift->update([
                 'shift_template_id' => $template->id,
@@ -81,13 +94,14 @@ class EmployeeShiftService
     public function delete(EmployeeShift $shift): bool
     {
         return DB::transaction(function () use ($shift) {
+            $shift->customNotification = [
+                'title' => 'Shift Deleted',
+                'message' => "Shift schedule for {$shift->employee->user->name} on {$shift->shift_date->format('Y-m-d')} has been removed.",
+            ];
 
-            $shift->delete();
-
-            return true;
+            return $shift->delete();
         });
     }
-
     public function show(EmployeeShift $shift): EmployeeShift
     {
         return $shift->load(['employee', 'shiftTemplate']);

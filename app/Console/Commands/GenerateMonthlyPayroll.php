@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\EmploymentState;
 use App\Enums\UserRole;
 use App\Models\Employee;
 use App\Models\Payroll;
@@ -18,7 +19,7 @@ class GenerateMonthlyPayroll extends Command
         {--year= : Tahun payroll}
     ';
 
-    protected $description = 'Generate monthly payroll draft';
+    protected $description = 'Generate monthly payroll draft for active employees';
 
     public function handle(): int
     {
@@ -31,10 +32,17 @@ class GenerateMonthlyPayroll extends Command
 
         $this->info("Generating payroll for period {$periodStart->toDateString()} - {$periodEnd->toDateString()}");
 
-        // Mengambil data dengan Eager Loading dan Constraints untuk efisiensi memori (Anti N+1)
+        // 1. FILTER: Hanya ambil karyawan yang aktif, sudah join, dan kontrak belum habis
         $employees = Employee::whereHas('user.roles', function ($query) {
-            $query->where('name', '!=', UserRole::OWNER);
-        })
+                $query->where('name', '!=', UserRole::OWNER->value);
+            })
+            ->where('employment_state', 'active') // Harus Aktif
+            ->where('join_date', '<=', $periodEnd) // Sudah join sebelum periode berakhir
+            ->where(function ($query) use ($periodStart) {
+                $query->whereNull('contract_end') // Kontrak selamanya
+                      ->orWhere('contract_end', '>=', $periodStart); // Atau kontrak belum habis saat periode mulai
+            })
+            ->whereNull('resign_date') // Belum resign
             ->with(['position.allowances', 'user'])
             ->with(['attendances' => function ($q) use ($periodStart, $periodEnd) {
                 $q->whereBetween('date', [$periodStart, $periodEnd]);
@@ -50,14 +58,13 @@ class GenerateMonthlyPayroll extends Command
         DB::beginTransaction();
         try {
             foreach ($employees as $employee) {
+                // Cek duplikasi payroll
                 $exists = Payroll::where('employee_id', $employee->id)
                     ->where('period_start', $periodStart->toDateString())
                     ->where('period_end', $periodEnd->toDateString())
                     ->exists();
 
-                if ($exists) {
-                    continue;
-                }
+                if ($exists) continue;
 
                 $baseSalary = (float) ($employee->base_salary ?? 0);
                 $hourlyRate = $baseSalary > 0 ? ($baseSalary / 173) : 0;
@@ -74,7 +81,6 @@ class GenerateMonthlyPayroll extends Command
                 }
 
                 // --- 2. OVERTIME ---
-                // Catatan 2: Mengambil dari collection yang sudah di-load di awal (lebih cepat)
                 $overtimeMinutes = $employee->overtimes->sum('duration_minutes');
                 $overtimePay = ($overtimeMinutes / 60) * $hourlyRate;
 
@@ -94,15 +100,13 @@ class GenerateMonthlyPayroll extends Command
                 $taxableIncome = $grossSalary - $attendanceDeduction;
                 $ptkp = 5000000;
                 $taxRate = 0.05;
-
                 $taxAmount = $taxableIncome > $ptkp ? ($taxableIncome - $ptkp) * $taxRate : 0;
 
                 // --- 5. FINAL CALCULATION ---
-                // Catatan 3: Perbaikan logika Net Salary
                 $totalDeduction = $attendanceDeduction + $taxAmount;
                 $netSalary = $grossSalary - $totalDeduction;
 
-                Payroll::create([
+                $payroll = Payroll::create([
                     'employee_id' => $employee->id,
                     'period_start' => $periodStart,
                     'period_end' => $periodEnd,
@@ -119,15 +123,23 @@ class GenerateMonthlyPayroll extends Command
                     'tax_amount' => $taxAmount,
                     'net_salary' => $netSalary,
                     'status' => Payroll::STATUS_DRAFT,
-                    'created_by_id' => 1, // Pastikan ID ini ada atau gunakan Auth jika manual
+                    'created_by_id' => 1,
                 ]);
+
+                // --- 6. NOTIFY CUSTOM ---
+                // Kirim notifikasi ke karyawan bahwa slip gaji draft sudah tersedia
+                $payroll->notifyCustom(
+                    title: 'Payroll Draft Generated',
+                    message: "Hello {$employee->user->name}, your payslip for the period {$periodStart->format('M Y')} has been generated (Draft). Please check the details.",
+                    customUsers: collect([$employee->user])
+                );
             }
+
             DB::commit();
             $this->info('Payroll draft generated successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
             $this->error('Error: '.$e->getMessage());
-
             return Command::FAILURE;
         }
 

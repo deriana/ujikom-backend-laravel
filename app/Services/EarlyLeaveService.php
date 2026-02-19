@@ -137,13 +137,20 @@ class EarlyLeaveService
                     ->storeAs('private/early_leave_attachments', $filename);
             }
 
-            return EarlyLeave::create([
+            $earlyLeave = EarlyLeave::create([
                 'attendance_id' => $attendance->id,
                 'employee_id' => $employee->id,
                 'reason' => $data['reason'],
                 'attachment' => $attachmentPath,
                 'status' => ApprovalStatus::PENDING->value,
             ]);
+
+            $earlyLeave->notifyCustom(
+                title: 'New Early Leave Request',
+                message: "Employee {$employee->user->name} has requested early leave for today.",
+            );
+
+            return $earlyLeave;
         });
     }
 
@@ -176,6 +183,11 @@ class EarlyLeaveService
                     ->storeAs('private/early_leave_attachments', $filename);
             }
 
+            $earlyLeave->notifyCustom(
+                title: 'Early Leave Request Updated',
+                message: "Employee {$earlyLeave->employee->user->name} has updated their early leave request.",
+            );
+
             $earlyLeave->update([
                 'reason' => $data['reason'] ?? $earlyLeave->reason,
                 'attachment' => $attachmentPath,
@@ -204,6 +216,11 @@ class EarlyLeaveService
                 throw new Exception('You do not have permission to process this early leave request.');
             }
 
+            $earlyLeave->notifyCustom(
+                title: $approve ? 'Early Leave Approved' : 'Early Leave Rejected',
+                message: "Your early leave request for {$earlyLeave->attendance->date->toFormattedDateString()} has been ".($approve ? 'approved' : 'rejected').".",
+            );
+
             // 3️⃣ Update status
             $earlyLeave->update([
                 'status' => $approve ? ApprovalStatus::APPROVED->value : ApprovalStatus::REJECTED->value,
@@ -224,6 +241,11 @@ class EarlyLeaveService
             if ($earlyLeave->attachment) {
                 Storage::delete($earlyLeave->attachment);
             }
+
+            $earlyLeave->notifyCustom(
+                title: 'Early Leave Request Deleted',
+                message: "Employee {$earlyLeave->employee->user->name} has deleted their early leave request for {$earlyLeave->attendance->date->toFormattedDateString()}.",
+            );
 
             $earlyLeave->delete();
 

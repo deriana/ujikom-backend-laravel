@@ -3,12 +3,16 @@
 namespace App\Models;
 
 use App\Traits\Blameable;
+use App\Traits\Notificationable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 
 class EmployeeShift extends Model
 {
-      use Blameable;
+    use Blameable, Notifiable, Notificationable;
+
+    public $customNotification = [];
 
     protected $fillable = [
         'uuid',
@@ -50,7 +54,6 @@ class EmployeeShift extends Model
     {
         return $this->belongsTo(ShiftTemplate::class);
     }
-
 
     public function getRouteKeyName()
     {
