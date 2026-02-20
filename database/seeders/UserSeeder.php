@@ -70,6 +70,15 @@ class UserSeeder extends Seeder
         ]);
         $manager->assignRole(UserRole::MANAGER->value);
 
+        // 6b. MANAGER 2
+        $manager2 = User::create([
+            'uuid' => (string) \Illuminate\Support\Str::uuid(),
+            'name' => 'Operations Manager',
+            'email' => 'manager2@app.com',
+            'password' => Hash::make('password'),
+        ]);
+        $manager2->assignRole(UserRole::MANAGER->value);
+
         // 7. EMPLOYEE (Staff Biasa)
         $employee = User::create([
             'uuid' => (string) \Illuminate\Support\Str::uuid(),
@@ -79,27 +88,17 @@ class UserSeeder extends Seeder
         ]);
         $employee->assignRole(UserRole::EMPLOYEE->value);
 
-        // $rolesDistribution = [
-        //     UserRole::EMPLOYEE->value => 70,
-        //     UserRole::MANAGER->value => 15,
-        //     UserRole::HR->value => 5,
-        //     UserRole::FINANCE->value => 5,
-        //     UserRole::DIRECTOR->value => 4,
-        // ];
+        $totalTesting = 100; // Ubah angka ini sesuai kebutuhan testingmu
 
-        // foreach ($rolesDistribution as $role => $total) {
+        for ($i = 1; $i <= $totalTesting; $i++) {
+            $user = User::create([
+                'uuid' => (string) \Illuminate\Support\Str::uuid(),
+                'name' => fake()->name(),
+                'email' => fake()->unique()->safeEmail(),
+                'password' => Hash::make('password'),
+            ]);
 
-        //     for ($i = 1; $i <= $total; $i++) {
-
-        //         $user = User::create([
-        //             'uuid' => (string) \Illuminate\Support\Str::uuid(),
-        //             'name' => fake()->name(),
-        //             'email' => strtolower($role).$i.'@app.com',
-        //             'password' => Hash::make('password'),
-        //         ]);
-
-        //         $user->assignRole($role);
-        //     }
-        // }
+            $user->assignRole(UserRole::EMPLOYEE->value);
+        }
     }
 }

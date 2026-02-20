@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\AttendanceDetailController;
 use App\Http\Controllers\Api\AttendanceRequestController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DivisionController;
 use App\Http\Controllers\Api\EarlyLeaveController;
 use App\Http\Controllers\Api\EmployeeShiftController;
@@ -163,4 +164,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::delete('/{id}', [NotificationController::class, 'delete']);
         Route::delete('/delete-all', [NotificationController::class, 'deleteAll']);
     });
+
+    Route::get('/dashboard/admin', [DashboardController::class, 'getAdminDashboard']);
+    Route::get('/dashboard/employee', [DashboardController::class, 'getEmployeeDashboard']);
 });

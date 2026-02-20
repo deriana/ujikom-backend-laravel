@@ -372,18 +372,16 @@ class PermissionSeeder extends Seeder
 
             'dashboards' => [
                 'actions' => [
+                    'admin' => 'dashboard.admin',
                     'employee' => 'dashboard.employee',
-                    'manager' => 'dashboard.manager',
-                    'hr' => 'dashboard.hr',
-                    'finance' => 'dashboard.finance',
-                    'owner' => 'dashboard.owner',
                 ],
                 'roles' => [
-                    UserRole::ADMIN->value => ['hr'],
-                    UserRole::OWNER->value => ['owner'],
-                    UserRole::DIRECTOR->value => ['owner', 'hr'],
-                    UserRole::FINANCE->value => ['finance'],
-                    UserRole::MANAGER->value => ['manager'],
+                    UserRole::ADMIN->value => ['admin'],
+                    UserRole::OWNER->value => ['admin'],
+                    UserRole::DIRECTOR->value => ['admin', 'employee'],
+                    UserRole::FINANCE->value => ['admin', 'employee'],
+                    UserRole::HR->value => ['admin', 'employee'],
+                    UserRole::MANAGER->value => ['admin', 'employee'],
                     UserRole::EMPLOYEE->value => ['employee'],
                 ],
             ],

@@ -20,6 +20,7 @@ class EmployeeSeeder extends Seeder
         $directorUser = User::where('email', 'director@app.com')->first();
         $financeUser = User::where('email', 'finance@app.com')->first();
         $managerUser = User::where('email', 'manager@app.com')->first();
+        $managerUser2 = User::where('email', 'manager2@app.com')->first();
         $hrUser = User::where('email', 'hr@app.com')->first();
         $employeeUser = User::where('email', 'employee@app.com')->first();
 
@@ -121,6 +122,23 @@ class EmployeeSeeder extends Seeder
             'created_by_id' => $admin->id,
         ]);
 
+        $managerEmployee2 = Employee::create([
+            'nik' => 'EMP20230004',
+            'user_id' => $managerUser2->id,
+            'team_id' => $teamBackend,
+            'position_id' => $posManager,
+            'manager_id' => $directorEmployee->id,
+            'employee_status' => EmployeeStatus::PERMANENT,
+            'base_salary' => 15000000,
+            'phone' => '081234567893',
+            'gender' => 'female',
+            'date_of_birth' => '1990-05-10',
+            'address' => 'Jakarta',
+            'join_date' => now()->subYears(5),
+            'created_by_id' => $admin->id,
+        ]);
+
+
         /*
         |--------------------------------------------------------------------------
         | HR
@@ -165,36 +183,41 @@ class EmployeeSeeder extends Seeder
             'created_by_id' => $admin->id,
         ]);
 
-        // $admin = User::where('email', 'admin@app.com')->first();
+        // Pastikan bagian akhir EmployeeSeeder.php kamu seperti ini:
 
-        // $teams = Team::pluck('id')->toArray();
+        $admin = User::where('email', 'admin@app.com')->first();
+        $teams = Team::pluck('id')->toArray();
+        $posStaff = Position::where('name', 'Staff')->first()->id;
 
-        // $managers = Employee::whereHas('user.roles', function ($q) {
-        //     $q->where('name', 'manager');
-        // })->pluck('id')->toArray();
+        // Ambil semua Manager yang sudah dibuat di atas untuk dijadikan atasan random
+        $managers = Employee::whereHas('user.roles', function ($q) {
+            $q->where('name', UserRole::MANAGER->value);
+        })->pluck('id')->toArray();
 
-        // $users = User::role(UserRole::EMPLOYEE->value)->get();
+        // Ambil user ber-role EMPLOYEE yang BELUM punya profil Employee (agar tidak duplikat)
+        $usersWithoutEmployee = User::role(UserRole::EMPLOYEE->value)
+            ->whereDoesntHave('employee')
+            ->get();
 
-        // foreach ($users as $index => $user) {
-
-        //     Employee::create([
-        //         'nik' => 'EMP'.str_pad($index + 1, 4, '0', STR_PAD_LEFT),
-        //         'user_id' => $user->id,
-        //         'team_id' => fake()->randomElement($teams),
-        //         'position_id' => $posStaff,
-        //         'manager_id' => fake()->randomElement($managers),
-        //         'employee_status' => fake()->randomElement([
-        //             EmployeeStatus::PERMANENT,
-        //             EmployeeStatus::CONTRACT,
-        //         ]),
-        //         'base_salary' => fake()->numberBetween(6000000, 9000000),
-        //         'phone' => fake()->phoneNumber(),
-        //         'gender' => fake()->randomElement(['male', 'female']),
-        //         'date_of_birth' => fake()->date('Y-m-d', '2000-01-01'),
-        //         'address' => fake()->address(),
-        //         'join_date' => now()->subMonths(rand(1, 60)),
-        //         'created_by_id' => $admin->id,
-        //     ]);
-        // }
+        foreach ($usersWithoutEmployee as $index => $user) {
+            Employee::create([
+                'nik' => 'TEST'.str_pad($index + 1, 5, '0', STR_PAD_LEFT),
+                'user_id' => $user->id,
+                'team_id' => fake()->randomElement($teams),
+                'position_id' => $posStaff,
+                'manager_id' => ! empty($managers) ? fake()->randomElement($managers) : null,
+                'employee_status' => fake()->randomElement([
+                    EmployeeStatus::PERMANENT,
+                    EmployeeStatus::CONTRACT,
+                ]),
+                'base_salary' => fake()->numberBetween(5000000, 10000000),
+                'phone' => fake()->phoneNumber(),
+                'gender' => fake()->randomElement(['male', 'female']),
+                'date_of_birth' => fake()->date('Y-m-d', '2000-01-01'),
+                'address' => fake()->address(),
+                'join_date' => now()->subMonths(rand(1, 24)),
+                'created_by_id' => $admin->id,
+            ]);
+        }
     }
 }
