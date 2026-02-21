@@ -13,7 +13,6 @@ use App\Services\UserService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
@@ -68,7 +67,7 @@ class UserController extends Controller
 
         return $this->successResponse(
             new UserResource($user),
-            'Division fetched successfully'
+            'User fetched successfully'
         );
     }
 
@@ -219,6 +218,57 @@ class UserController extends Controller
         return $this->successResponse(
             EmployeeLiteResources::collection($users),
             'Employees fetched successfully'
+        );
+    }
+
+    public function getProfile()
+    {
+        $user = Auth::user();
+
+        $employee = $this->userService->show($user);
+
+        return $this->successResponse(
+            new UserResource($employee),
+            'Profile fetched successfully'
+        );
+    }
+
+    public function changePassword(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'current_password' => 'required|string',
+            'new_password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $user = Auth::user();
+
+        $this->userService->changePassword(
+            $user,
+            $validated['current_password'],
+            $validated['new_password']
+        );
+
+        return $this->successResponse(
+            null,
+            'Password changed successfully'
+        );
+    }
+
+    public function updateBiometricDescriptors(Request $request)
+    {
+        $request->validate([
+            'descriptors' => 'required|array|size:5',
+            'descriptors.*' => 'required|array|min:128',
+        ]);
+
+        $this->userService->updateBiometricDescriptors(
+            Auth::user(),
+            $request->descriptors
+        );
+
+        return $this->successResponse(
+            null,
+            'Biometric descriptors updated successfully'
         );
     }
 }

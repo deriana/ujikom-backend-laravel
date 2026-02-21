@@ -68,6 +68,9 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::post('/upload-profile-photo/{uuid}', [UserController::class, 'uploadProfilePhoto']);
         Route::get('/managers', [UserController::class, 'getManagers']);
         Route::get('/employees-lite', [UserController::class, 'getEmployeesLite']);
+        Route::get('/profile', [UserController::class, 'getProfile']);
+        Route::put('/change-password', [UserController::class, 'changePassword']);
+        Route::put('/update-biometric', [UserController::class, 'updateBiometricDescriptors']);
     });
     Route::apiResource('users', UserController::class);
     Route::prefix('divisions')->group(function () {

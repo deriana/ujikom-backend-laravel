@@ -106,6 +106,7 @@ class UserService
             'employee.position',
             'employee.team.division',
             'employee.manager.user',
+            'employee.biometrics',
             'roles',
         ]);
     }
@@ -292,6 +293,21 @@ class UserService
         });
     }
 
+    public function changePassword(User $user, string $currentPassword, string $newPassword): void
+    {
+        DB::transaction(function () use ($user, $currentPassword, $newPassword) {
+            if (! Hash::check($currentPassword, $user->password)) {
+                throw new Exception('The current password you entered is incorrect.');
+            }
+
+            $user->update([
+                'password' => Hash::make($newPassword),
+            ]);
+
+            $user->tokens()->delete();
+        });
+    }
+
     public function adminChangePassword(string $uuid, string $newPassword): void
     {
         DB::transaction(function () use ($uuid, $newPassword) {
@@ -388,5 +404,24 @@ class UserService
         return Employee::whereHas('user', function ($query) {
             $query->where('system_reserve', false);
         })->with('user')->get();
+    }
+
+    public function updateBiometricDescriptors(User $user, array $descriptors): void
+    {
+        DB::transaction(function () use ($user, $descriptors) {
+            $employee = $user->employee;
+
+            if (! $employee) {
+                throw new Exception('Employee record not found for this user');
+            }
+
+            $employee->biometrics()->delete();
+
+            foreach ($descriptors as $descriptor) {
+                $employee->biometrics()->create([
+                    'descriptor' => $descriptor,
+                ]);
+            }
+        });
     }
 }

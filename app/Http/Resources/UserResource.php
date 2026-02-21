@@ -4,11 +4,14 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Auth;
 
 class UserResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $user = Auth::user();
+
         return [
             'uuid' => $this->uuid,
             'name' => $this->name,
@@ -20,6 +23,10 @@ class UserResource extends JsonResource
 
             'roles' => $this->whenLoaded('roles', fn () => $this->roles->pluck('name')
             ),
+
+            'can' => [
+                'update' => $user ? $user->can('update', $this->resource) : false,
+            ],
 
             'employee' => $this->whenLoaded('employee', function () {
                 return [
@@ -52,6 +59,7 @@ class UserResource extends JsonResource
                     ] : null,
 
                     // tambahan fields baru
+                    'has_face_descriptor' => $this->employee->biometrics ? true : false,
                     'profile_photo' => $this->employee->getFirstMediaUrl('profile_photo') ?: null,
                     'phone' => $this->employee->phone,
                     'gender' => $this->employee->gender,
