@@ -13,6 +13,7 @@ use App\Services\Attendance\Validators\GeoFenceValidator;
 use App\Services\Attendance\Validators\TimeValidator;
 use Carbon\Carbon;
 use Exception;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -33,103 +34,26 @@ class AttendanceService
      */
     public function handleAttendance(array $data, string $userAgent): array
     {
-        DB::beginTransaction();
         try {
-            // 1. Validate Face
-            $descriptor = is_array($data['descriptor'] ?? null)
-                ? $data['descriptor']
-                : json_decode($data['descriptor'] ?? '[]', true);
-
-            $faceResult = $this->faceValidator->validate($descriptor);
-            $employee = $faceResult['employee'];
-            $score = $faceResult['score'];
-
-            $user = $employee->user;
-
-            if ($user->hasRole([\App\Enums\UserRole::DIRECTOR->value, \App\Enums\UserRole::OWNER->value])) {
-                throw new AttendanceException('This position is exempt from daily attendance', [
-                    'reason' => 'role_exempted',
-                ]);
+            $user = Auth::user();
+            if (!$user->employee) {
+                return ['success' => false, 'message' => 'Profil karyawan tidak ditemukan.'];
             }
 
-            // 2. Validate Geo Location (if applicable)
-            $this->geoValidator->validate(
-                (float) ($data['latitude'] ?? 0),
-                (float) ($data['longitude'] ?? 0)
-            );
+            $descriptor = $this->parseDescriptor($data['descriptor'] ?? null);
 
-            // 3. Validate Workday
-            $today = Carbon::today();
-            $this->timeValidator->validateWorkday($today);
+            // Verifikasi wajah (1:1 matching dengan data user login)
+            $faceResult = $this->faceValidator->verifyMatch($user->employee, $descriptor);
 
-            // 4. Get or Create Attendance Record
-            $attendance = Attendance::firstOrCreate(
-                ['employee_id' => $employee->id, 'date' => $today],
-                ['status' => 'present']
-            );
-
-            $now = Carbon::now();
-            $photoPath = isset($data['photo'])
-                ? $this->uploader->upload($data['photo'], $employee->id, $today)
-                : null;
-
-            $resultMessage = 'Already attended today'; // Default if both filled
-
-            // 5. Process Clock-In or Clock-Out
-            $actionType = null;
-            if (! $attendance->clock_in) {
-                $actionType = 'clock_in';
-                $status = $this->processClockIn($attendance, $now, $data, $photoPath);
-                $resultMessage = 'Clock-in successful';
-            } elseif (! $attendance->clock_out) {
-                $actionType = 'clock_out';
-                $status = $this->processClockOut($attendance, $now, $data, $photoPath);
-                $resultMessage = 'Clock-out successful';
-            } else {
-                throw new AttendanceException('Already clocked in and out today', ['reason' => 'already_clocked_in_out']);
-            }
-
-            // 6. Log Success
-            $this->logger->logSuccess($actionType, [
-                'employee_id' => $employee->id,
-                'employee_nik' => $employee->nik,
-                'similarity_score' => $score,
-                'latitude' => $data['latitude'] ?? null,
-                'longitude' => $data['longitude'] ?? null,
-                'user_agent' => $userAgent,
-            ]);
-
-            DB::commit();
-
-            return [
-                'success' => true,
-                'message' => $resultMessage,
-                'data' => $attendance,
-            ];
+            // Jalankan core logic
+            return $this->executeProcess($faceResult['employee'], $faceResult['score'], $data, $userAgent);
 
         } catch (AttendanceException $e) {
-            DB::rollBack();
-            // Log failure explicitly
-            $this->logger->logFailure($e->getMessage(), array_merge($e->getContext(), [
-                'user_agent' => $userAgent,
-                'employee_id' => $employee->id ?? null, // Attempt to get ID if available
-            ]));
-
-            return [
-                'success' => false,
-                'message' => $e->getMessage(),
-            ];
-
+            return ['success' => false, 'message' => $e->getMessage()];
         } catch (Exception $e) {
-            DB::rollBack();
-            $this->logger->logFailure('System Error: '.$e->getMessage(), ['user_agent' => $userAgent]);
+            Log::error('Attendance Error: '.$e->getMessage());
 
-            Log::error('System Error: '.$e->getMessage());
-
-            return [
-                'success' => false,
-                'message' => 'A system error occurred',
-            ];
+            return ['success' => false, 'message' => 'Terjadi kesalahan sistem.'];
         }
     }
 
@@ -200,30 +124,127 @@ class AttendanceService
      */
     public function handleBulkAttendance(array $data, string $userAgent): array
     {
-        $summary = [
-            'success_count' => 0,
-            'failed_count' => 0,
-            'details' => [],
-        ];
+        $summary = ['success_count' => 0, 'failed_count' => 0, 'details' => []];
 
         foreach ($data['attendances'] as $item) {
-            // Merge global lat/long if not present in item
-            $singleData = array_merge($item, [
-                'latitude' => $data['latitude'] ?? ($item['latitude'] ?? null),
-                'longitude' => $data['longitude'] ?? ($item['longitude'] ?? null),
-            ]);
+            try {
+                $singleData = array_merge($item, [
+                    'latitude' => $data['latitude'] ?? ($item['latitude'] ?? null),
+                    'longitude' => $data['longitude'] ?? ($item['longitude'] ?? null),
+                ]);
 
-            $res = $this->handleAttendance($singleData, $userAgent);
+                $descriptor = $this->parseDescriptor($item['descriptor'] ?? null);
 
-            if ($res['success']) {
+                $faceResult = $this->faceValidator->validate($descriptor);
+
+                $res = $this->executeProcess($faceResult['employee'], $faceResult['score'], $singleData, $userAgent);
+
                 $summary['success_count']++;
                 $summary['details'][] = ['status' => 'Success', 'message' => $res['message']];
-            } else {
+            } catch (Exception $e) {
                 $summary['failed_count']++;
-                $summary['details'][] = ['status' => 'Failed', 'message' => $res['message']];
+                $summary['details'][] = ['status' => 'Failed', 'message' => $e->getMessage()];
             }
         }
 
         return ['success' => true, 'summary' => $summary];
+    }
+
+    protected function executeProcess($employee, $score, array $data, string $userAgent): array
+    {
+        DB::beginTransaction();
+        try {
+            $user = $employee->user;
+
+            // 1. Cek Role Terlarang
+            if ($user->hasRole([\App\Enums\UserRole::DIRECTOR->value, \App\Enums\UserRole::OWNER->value])) {
+                throw new AttendanceException('Jabatan ini dibebaskan dari absensi harian.');
+            }
+
+            // 2. Validasi Lokasi & Hari Kerja
+            $this->geoValidator->validate((float) ($data['latitude'] ?? 0), (float) ($data['longitude'] ?? 0));
+            $today = Carbon::today();
+            $this->timeValidator->validateWorkday($today);
+
+            // 3. Record Absensi
+            $attendance = Attendance::firstOrCreate(['employee_id' => $employee->id, 'date' => $today], ['status' => 'present']);
+            $now = Carbon::now();
+            $photoPath = isset($data['photo']) ? $this->uploader->upload($data['photo'], $employee->id, $today) : null;
+
+            $resultMessage = 'Already attended today'; // Default if both filled
+
+            // 4. Proses Clock In/Out
+            $actionType = null;
+            if (! $attendance->clock_in) {
+                $actionType = 'clock_in';
+                $this->processClockIn($attendance, $now, $data, $photoPath);
+                $resultMessage = 'Clock-in berhasil';
+            } elseif (! $attendance->clock_out) {
+                $actionType = 'clock_out';
+                $this->processClockOut($attendance, $now, $data, $photoPath);
+                $resultMessage = 'Clock-out berhasil';
+            } else {
+                throw new AttendanceException('Sudah melakukan clock-in dan clock-out hari ini.');
+            }
+
+            // 5. Log & Commit
+            $this->logger->logSuccess($actionType, [
+                'employee_id' => $employee->id,
+                'employee_nik' => $employee->nik,
+                'similarity_score' => $score,
+                'latitude' => $data['latitude'] ?? null,
+                'longitude' => $data['longitude'] ?? null,
+                'user_agent' => $userAgent,
+            ]);
+
+            DB::commit();
+
+            return ['success' => true, 'message' => $resultMessage, 'data' => $attendance];
+
+        } catch (AttendanceException $e) {
+            DB::rollBack();
+            // Log failure explicitly
+            $this->logger->logFailure($e->getMessage(), array_merge($e->getContext(), [
+                'user_agent' => $userAgent,
+                'employee_id' => $employee->id ?? null, // Attempt to get ID if available
+            ]));
+
+            return [
+                'success' => false,
+                'message' => $e->getMessage(),
+            ];
+
+        } catch (Exception $e) {
+            DB::rollBack();
+            $this->logger->logFailure('System Error: '.$e->getMessage(), ['user_agent' => $userAgent]);
+
+            Log::error('System Error: '.$e->getMessage());
+
+            return [
+                'success' => false,
+                'message' => 'A system error occurred',
+            ];
+        }
+    }
+
+    protected function parseDescriptor($raw): array
+    {
+        return is_array($raw) ? $raw : json_decode($raw ?? '[]', true);
+    }
+
+    public function getTodayAttendanceStatus($employee): string
+    {
+        $attendance = Attendance::where('employee_id', $employee->id)
+            ->where('date', Carbon::today())
+            ->first();
+        if (! $attendance) {
+            return 'absent';
+        } elseif ($attendance->clock_in && ! $attendance->clock_out) {
+            return 'clocked_in';
+        } elseif ($attendance->clock_in && $attendance->clock_out) {
+            return 'completed';
+        } else {
+            return 'absent';
+        }
     }
 }

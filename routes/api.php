@@ -50,6 +50,7 @@ Route::group(['prefix' => 'auth', 'middleware' => 'throttle:api'], function () {
 });
 
 Route::post('/attendance/bulk-send', [AttendanceController::class, 'bulkAttendance']);
+Route::post('/attendance/single-send', [AttendanceController::class, 'singleAttendance']);
 
 Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::get('/user', function (Request $request) {
@@ -98,6 +99,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::post('/geo_fencing', [SettingController::class, 'updateGeoFencing']);
         Route::post('/general', [SettingController::class, 'updateGeneral']);
     });
+    Route::get('/attendances/today', [AttendanceController::class, 'attendanceStatusToday']);
     Route::get('/attendances/export', [AttendanceDetailController::class, 'export']);
     Route::apiResource('attendances', AttendanceDetailController::class)->only('index', 'show');
     Route::apiResource('holidays', HolidayController::class);
