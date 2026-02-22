@@ -22,6 +22,7 @@ use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\ShiftTemplateController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\WorkScheduleController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\VerificationController;
@@ -51,6 +52,10 @@ Route::group(['prefix' => 'auth', 'middleware' => 'throttle:api'], function () {
     Route::get('/check-token', [VerificationController::class, 'checkToken']);
     Route::post('/resend-verification', [VerificationController::class, 'resend']);
     Route::post('/finalize-activation', [VerificationController::class, 'finalizeActivation']);
+
+    Route::get('/reset-password/check', [ForgotPasswordController::class, 'checkToken']);
+    Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLink']);
+    Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword']);
 });
 
 Route::post('/attendance/bulk-send', [AttendanceController::class, 'bulkAttendance']);
