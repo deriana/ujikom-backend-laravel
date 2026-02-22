@@ -60,6 +60,7 @@ Route::group(['prefix' => 'auth', 'middleware' => 'throttle:api'], function () {
 
 Route::post('/attendance/bulk-send', [AttendanceController::class, 'bulkAttendance']);
 Route::post('/attendance/single-send', [AttendanceController::class, 'singleAttendance']);
+route::get('/settings/get/general', [SettingController::class, 'getGeneral']);
 
 Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::get('/user', function (Request $request) {
