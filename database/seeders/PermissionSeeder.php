@@ -366,7 +366,7 @@ class PermissionSeeder extends Seeder
                     UserRole::FINANCE->value => ['index', 'show', 'create', 'edit', 'destroy', 'export', 'pay'],
                     UserRole::DIRECTOR->value => ['index', 'show'],
                     UserRole::OWNER->value => ['index', 'show', 'export'],
-                    UserRole::EMPLOYEE->value => ['show'],
+                    UserRole::EMPLOYEE->value => ['index', 'show'],
                 ],
             ],
 

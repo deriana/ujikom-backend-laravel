@@ -22,6 +22,7 @@ class UserService
     public function index()
     {
         $user = Auth::user();
+        $currentUserEmployee = $user->employee;
 
         $query = User::with([
             'employee.position',
@@ -32,11 +33,21 @@ class UserService
             ->where('id', '!=', $user->id)
             ->latest();
 
-        if ($user->hasAnyRole([UserRole::ADMIN->value, UserRole::DIRECTOR->value, UserRole::OWNER->value, UserRole::HR->value, UserRole::FINANCE->value])) {
+        if ($user->hasAnyRole([
+            UserRole::ADMIN->value,
+            UserRole::DIRECTOR->value,
+            UserRole::OWNER->value,
+            UserRole::HR->value,
+            UserRole::FINANCE->value
+        ])) {
         } elseif ($user->hasRole(UserRole::MANAGER->value)) {
-            $query->whereHas('employee', function ($q) use ($user) {
-                $q->where('manager_id', $user->id);
-            });
+            if ($currentUserEmployee) {
+                $query->whereHas('employee', function ($q) use ($currentUserEmployee) {
+                    $q->where('manager_id', $currentUserEmployee->id);
+                });
+            } else {
+                return response()->json([], 200);
+            }
         } elseif ($user->hasRole(UserRole::EMPLOYEE->value)) {
             $query->where('id', $user->id);
         } else {
@@ -220,7 +231,6 @@ class UserService
 
             return true;
         });
-
     }
 
     public function restore(string $uuid): User
@@ -364,10 +374,12 @@ class UserService
     public function getTrashed()
     {
         return User::onlyTrashed()
-            ->with('employee.position',
+            ->with(
+                'employee.position',
                 'employee.team.division',
                 'employee.manager.user',
-                'roles', )
+                'roles',
+            )
             ->latest()
             ->get();
     }

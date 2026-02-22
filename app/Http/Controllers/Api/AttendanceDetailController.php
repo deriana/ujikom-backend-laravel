@@ -40,7 +40,7 @@ class AttendanceDetailController extends Controller
 
     public function show(Attendance $attendance): JsonResponse
     {
-        $this->authorize('view', Attendance::class);
+        // $this->authorize('view', Attendance::class);
 
         $attendance = $this->attendanceDetailService->show($attendance);
 

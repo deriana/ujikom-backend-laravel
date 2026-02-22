@@ -21,6 +21,8 @@ class UserSeeder extends Seeder
             'email' => 'admin@app.com',
             'password' => Hash::make('password'),
             'system_reserve' => true,
+            'is_verified' => true,
+            'email_verified_at' => now(),
         ]);
         $admin->assignRole(UserRole::ADMIN->value);
 
@@ -31,6 +33,8 @@ class UserSeeder extends Seeder
             'email' => 'owner@app.com',
             'password' => Hash::make('password'),
             'system_reserve' => true,
+            'is_verified' => true,
+            'email_verified_at' => now(),
         ]);
         $owner->assignRole(UserRole::OWNER->value);
 
@@ -40,6 +44,8 @@ class UserSeeder extends Seeder
             'name' => 'Ibu Direktur',
             'email' => 'director@app.com',
             'password' => Hash::make('password'),
+            'is_verified' => true,
+            'email_verified_at' => now(),
         ]);
         $director->assignRole(UserRole::DIRECTOR->value);
 
@@ -49,6 +55,8 @@ class UserSeeder extends Seeder
             'name' => 'Project HR',
             'email' => 'hr@app.com',
             'password' => Hash::make('password'),
+            'is_verified' => true,
+            'email_verified_at' => now(),
         ]);
         $hr->assignRole(UserRole::HR->value);
 
@@ -58,6 +66,8 @@ class UserSeeder extends Seeder
             'name' => 'Bagian Keuangan',
             'email' => 'finance@app.com',
             'password' => Hash::make('password'),
+            'is_verified' => true,
+            'email_verified_at' => now(),
         ]);
         $finance->assignRole(UserRole::FINANCE->value);
 
@@ -67,6 +77,8 @@ class UserSeeder extends Seeder
             'name' => 'Project Manager',
             'email' => 'manager@app.com',
             'password' => Hash::make('password'),
+            'is_verified' => true,
+            'email_verified_at' => now(),
         ]);
         $manager->assignRole(UserRole::MANAGER->value);
 
@@ -76,6 +88,8 @@ class UserSeeder extends Seeder
             'name' => 'Operations Manager',
             'email' => 'manager2@app.com',
             'password' => Hash::make('password'),
+            'is_verified' => true,
+            'email_verified_at' => now(),
         ]);
         $manager2->assignRole(UserRole::MANAGER->value);
 
@@ -85,6 +99,8 @@ class UserSeeder extends Seeder
             'name' => 'Nikola Tesla',
             'email' => 'employee@app.com',
             'password' => Hash::make('password'),
+            'is_verified' => true,
+            'email_verified_at' => now(),
         ]);
         $employee->assignRole(UserRole::EMPLOYEE->value);
 

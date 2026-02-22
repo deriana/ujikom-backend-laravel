@@ -7,6 +7,7 @@ use App\Http\Requests\CreateUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Http\Resources\EmployeeLiteResources;
 use App\Http\Resources\ManagerResource;
+use App\Http\Resources\UserDetailResource;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Services\UserService;
@@ -66,7 +67,7 @@ class UserController extends Controller
         $user = $this->userService->show($user);
 
         return $this->successResponse(
-            new UserResource($user),
+            new UserDetailResource($user),
             'User fetched successfully'
         );
     }
