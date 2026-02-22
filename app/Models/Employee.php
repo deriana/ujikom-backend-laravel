@@ -51,6 +51,7 @@ class Employee extends Model implements HasMedia
         'contract_end' => 'date',
         'resign_date' => 'date',
         'date_of_birth' => 'date',
+        'termination_date' => 'date',
     ];
 
     protected static function booted()

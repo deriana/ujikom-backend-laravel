@@ -278,7 +278,7 @@ class UserService
         });
     }
 
-    public function terminateEmployment(string $uuid, EmploymentState $state, ?string $date, int $adminId): User
+    public function terminateEmployment(string $uuid, string $state, ?string $date, int $adminId): User
     {
         return DB::transaction(function () use ($uuid, $state, $date, $adminId) {
 
@@ -294,7 +294,7 @@ class UserService
             }
 
             $employee->update([
-                'employment_state' => $state->value,
+                'employment_state' => $state,
                 'termination_date' => $date ?? now(),
                 'updated_by_id' => $adminId,
             ]);

@@ -10,6 +10,7 @@ class UserResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
 
         return [
@@ -21,11 +22,15 @@ class UserResource extends JsonResource
             'is_active' => $this->is_active,
             'system_reserve' => $this->system_reserve,
 
-            'roles' => $this->whenLoaded('roles', fn () => $this->roles->pluck('name')
+            'roles' => $this->whenLoaded(
+                'roles',
+                fn() => $this->roles->pluck('name')
             ),
 
             'can' => [
-                'update' => $user ? $user->can('update', $this->resource) : false,
+                'update' => $this->is_active && $user?->can('update', $this->resource),
+                'terminate' => $this->is_active && $user?->can('terminate', $this->resource),
+                'change_password' => $user?->can('changePassword', $this->resource),
             ],
 
             'employee' => $this->whenLoaded('employee', function () {

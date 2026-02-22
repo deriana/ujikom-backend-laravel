@@ -46,4 +46,14 @@ class UserPolicy
     {
         return $user->can('user.forceDelete') && $user->id === $model->created_by_id;
     }
+
+    public function terminated(User $user, User $model): bool
+    {
+        return $user->can('user.terminated');
+    }
+
+    public function changePassword(User $user, User $model): bool
+    {
+        return $user->can('user.change_password') || $user->id === $model->id;
+    }
 }

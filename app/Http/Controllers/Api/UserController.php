@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\ApprovalStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CreateUserRequest;
 use App\Http\Requests\UpdateUserRequest;
@@ -38,7 +39,6 @@ class UserController extends Controller
             'Users fetched successfully',
             200
         );
-
     }
 
     /**
@@ -128,8 +128,9 @@ class UserController extends Controller
         $this->authorize('edit', User::class);
 
         $validated = $request->validate([
-            'type' => 'required|in:resign,terminated',
-            'date' => 'nullable|date', ]);
+            'type' => 'required|in:resigned,terminated',
+            'date' => 'nullable|date',
+        ]);
 
         $user = $this->userService->terminateEmployment(
             $uuid,
@@ -152,7 +153,9 @@ class UserController extends Controller
             'new_password' => 'required|string|min:8|confirmed',
         ]);
 
-        $user = $this->userService->adminChangePassword($uuid, $validated['new_password']
+        $user = $this->userService->adminChangePassword(
+            $uuid,
+            $validated['new_password']
         );
 
         return $this->successResponse(
