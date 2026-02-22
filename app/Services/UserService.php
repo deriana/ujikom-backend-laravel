@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\EmploymentState;
 use App\Enums\UserRole;
+use App\Mail\VerifyEmail;
 use App\Models\Employee;
 use App\Models\Position;
 use App\Models\Role;
@@ -13,6 +14,8 @@ use Exception;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 class UserService
 {
@@ -50,7 +53,7 @@ class UserService
             $user = User::create([
                 'name' => $data['name'],
                 'email' => $data['email'],
-                'password' => Hash::make($data['password']),
+                'password' => Hash::make(Str::random(32)),
                 'is_active' => $data['is_active'],
             ]);
 
@@ -90,6 +93,12 @@ class UserService
                 'message' => "Employee {$employee->user->name} (NIK: {$employee->nik}) has been successfully added to the system.",
                 'url' => "/users/{$employee->user->uuid}/show",
             ];
+
+            $verificationService = app(EmailVerificationService::class);
+            $token = $verificationService->generateToken($user);
+
+            // Kirim email (Bisa via Queue agar cepat)
+            Mail::to($user->email)->send(new VerifyEmail($user, $token));
 
             return $user->load([
                 'roles',

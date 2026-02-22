@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\UserRole;
 use App\Models\User;
 use Spatie\Permission\Models\Role;
 use Illuminate\Auth\Access\HandlesAuthorization;
@@ -12,7 +13,7 @@ class RolePolicy
 
     public function viewAny(User $user): bool
     {
-        return $user->can('role.index');
+        return $user->can('role.index') || $user->hasRole(UserRole::HR);
     }
 
     public function view(User $user, Role $role): bool

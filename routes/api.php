@@ -24,6 +24,7 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\WorkScheduleController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Auth\VerificationController;
 
 Route::middleware('throttle:api')->group(function () {
     Route::get('/ping', function () {
@@ -47,6 +48,9 @@ Route::group(['prefix' => 'auth', 'middleware' => 'throttle:api'], function () {
         });
         Route::post('/logout', [AuthController::class, 'logout']);
     });
+    Route::get('/check-token', [VerificationController::class, 'checkToken']);
+    Route::post('/resend-verification', [VerificationController::class, 'resend']);
+    Route::post('/finalize-activation', [VerificationController::class, 'finalizeActivation']);
 });
 
 Route::post('/attendance/bulk-send', [AttendanceController::class, 'bulkAttendance']);

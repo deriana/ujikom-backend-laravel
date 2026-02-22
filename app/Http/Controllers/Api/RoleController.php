@@ -24,7 +24,7 @@ class RoleController extends Controller
      */
     public function index(): JsonResponse
     {
-        $this->authorize('viewAny', Role::class);
+        // $this->authorize('viewAny', Role::class);
 
         $roles = $this->roleService->index();
 
