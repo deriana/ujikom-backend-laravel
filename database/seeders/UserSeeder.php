@@ -21,6 +21,8 @@ class UserSeeder extends Seeder
             'email' => 'admin@app.com',
             'password' => Hash::make('password'),
             'system_reserve' => true,
+            'is_verified' => true,
+            'email_verified_at' => now(),
         ]);
         $admin->assignRole(UserRole::ADMIN->value);
 
@@ -31,6 +33,8 @@ class UserSeeder extends Seeder
             'email' => 'owner@app.com',
             'password' => Hash::make('password'),
             'system_reserve' => true,
+            'is_verified' => true,
+            'email_verified_at' => now(),
         ]);
         $owner->assignRole(UserRole::OWNER->value);
 
@@ -40,6 +44,8 @@ class UserSeeder extends Seeder
             'name' => 'Ibu Direktur',
             'email' => 'director@app.com',
             'password' => Hash::make('password'),
+            'is_verified' => true,
+            'email_verified_at' => now(),
         ]);
         $director->assignRole(UserRole::DIRECTOR->value);
 
@@ -49,6 +55,8 @@ class UserSeeder extends Seeder
             'name' => 'Project HR',
             'email' => 'hr@app.com',
             'password' => Hash::make('password'),
+            'is_verified' => true,
+            'email_verified_at' => now(),
         ]);
         $hr->assignRole(UserRole::HR->value);
 
@@ -58,6 +66,8 @@ class UserSeeder extends Seeder
             'name' => 'Bagian Keuangan',
             'email' => 'finance@app.com',
             'password' => Hash::make('password'),
+            'is_verified' => true,
+            'email_verified_at' => now(),
         ]);
         $finance->assignRole(UserRole::FINANCE->value);
 
@@ -67,8 +77,21 @@ class UserSeeder extends Seeder
             'name' => 'Project Manager',
             'email' => 'manager@app.com',
             'password' => Hash::make('password'),
+            'is_verified' => true,
+            'email_verified_at' => now(),
         ]);
         $manager->assignRole(UserRole::MANAGER->value);
+
+        // 6b. MANAGER 2
+        $manager2 = User::create([
+            'uuid' => (string) \Illuminate\Support\Str::uuid(),
+            'name' => 'Operations Manager',
+            'email' => 'manager2@app.com',
+            'password' => Hash::make('password'),
+            'is_verified' => true,
+            'email_verified_at' => now(),
+        ]);
+        $manager2->assignRole(UserRole::MANAGER->value);
 
         // 7. EMPLOYEE (Staff Biasa)
         $employee = User::create([
@@ -76,30 +99,22 @@ class UserSeeder extends Seeder
             'name' => 'Nikola Tesla',
             'email' => 'employee@app.com',
             'password' => Hash::make('password'),
+            'is_verified' => true,
+            'email_verified_at' => now(),
         ]);
         $employee->assignRole(UserRole::EMPLOYEE->value);
 
-        // $rolesDistribution = [
-        //     UserRole::EMPLOYEE->value => 70,
-        //     UserRole::MANAGER->value => 15,
-        //     UserRole::HR->value => 5,
-        //     UserRole::FINANCE->value => 5,
-        //     UserRole::DIRECTOR->value => 4,
-        // ];
+        $totalTesting = 100; // Ubah angka ini sesuai kebutuhan testingmu
 
-        // foreach ($rolesDistribution as $role => $total) {
+        for ($i = 1; $i <= $totalTesting; $i++) {
+            $user = User::create([
+                'uuid' => (string) \Illuminate\Support\Str::uuid(),
+                'name' => fake()->name(),
+                'email' => fake()->unique()->safeEmail(),
+                'password' => Hash::make('password'),
+            ]);
 
-        //     for ($i = 1; $i <= $total; $i++) {
-
-        //         $user = User::create([
-        //             'uuid' => (string) \Illuminate\Support\Str::uuid(),
-        //             'name' => fake()->name(),
-        //             'email' => strtolower($role).$i.'@app.com',
-        //             'password' => Hash::make('password'),
-        //         ]);
-
-        //         $user->assignRole($role);
-        //     }
-        // }
+            $user->assignRole(UserRole::EMPLOYEE->value);
+        }
     }
 }

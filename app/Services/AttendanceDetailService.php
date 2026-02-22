@@ -2,29 +2,49 @@
 
 namespace App\Services;
 
+use App\Enums\UserRole;
 use App\Models\Attendance;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class AttendanceDetailService
 {
     public function index(array $filters = [])
     {
-        $query = Attendance::query()->with('employee');
+        $user = Auth::user();
+        $currentUserEmployee = $user->employee;
 
-        // Filter date range
-        if (! empty($filters['start_date']) && ! empty($filters['end_date'])) {
+        $query = Attendance::query()->with('employee.user');
+
+        if ($user->hasAnyRole([
+            UserRole::ADMIN->value,
+            UserRole::DIRECTOR->value,
+            UserRole::OWNER->value,
+            UserRole::HR->value
+        ])) {
+        } elseif ($user->hasRole(UserRole::MANAGER->value)) {
+            $query->whereHas('employee', function ($q) use ($currentUserEmployee) {
+                $q->where('id', $currentUserEmployee->id)
+                    ->orWhere('manager_id', $currentUserEmployee->id);
+            });
+        } elseif ($user->hasRole(UserRole::EMPLOYEE->value) || $user->hasRole(UserRole::FINANCE->value)) {
+            $query->where('employee_id', $currentUserEmployee->id);
+        } else {
+            return collect([]);
+        }
+
+        // --- FILTER DATE RANGE (Logika kamu sebelumnya) ---
+        if (!empty($filters['start_date']) && !empty($filters['end_date'])) {
             $query->whereBetween('date', [
                 Carbon::parse($filters['start_date'])->startOfDay(),
                 Carbon::parse($filters['end_date'])->endOfDay(),
             ]);
         } else {
-            // Default hari ini
             $query->whereDate('date', Carbon::today());
         }
 
         return $query->orderBy('date', 'desc')->get();
     }
-
     public function show(Attendance $attendance)
     {
         return $attendance->load('employee');

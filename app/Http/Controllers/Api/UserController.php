@@ -2,18 +2,19 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\ApprovalStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CreateUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Http\Resources\EmployeeLiteResources;
 use App\Http\Resources\ManagerResource;
+use App\Http\Resources\UserDetailResource;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Services\UserService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
@@ -38,7 +39,6 @@ class UserController extends Controller
             'Users fetched successfully',
             200
         );
-
     }
 
     /**
@@ -67,8 +67,8 @@ class UserController extends Controller
         $user = $this->userService->show($user);
 
         return $this->successResponse(
-            new UserResource($user),
-            'Division fetched successfully'
+            new UserDetailResource($user),
+            'User fetched successfully'
         );
     }
 
@@ -128,8 +128,9 @@ class UserController extends Controller
         $this->authorize('edit', User::class);
 
         $validated = $request->validate([
-            'type' => 'required|in:resign,terminated',
-            'date' => 'nullable|date', ]);
+            'type' => 'required|in:resigned,terminated',
+            'date' => 'nullable|date',
+        ]);
 
         $user = $this->userService->terminateEmployment(
             $uuid,
@@ -152,7 +153,9 @@ class UserController extends Controller
             'new_password' => 'required|string|min:8|confirmed',
         ]);
 
-        $user = $this->userService->adminChangePassword($uuid, $validated['new_password']
+        $user = $this->userService->adminChangePassword(
+            $uuid,
+            $validated['new_password']
         );
 
         return $this->successResponse(
@@ -219,6 +222,57 @@ class UserController extends Controller
         return $this->successResponse(
             EmployeeLiteResources::collection($users),
             'Employees fetched successfully'
+        );
+    }
+
+    public function getProfile()
+    {
+        $user = Auth::user();
+
+        $employee = $this->userService->show($user);
+
+        return $this->successResponse(
+            new UserResource($employee),
+            'Profile fetched successfully'
+        );
+    }
+
+    public function changePassword(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'current_password' => 'required|string',
+            'new_password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $user = Auth::user();
+
+        $this->userService->changePassword(
+            $user,
+            $validated['current_password'],
+            $validated['new_password']
+        );
+
+        return $this->successResponse(
+            null,
+            'Password changed successfully'
+        );
+    }
+
+    public function updateBiometricDescriptors(Request $request)
+    {
+        $request->validate([
+            'descriptors' => 'required|array|size:5',
+            'descriptors.*' => 'required|array|min:128',
+        ]);
+
+        $this->userService->updateBiometricDescriptors(
+            Auth::user(),
+            $request->descriptors
+        );
+
+        return $this->successResponse(
+            null,
+            'Biometric descriptors updated successfully'
         );
     }
 }

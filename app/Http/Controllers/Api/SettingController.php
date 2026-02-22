@@ -29,6 +29,18 @@ class SettingController extends Controller
         );
     }
 
+    public function getGeneral(): JsonResponse
+    {
+        $settings = $this->settingService->getMany([
+            'general',
+        ]);
+
+        return $this->successResponse(
+            SettingResource::collection($settings),
+            'Settings fetched successfully'
+        );
+    }
+
     public function updateGeneral(Request $request): JsonResponse
     {
         $this->authorize('update', Setting::class);

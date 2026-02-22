@@ -3,11 +3,19 @@
 namespace App\Models;
 
 use App\Enums\ApprovalStatus;
+use App\Traits\Notificationable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 
 class EarlyLeave extends Model
 {
+    use Notifiable, Notificationable;
+
+    public $customNotification = [];
+
+    public $skipDefaultNotification = true;
+
     protected $fillable = [
         'uuid',
         'attendance_id',

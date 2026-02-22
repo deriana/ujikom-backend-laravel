@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\UserNotVerifiedException;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -47,6 +48,10 @@ class AuthService
 
         if (!$user->is_active) {
             throw new DomainException('Your account is inactive. Please contact support.');
+        }
+
+        if (!$user->is_verified) {
+            throw new UserNotVerifiedException($user->email);
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;

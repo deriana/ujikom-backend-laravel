@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\AttendanceDetailController;
 use App\Http\Controllers\Api\AttendanceRequestController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DivisionController;
 use App\Http\Controllers\Api\EarlyLeaveController;
 use App\Http\Controllers\Api\EmployeeShiftController;
@@ -12,6 +13,7 @@ use App\Http\Controllers\Api\EmployeeWorkScheduleController;
 use App\Http\Controllers\Api\HolidayController;
 use App\Http\Controllers\Api\LeaveController;
 use App\Http\Controllers\Api\LeaveTypeController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\OvertimeController;
 use App\Http\Controllers\Api\PayrollController;
 use App\Http\Controllers\Api\PositionController;
@@ -20,8 +22,10 @@ use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\ShiftTemplateController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\WorkScheduleController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Auth\VerificationController;
 
 Route::middleware('throttle:api')->group(function () {
     Route::get('/ping', function () {
@@ -45,9 +49,18 @@ Route::group(['prefix' => 'auth', 'middleware' => 'throttle:api'], function () {
         });
         Route::post('/logout', [AuthController::class, 'logout']);
     });
+    Route::get('/check-token', [VerificationController::class, 'checkToken']);
+    Route::post('/resend-verification', [VerificationController::class, 'resend']);
+    Route::post('/finalize-activation', [VerificationController::class, 'finalizeActivation']);
+
+    Route::get('/reset-password/check', [ForgotPasswordController::class, 'checkToken']);
+    Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLink']);
+    Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword']);
 });
 
 Route::post('/attendance/bulk-send', [AttendanceController::class, 'bulkAttendance']);
+Route::post('/attendance/single-send', [AttendanceController::class, 'singleAttendance']);
+route::get('/settings/get/general', [SettingController::class, 'getGeneral']);
 
 Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::get('/user', function (Request $request) {
@@ -66,6 +79,9 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::post('/upload-profile-photo/{uuid}', [UserController::class, 'uploadProfilePhoto']);
         Route::get('/managers', [UserController::class, 'getManagers']);
         Route::get('/employees-lite', [UserController::class, 'getEmployeesLite']);
+        Route::get('/profile', [UserController::class, 'getProfile']);
+        Route::put('/change-password', [UserController::class, 'changePassword']);
+        Route::put('/update-biometric', [UserController::class, 'updateBiometricDescriptors']);
     });
     Route::apiResource('users', UserController::class);
     Route::prefix('divisions')->group(function () {
@@ -93,6 +109,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::post('/geo_fencing', [SettingController::class, 'updateGeoFencing']);
         Route::post('/general', [SettingController::class, 'updateGeneral']);
     });
+    Route::get('/attendances/today', [AttendanceController::class, 'attendanceStatusToday']);
     Route::get('/attendances/export', [AttendanceDetailController::class, 'export']);
     Route::apiResource('attendances', AttendanceDetailController::class)->only('index', 'show');
     Route::apiResource('holidays', HolidayController::class);
@@ -153,4 +170,16 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::put('/{payroll:uuid}/void', [PayrollController::class, 'void']);
         Route::get('/{payroll:uuid}/download', [PayrollController::class, 'downloadSlip']);
     });
+
+    Route::prefix('notifications')->group(function () {
+        Route::get('/', [NotificationController::class, 'getNotifications']);
+        Route::get('/unread', [NotificationController::class, 'getUnreadNotifications']);
+        Route::patch('/{id}/read', [NotificationController::class, 'markAsRead']);
+        Route::patch('/mark-all-read', [NotificationController::class, 'markAllAsRead']);
+        Route::delete('/{id}', [NotificationController::class, 'delete']);
+        Route::delete('/delete-all', [NotificationController::class, 'deleteAll']);
+    });
+
+    Route::get('/dashboard/admin', [DashboardController::class, 'getAdminDashboard']);
+    Route::get('/dashboard/employee', [DashboardController::class, 'getEmployeeDashboard']);
 });

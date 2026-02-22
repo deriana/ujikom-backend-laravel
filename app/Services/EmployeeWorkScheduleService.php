@@ -25,11 +25,8 @@ class EmployeeWorkScheduleService
             $employee = Employee::where('nik', $data['employee_nik'])->firstOrFail();
             $workSchedule = WorkSchedule::where('uuid', $data['work_schedule_uuid'])->firstOrFail();
 
-            // Jika ada end_date = Level 2 (Temporary)
-            // Jika tidak ada end_date = Level 1 (Regular/Permanent)
             $priority = isset($data['end_date']) ? PriorityEnum::LEVEL_2->value : PriorityEnum::LEVEL_1->value;
 
-            // 🔥 LOGIKA BARU: Jika Ganti Permanen (Level 1), Tutup Jadwal Level 1 yang lama
             if ($priority === PriorityEnum::LEVEL_1->value) {
                 EmployeeWorkSchedule::where('employee_id', $employee->id)
                     ->level1()
@@ -46,13 +43,23 @@ class EmployeeWorkScheduleService
                 $priority
             );
 
-            return EmployeeWorkSchedule::create([
+            $assignment = new EmployeeWorkSchedule([
                 'employee_id' => $employee->id,
                 'work_schedule_id' => $workSchedule->id,
                 'start_date' => $data['start_date'],
                 'end_date' => $data['end_date'] ?? null,
                 'priority' => $priority,
             ]);
+
+            $assignment->customNotification = [
+                'title' => 'Work Schedule Assigned',
+                'message' => "Work schedule '{$workSchedule->name}' for {$employee->user->name} (NIK: {$employee->nik}) has been assigned from {$assignment->start_date}".($assignment->end_date ? " to {$assignment->end_date}" : ''),
+                'url' => null,
+            ];
+
+            $assignment->save();
+
+            return $assignment->load(['employee', 'workSchedule']);
         });
     }
 
@@ -80,6 +87,13 @@ class EmployeeWorkScheduleService
                 'priority' => $priority,
             ]);
 
+            // 🔹 Custom notification tanpa URL
+            $assignment->customNotification = [
+                'title' => 'Work Schedule Updated',
+                'message' => "Work schedule '{$workSchedule->name}' for {$assignment->employee->user->name} (NIK: {$assignment->employee->nik}) has been updated from {$assignment->start_date}".($assignment->end_date ? " to {$assignment->end_date}" : ''),
+                'url' => null,
+            ];
+
             return $assignment->load(['employee', 'workSchedule']);
         });
     }
@@ -87,6 +101,14 @@ class EmployeeWorkScheduleService
     public function delete(EmployeeWorkSchedule $assignment): bool
     {
         return DB::transaction(function () use ($assignment) {
+
+            // 🔹 Custom notification tanpa URL
+            $assignment->customNotification = [
+                'title' => 'Work Schedule Removed',
+                'message' => "Work schedule '{$assignment->workSchedule->name}' for {$assignment->employee->user->name} (NIK: {$assignment->employee->nik}) has been removed from {$assignment->start_date}".($assignment->end_date ? " to {$assignment->end_date}" : ''),
+                'url' => null,
+            ];
+
             $assignment->delete();
 
             return true;

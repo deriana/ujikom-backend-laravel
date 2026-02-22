@@ -132,10 +132,10 @@ class LeaveService
             $start = Carbon::parse($data['date_start']);
             $end = Carbon::parse($data['date_end']);
 
-            $employee = $user->employee;
-            if (! $employee) {
-                throw new \Exception('Employee profile not found.');
-            }
+            // $employee = $user->employee;
+            // if (! $employee) {
+            //     throw new \Exception('Employee profile not found.');
+            // }
 
             // 1. Hitung Hari Kerja (Skip Libur/Weekend)
             $daysRequested = $this->calculateWorkDays(
@@ -263,6 +263,11 @@ class LeaveService
                 // bisa dibuat nanti saat manager approve
             }
 
+            $leave->notifyCustom(
+                title: 'New Leave Request',
+                message: "Employee {$employee->user->name} has requested {$leave->leaveType->name} for {$daysRequested} day(s).",
+            );
+
             return $leave;
         });
     }
@@ -320,6 +325,11 @@ class LeaveService
                     ->storeAs('private/leave_attachments', $filename);
             }
 
+            $leave->notifyCustom(
+                title: 'Leave Request Updated',
+                message: "Employee {$leave->employee->user->name} has updated their leave request. New duration: {$newDuration} day(s).",
+            );
+
             // 6️⃣ Update leave
             $leave->update([
                 'date_start' => $data['date_start'],
@@ -338,12 +348,13 @@ class LeaveService
      */
     public function approve(LeaveApproval $approval, $user, bool $approve, ?string $note = null)
     {
-        return DB::transaction(function () use ($approval, $approve, $note) {
+        return DB::transaction(function () use ($approval, $user, $approve, $note) {
 
             if ($approval->status !== ApprovalStatus::PENDING->value) {
                 throw new \Exception('Approval sudah diproses');
             }
 
+            // 1. Update status record approval yang sedang diproses
             $approval->update([
                 'status' => $approve ? ApprovalStatus::APPROVED->value : ApprovalStatus::REJECTED->value,
                 'approved_at' => now(),
@@ -351,15 +362,24 @@ class LeaveService
             ]);
 
             $leave = $approval->leave;
+            $requestor = $leave->employee->user; // Pemilik cuti
 
-            // Jika ditolak, langsung update leave
+            // ❌ SKENARIO: DITOLAK
             if (! $approve) {
                 $leave->update(['approval_status' => ApprovalStatus::REJECTED->value]);
+
+                // Kirim notif ke pembuat cuti bahwa cutinya ditolak
+                $leave->notifyCustom(
+                    title: 'Leave Request Rejected',
+                    message: "Your leave request has been rejected by {$user->name}. Note: ".($note ?? '-'),
+                    customUsers: collect([$requestor])
+                );
 
                 return $approval;
             }
 
-            // ✅ Logic: buat HR approval jika yang approve manager (level 0)
+            // ✅ SKENARIO: LANJUT KE HR (Level 1)
+            // Jika yang approve adalah manager (level 0), buatkan record approval untuk HR
             if ($approval->level === 0 && $leave->employee->manager_id === $approval->approver_id) {
                 $hrEmployee = Employee::whereHas('user', function ($q) {
                     $q->role(UserRole::HR->value);
@@ -368,18 +388,26 @@ class LeaveService
                 if ($hrEmployee) {
                     $this->createApproval(
                         $leave->id,
-                        $hrEmployee->id, // pakai employee_id
+                        $hrEmployee->id,
                         1 // level HR
+                    );
+
+                    // Notif ke semua user HR bahwa ada cuti yang butuh approval level 2
+                    $leave->notifyCustom(
+                        title: 'New Leave Approval Needed',
+                        message: "Leave request from {$requestor->name} has been approved by the Manager and requires HR verification.",
+                        customUsers: \App\Models\User::role(UserRole::HR->value)->get()
                     );
                 }
             }
 
-            // Cek apakah masih ada pending approval
+            // 🏁 SKENARIO: FINAL APPROVAL
+            // Cek apakah masih ada pending approval di tabel approvals
             $hasPending = $leave->approvals()
                 ->where('status', ApprovalStatus::PENDING->value)
                 ->exists();
 
-            // Jika semua sudah approve → final approval
+            // Jika sudah tidak ada yang pending, berarti semua level sudah approve
             if (! $hasPending) {
                 $leave->update(['approval_status' => ApprovalStatus::APPROVED->value]);
 
@@ -403,7 +431,6 @@ class LeaveService
                 // Potong saldo jika cuti berkuota
                 if (! $leave->leaveType->is_unlimited) {
                     $leaveYear = Carbon::parse($leave->date_start)->year;
-
                     $balance = EmployeeLeaveBalance::where([
                         'employee_id' => $leave->employee_id,
                         'leave_type_id' => $leave->leave_type_id,
@@ -419,9 +446,15 @@ class LeaveService
                             'used_days' => 0,
                         ]);
                     }
-
                     $balance->useDays($days);
                 }
+
+                // Notif ke pembuat cuti bahwa cutinya SUDAH FINAL disetujui
+                $leave->notifyCustom(
+                    title: 'Leave Request Approved',
+                    message: "Congratulations! Your leave request for {$leave->date_start->format('d M Y')} has been fully approved.",
+                    customUsers: collect([$requestor])
+                );
             }
 
             return $approval;
@@ -448,6 +481,11 @@ class LeaveService
             ) {
                 throw new Exception('You do not have permission to delete this leave request.');
             }
+
+            $leave->notifyCustom(
+                title: 'Leave Request Cancelled',
+                message: "Employee {$leave->employee->user->name} has cancelled their leave request."
+            );
 
             // Delete all related approvals
             $leave->approvals()->delete();

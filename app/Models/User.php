@@ -26,11 +26,11 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'uuid',
         'is_active',
         'system_reserve',
-        'remember_token'
-        // 'created_by_id',
+        'remember_token',
+        'is_verified',
+        'email_verified_at',
     ];
 
     /**
@@ -92,6 +92,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_verified' => 'boolean',
         ];
     }
 }

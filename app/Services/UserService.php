@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\EmploymentState;
 use App\Enums\UserRole;
+use App\Mail\VerifyEmail;
 use App\Models\Employee;
 use App\Models\Position;
 use App\Models\Role;
@@ -13,12 +14,15 @@ use Exception;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 class UserService
 {
     public function index()
     {
         $user = Auth::user();
+        $currentUserEmployee = $user->employee;
 
         $query = User::with([
             'employee.position',
@@ -29,11 +33,21 @@ class UserService
             ->where('id', '!=', $user->id)
             ->latest();
 
-        if ($user->hasAnyRole([UserRole::ADMIN->value, UserRole::DIRECTOR->value, UserRole::OWNER->value, UserRole::HR->value, UserRole::FINANCE->value])) {
+        if ($user->hasAnyRole([
+            UserRole::ADMIN->value,
+            UserRole::DIRECTOR->value,
+            UserRole::OWNER->value,
+            UserRole::HR->value,
+            UserRole::FINANCE->value
+        ])) {
         } elseif ($user->hasRole(UserRole::MANAGER->value)) {
-            $query->whereHas('employee', function ($q) use ($user) {
-                $q->where('manager_id', $user->id);
-            });
+            if ($currentUserEmployee) {
+                $query->whereHas('employee', function ($q) use ($currentUserEmployee) {
+                    $q->where('manager_id', $currentUserEmployee->id);
+                });
+            } else {
+                return response()->json([], 200);
+            }
         } elseif ($user->hasRole(UserRole::EMPLOYEE->value)) {
             $query->where('id', $user->id);
         } else {
@@ -50,7 +64,7 @@ class UserService
             $user = User::create([
                 'name' => $data['name'],
                 'email' => $data['email'],
-                'password' => Hash::make($data['password']),
+                'password' => Hash::make(Str::random(32)),
                 'is_active' => $data['is_active'],
             ]);
 
@@ -67,7 +81,7 @@ class UserService
                 $managerId = Employee::where('nik', $data['manager_nik'])->value('id');
             }
 
-            Employee::create([
+            $employee = Employee::create([
                 'user_id' => $user->id,
                 'team_id' => $team->id,
                 'position_id' => $position->id,
@@ -85,6 +99,18 @@ class UserService
                 'created_by_id' => $creatorId,
             ]);
 
+            $employee->customNotification = [
+                'title' => 'Employee Created',
+                'message' => "Employee {$employee->user->name} (NIK: {$employee->nik}) has been successfully added to the system.",
+                'url' => "/users/{$employee->user->uuid}/show",
+            ];
+
+            $verificationService = app(EmailVerificationService::class);
+            $token = $verificationService->generateToken($user);
+
+            // Kirim email (Bisa via Queue agar cepat)
+            Mail::to($user->email)->send(new VerifyEmail($user, $token));
+
             return $user->load([
                 'roles',
                 'employee.position',
@@ -100,6 +126,7 @@ class UserService
             'employee.position',
             'employee.team.division',
             'employee.manager.user',
+            'employee.biometrics',
             'roles',
         ]);
     }
@@ -167,6 +194,12 @@ class UserService
                 'updated_by_id' => $updaterId,
             ]);
 
+            $employee->customNotification = [
+                'title' => 'Employee Updated',
+                'message' => "Employee {$employee->user->name} (NIK: {$employee->nik}) has been successfully updated.",
+                'url' => "/users/{$employee->user->uuid}/show",
+            ];
+
             return $user->load([
                 'roles',
                 'employee.position',
@@ -186,13 +219,18 @@ class UserService
             throw new Exception('Cannot delete a user');
         }
 
+        $user->employee->customNotification = [
+            'title' => 'Employee Deleted',
+            'message' => "Employee {$user->employee->user->name} (NIK: {$user->employee->nik}) has been successfully deleted.",
+            'url' => "/users/{$user->uuid}/show",
+        ];
+
         return DB::transaction(function () use ($user) {
             $user->employee()->delete();
             $user->delete();
 
             return true;
         });
-
     }
 
     public function restore(string $uuid): User
@@ -206,6 +244,12 @@ class UserService
 
             $user->restore();
             $user->employee()->onlyTrashed()->restore();
+
+            $user->employee->customNotification = [
+                'title' => 'Employee Restored',
+                'message' => "Employee {$user->employee->user->name} (NIK: {$user->employee->nik}) has been successfully restored.",
+                'url' => "/users/{$user->uuid}/show",
+            ];
 
             return $user->load([
                 'roles',
@@ -222,6 +266,11 @@ class UserService
 
             $user = User::withTrashed()->whereUuid($uuid)->firstOrFail();
 
+            $user->employee->customNotification = [
+                'title' => 'Permanently Deleted Employee',
+                'message' => "Employee {$user->employee->user->name} (NIK: {$user->employee->nik}) has been permanently deleted.",
+            ];
+
             $user->employee()->withTrashed()->forceDelete();
             $user->forceDelete();
 
@@ -229,7 +278,7 @@ class UserService
         });
     }
 
-    public function terminateEmployment(string $uuid, EmploymentState $state, ?string $date, int $adminId): User
+    public function terminateEmployment(string $uuid, string $state, ?string $date, int $adminId): User
     {
         return DB::transaction(function () use ($uuid, $state, $date, $adminId) {
 
@@ -245,7 +294,7 @@ class UserService
             }
 
             $employee->update([
-                'employment_state' => $state->value,
+                'employment_state' => $state,
                 'termination_date' => $date ?? now(),
                 'updated_by_id' => $adminId,
             ]);
@@ -260,6 +309,21 @@ class UserService
                 'employee.team.division',
                 'employee.manager.user',
             ]);
+        });
+    }
+
+    public function changePassword(User $user, string $currentPassword, string $newPassword): void
+    {
+        DB::transaction(function () use ($user, $currentPassword, $newPassword) {
+            if (! Hash::check($currentPassword, $user->password)) {
+                throw new Exception('The current password you entered is incorrect.');
+            }
+
+            $user->update([
+                'password' => Hash::make($newPassword),
+            ]);
+
+            $user->tokens()->delete();
         });
     }
 
@@ -310,10 +374,12 @@ class UserService
     public function getTrashed()
     {
         return User::onlyTrashed()
-            ->with('employee.position',
+            ->with(
+                'employee.position',
                 'employee.team.division',
                 'employee.manager.user',
-                'roles', )
+                'roles',
+            )
             ->latest()
             ->get();
     }
@@ -359,5 +425,24 @@ class UserService
         return Employee::whereHas('user', function ($query) {
             $query->where('system_reserve', false);
         })->with('user')->get();
+    }
+
+    public function updateBiometricDescriptors(User $user, array $descriptors): void
+    {
+        DB::transaction(function () use ($user, $descriptors) {
+            $employee = $user->employee;
+
+            if (! $employee) {
+                throw new Exception('Employee record not found for this user');
+            }
+
+            $employee->biometrics()->delete();
+
+            foreach ($descriptors as $descriptor) {
+                $employee->biometrics()->create([
+                    'descriptor' => $descriptor,
+                ]);
+            }
+        });
     }
 }

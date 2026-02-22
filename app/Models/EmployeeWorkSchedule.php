@@ -4,13 +4,17 @@ namespace App\Models;
 
 use App\Enums\PriorityEnum;
 use App\Traits\Blameable;
+use App\Traits\Notificationable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 
 class EmployeeWorkSchedule extends Model
 {
-    use Blameable;
+    use Blameable, Notifiable, Notificationable;
+
+    public $customNotification = [];
 
     protected $fillable = [
         'uuid',

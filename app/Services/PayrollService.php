@@ -2,10 +2,12 @@
 
 namespace App\Services;
 
+use App\Enums\UserRole;
 use App\Http\Resources\PayrollDetailResource;
 use App\Models\Payroll;
 use App\Models\Setting;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
@@ -13,9 +15,30 @@ class PayrollService
 {
     public function index()
     {
-        return Payroll::with(['employee'])
-            ->latest()
-            ->get();
+        $user = Auth::user();
+        $currentUserEmployee = $user->employee;
+
+        $query = Payroll::with(['employee.user', 'employee.position'])->latest();
+
+        if ($user->hasAnyRole([
+            UserRole::ADMIN->value,
+            UserRole::DIRECTOR->value,
+            UserRole::OWNER->value,
+            UserRole::HR->value,
+            UserRole::FINANCE->value 
+        ])) {
+        } elseif ($user->hasRole(UserRole::MANAGER->value)) {
+            $query->whereHas('employee', function ($q) use ($currentUserEmployee) {
+                $q->where('id', $currentUserEmployee->id)
+                    ->orWhere('manager_id', $currentUserEmployee->id);
+            });
+        } elseif ($user->hasRole(UserRole::EMPLOYEE->value)) {
+            $query->where('employee_id', $currentUserEmployee->id);
+        } else {
+            return response()->json([], 200);
+        }
+
+        return $query->get();
     }
 
     public function show(Payroll $payroll): Payroll
@@ -76,6 +99,11 @@ class PayrollService
                 'updated_by_id' => $userId, // Pastikan kolom ini ada di fillable model
             ]);
 
+            $payroll->notifyCustom(
+                title: 'Payroll Updated',
+                message: "The payroll for period {$payroll->period_start->format('M Y')} has been updated."
+            );
+
             return $payroll;
         });
     }
@@ -94,6 +122,11 @@ class PayrollService
 
             $payroll->finalize();
             $this->generateSlip($payroll);
+
+            $payroll->notifyCustom(
+                title: 'Payroll Finalized',
+                message: "The payroll for period {$payroll->period_start->format('M Y')} has been finalized."
+            );
 
             return $payroll;
         });
@@ -116,6 +149,11 @@ class PayrollService
                 'void_note' => $note,
                 'updated_by_id' => $userId,
             ]);
+
+            $payroll->notifyCustom(
+                title: 'Payroll Voided',
+                message: "The payroll for period {$payroll->period_start->format('M Y')} has been voided. Reason: {$note}"
+            );
 
             return $payroll;
         });

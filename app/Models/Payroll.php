@@ -3,14 +3,19 @@
 namespace App\Models;
 
 use App\Traits\Blameable;
+use App\Traits\Notificationable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Log;
 
 class Payroll extends Model
 {
-    use Blameable;
+    use Blameable, Notifiable, Notificationable;
+
+    public $customNotification = [];
+
+    public $skipDefaultNotification = true;
 
     const STATUS_DRAFT = 0;
 

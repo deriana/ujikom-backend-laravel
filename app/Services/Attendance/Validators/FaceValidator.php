@@ -4,10 +4,12 @@ namespace App\Services\Attendance\Validators;
 
 use App\Exceptions\Attendance\FaceValidationException;
 use App\Models\BiometricUser;
+use App\Models\Employee;
 
 class FaceValidator
 {
     protected float $threshold = 0.90;
+
     protected float $minGap = 0.03;
 
     public function validate(?array $inputDescriptor): array
@@ -28,6 +30,37 @@ class FaceValidator
         return $match;
     }
 
+    public function verifyMatch(Employee $employee, ?array $inputDescriptor): array
+    {
+        $this->ensureDescriptorExists($inputDescriptor);
+
+        $biometrics = BiometricUser::where('employee_id', $employee->id)->get();
+
+        $bestScore = 0;
+        foreach ($biometrics as $bio) {
+            $score = $this->cosineSimilarity($inputDescriptor, $bio->descriptor);
+            if ($score > $bestScore) {
+                $bestScore = $score;
+            }
+        }
+
+        if ($bestScore < $this->threshold) {
+            throw new FaceValidationException(
+                'Face match failed. Similarity: '.round($bestScore * 100, 2).'%',
+                ['reason' => 'insufficient_similarity', 'score' => $bestScore]
+            );
+        }
+
+        return ['employee' => $employee, 'score' => $bestScore];
+    }
+
+    protected function ensureDescriptorExists(?array $inputDescriptor): void
+    {
+        if (empty($inputDescriptor)) {
+            throw new FaceValidationException('Face descriptor not found.', ['reason' => 'descriptor_missing']);
+        }
+    }
+
     protected function findBestMatch(array $inputDescriptor): array
     {
         $descriptors = BiometricUser::with('employee')->get();
@@ -37,7 +70,7 @@ class FaceValidator
         foreach ($descriptors as $desc) {
             $stored = $desc->descriptor;
 
-            if (!is_array($stored) || count($stored) !== count($inputDescriptor)) {
+            if (! is_array($stored) || count($stored) !== count($inputDescriptor)) {
                 continue;
             }
 
@@ -45,7 +78,7 @@ class FaceValidator
             $employeeId = $desc->employee_id;
 
             // Simpan skor tertinggi per employee
-            if (!isset($scores[$employeeId]) || $score > $scores[$employeeId]['score']) {
+            if (! isset($scores[$employeeId]) || $score > $scores[$employeeId]['score']) {
                 $scores[$employeeId] = [
                     'employee' => $desc->employee,
                     'score' => $score,
@@ -58,21 +91,21 @@ class FaceValidator
         }
 
         // Urutkan skor tertinggi
-        usort($scores, fn($a, $b) => $b['score'] <=> $a['score']);
+        usort($scores, fn ($a, $b) => $b['score'] <=> $a['score']);
 
         $top1 = $scores[0];
         $top2 = $scores[1] ?? null;
 
         if (
             $top1['score'] >= $this->threshold &&
-            (!$top2 || ($top1['score'] - $top2['score']) > $this->minGap)
+            (! $top2 || ($top1['score'] - $top2['score']) > $this->minGap)
         ) {
             return $top1;
         }
 
         return [
             'employee' => null,
-            'score' => $top1['score']
+            'score' => $top1['score'],
         ];
     }
 

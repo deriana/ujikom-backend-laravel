@@ -26,8 +26,8 @@ class CreateUserRequest extends FormRequest
         return [
             'name' => 'required|string',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8',
-            'password_confirmation' => 'required|same:password',
+            // 'password' => 'required|string|min:8',
+            // 'password_confirmation' => 'required|same:password',
             'team_uuid' => 'required|string|exists:teams,uuid',
             'role' => ['nullable', 'string', Rule::in(array_column(UserRole::cases(), 'value'))],
             'is_active' => 'required|boolean',
