@@ -46,8 +46,6 @@ class Leave extends Model
         return 'uuid';
     }
 
-    // RELASI
-
     public function employee()
     {
         return $this->belongsTo(Employee::class);
@@ -69,7 +67,6 @@ class Leave extends Model
         return $this->hasMany(LeaveApproval::class);
     }
 
-    // PENDING approval berikutnya
     public function nextApprover()
     {
         return $this->approvals()
@@ -78,7 +75,6 @@ class Leave extends Model
             ->first()?->approver;
     }
 
-    // CHECK level approval
     public function isApprovedByManager()
     {
         return $this->approvals()
@@ -95,7 +91,6 @@ class Leave extends Model
             ->exists();
     }
 
-    // SCOPES
     public function scopeApproved($query)
     {
         return $query->where('approval_status', ApprovalStatus::APPROVED->value);

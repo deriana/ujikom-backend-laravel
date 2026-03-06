@@ -12,21 +12,33 @@ use Illuminate\Support\Facades\DB;
 
 class EmployeeWorkScheduleService
 {
+    /**
+     * Get all employee work schedules with related data.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
     public function index()
     {
+        // 1. Retrieve all assignments with eager loaded relationships
         return EmployeeWorkSchedule::with(['employee', 'workSchedule'])
             ->latest()
             ->get();
     }
 
+    /**
+     * Assign a work schedule to an employee.
+     */
     public function store(array $data)
     {
         return DB::transaction(function () use ($data) {
+            // 1. Find employee and work schedule by identifiers
             $employee = Employee::where('nik', $data['employee_nik'])->firstOrFail();
             $workSchedule = WorkSchedule::where('uuid', $data['work_schedule_uuid'])->firstOrFail();
 
+            // 2. Determine priority level based on whether it's a temporary (Level 2) or permanent (Level 1) schedule
             $priority = isset($data['end_date']) ? PriorityEnum::LEVEL_2->value : PriorityEnum::LEVEL_1->value;
 
+            // 3. If Level 1, close the previous permanent schedule to prevent overlap
             if ($priority === PriorityEnum::LEVEL_1->value) {
                 EmployeeWorkSchedule::where('employee_id', $employee->id)
                     ->level1()
@@ -36,6 +48,7 @@ class EmployeeWorkScheduleService
                     ]);
             }
 
+            // 4. Validate that the new schedule doesn't conflict with existing ones of the same priority
             $this->validateDateConflict(
                 $employee->id,
                 $data['start_date'],
@@ -43,6 +56,7 @@ class EmployeeWorkScheduleService
                 $priority
             );
 
+            // 5. Create the assignment record
             $assignment = new EmployeeWorkSchedule([
                 'employee_id' => $employee->id,
                 'work_schedule_id' => $workSchedule->id,
@@ -51,6 +65,7 @@ class EmployeeWorkScheduleService
                 'priority' => $priority,
             ]);
 
+            // 6. Set custom notification data
             $assignment->customNotification = [
                 'title' => 'Work Schedule Assigned',
                 'message' => "Work schedule '{$workSchedule->name}' for {$employee->user->name} (NIK: {$employee->nik}) has been assigned from {$assignment->start_date}".($assignment->end_date ? " to {$assignment->end_date}" : ''),
@@ -63,15 +78,21 @@ class EmployeeWorkScheduleService
         });
     }
 
+    /**
+     * Update an existing employee work schedule assignment.
+     */
     public function update(EmployeeWorkSchedule $assignment, array $data)
     {
         return DB::transaction(function () use ($assignment, $data) {
+            // 1. Find the requested work schedule
             $workSchedule = WorkSchedule::where('uuid', $data['work_schedule_uuid'])->firstOrFail();
 
+            // 2. Prepare data and determine priority
             $startDate = $data['start_date'];
             $endDate = $data['end_date'] ?? null;
             $priority = $endDate ? PriorityEnum::LEVEL_2->value : PriorityEnum::LEVEL_1->value;
 
+            // 3. Validate date conflicts excluding the current record
             $this->validateDateConflict(
                 $assignment->employee_id,
                 $startDate,
@@ -80,6 +101,7 @@ class EmployeeWorkScheduleService
                 $assignment->id
             );
 
+            // 4. Update the assignment record
             $assignment->update([
                 'work_schedule_id' => $workSchedule->id,
                 'start_date' => $startDate,
@@ -87,7 +109,7 @@ class EmployeeWorkScheduleService
                 'priority' => $priority,
             ]);
 
-            // 🔹 Custom notification tanpa URL
+            // 5. Set custom notification data
             $assignment->customNotification = [
                 'title' => 'Work Schedule Updated',
                 'message' => "Work schedule '{$workSchedule->name}' for {$assignment->employee->user->name} (NIK: {$assignment->employee->nik}) has been updated from {$assignment->start_date}".($assignment->end_date ? " to {$assignment->end_date}" : ''),
@@ -98,11 +120,14 @@ class EmployeeWorkScheduleService
         });
     }
 
+    /**
+     * Remove a work schedule assignment.
+     */
     public function delete(EmployeeWorkSchedule $assignment): bool
     {
         return DB::transaction(function () use ($assignment) {
 
-            // 🔹 Custom notification tanpa URL
+            // 1. Set custom notification data before deletion
             $assignment->customNotification = [
                 'title' => 'Work Schedule Removed',
                 'message' => "Work schedule '{$assignment->workSchedule->name}' for {$assignment->employee->user->name} (NIK: {$assignment->employee->nik}) has been removed from {$assignment->start_date}".($assignment->end_date ? " to {$assignment->end_date}" : ''),
@@ -116,7 +141,7 @@ class EmployeeWorkScheduleService
     }
 
     /**
-     * Prevent overlapping schedule
+     * Prevent overlapping schedules for the same priority level.
      */
     private function validateDateConflict(
         int $employeeId,
@@ -125,7 +150,7 @@ class EmployeeWorkScheduleService
         int $priority,
         ?int $ignoreId = null
     ): void {
-        // Gunakan scope yang kamu buat tadi!
+        // 1. Initialize query for the specific employee and priority
         $query = EmployeeWorkSchedule::where('employee_id', $employeeId)
             ->where('priority', $priority);
 
@@ -133,8 +158,9 @@ class EmployeeWorkScheduleService
             $query->where('id', '!=', $ignoreId);
         }
 
+        // 2. Check for overlapping date ranges
         $query->where(function ($q) use ($startDate, $endDate) {
-            // Kita pakai bantuan Carbon untuk mempermudah logika 'akhir zaman'
+            // Use a far-future date to represent null end_date for comparison
             $actualEnd = $endDate ?? '9999-12-31';
 
             $q->where(function ($query) use ($startDate, $actualEnd) {
@@ -146,6 +172,7 @@ class EmployeeWorkScheduleService
             });
         });
 
+        // 3. Throw exception if a conflict is found
         if ($query->exists()) {
             throw new Exception("Schedule conflict detected for Priority Level $priority");
         }

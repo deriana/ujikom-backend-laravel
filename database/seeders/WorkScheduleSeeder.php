@@ -18,7 +18,7 @@ class WorkScheduleSeeder extends Seeder
         $creatorId = User::first()->id;
 
         $schedules = [
-            // --- JADWAL REGULAR ---
+            // --- REGULAR SCHEDULES ---
             [
                 'name' => 'Office Regular (08-17)',
                 'work_mode_id' => $wfo->id,
@@ -47,7 +47,7 @@ class WorkScheduleSeeder extends Seeder
                 'requires_office_location' => false,
             ],
 
-            // --- JADWAL SHIFT (COCOK UNTUK OPS/SECURITY/IT) ---
+            // --- SHIFT SCHEDULES (SUITABLE FOR OPS/SECURITY/IT) ---
             [
                 'name' => 'Afternoon Shift (14-22)',
                 'work_mode_id' => $wfo->id,
@@ -67,11 +67,11 @@ class WorkScheduleSeeder extends Seeder
                 'requires_office_location' => true,
             ],
 
-            // --- JADWAL EKSEKUTIF (FLEXIBLE) ---
+            // --- EXECUTIVE SCHEDULES (FLEXIBLE) ---
             [
                 'name' => 'Executive Flexible',
                 'work_mode_id' => $hybrid->id,
-                'work_start_time' => '00:00:00', // Start kapan saja
+                'work_start_time' => '00:00:00', // Start anytime
                 'work_end_time' => '23:59:59',
                 'break_start_time' => null,
                 'break_end_time' => null,

@@ -51,12 +51,6 @@ class Overtime extends Model
         return 'uuid';
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | RELATIONS
-    |--------------------------------------------------------------------------
-    */
-
     public function attendance()
     {
         return $this->belongsTo(Attendance::class);

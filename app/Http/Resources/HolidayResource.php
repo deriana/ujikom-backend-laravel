@@ -13,11 +13,9 @@ class HolidayResource extends JsonResource
             'uuid' => $this->uuid,
             'name' => $this->name,
 
-            // Untuk FE supaya mudah dipakai
             'start_date' => $this->start_date?->format('Y-m-d'),
             'end_date'   => $this->end_date?->format('Y-m-d'),
 
-            // Backward compatibility kalau FE lama masih pakai "date"
             'date' => $this->start_date?->format('Y-m-d'),
 
             'is_recurring' => (bool) $this->is_recurring,

@@ -15,7 +15,7 @@ class EarlyLeaveSeeder extends Seeder
 {
     public function run(): void
     {
-        // Ambil semua Employee kecuali Owner
+        // Get all Employees except Owner
         $employees = Employee::whereHas('user', function($q) {
             $q->whereDoesntHave('roles', function($r) {
                 $r->where('name', UserRole::OWNER->value);
@@ -26,14 +26,14 @@ class EarlyLeaveSeeder extends Seeder
         $director = User::role(UserRole::DIRECTOR->value)->first();
 
         foreach ($employees as $employee) {
-            // Ambil absensi terbaru (Asumsi AttendanceSeeder sudah dijalankan)
+            // Get the latest attendance (Assuming AttendanceSeeder has been run)
             $attendance = Attendance::where('employee_id', $employee->id)
                 ->latest()
                 ->first();
 
             if (!$attendance) continue;
 
-            // Tentukan siapa pemberi izin (Approver) berdasarkan hirarki kita
+            // Determine the approver based on the hierarchy
             $approverId = null;
 
             if ($employee->user->hasRole(UserRole::DIRECTOR->value)) {
@@ -41,14 +41,14 @@ class EarlyLeaveSeeder extends Seeder
             } elseif ($employee->user->hasRole([UserRole::MANAGER->value, UserRole::HR->value, UserRole::FINANCE->value])) {
                 $approverId = $director ? $director->id : null;
             } else {
-                // Staff biasa lapor ke Manager-nya
+                // Regular staff reports to their Manager
                 if ($employee->manager_id) {
                     $manager = Employee::find($employee->manager_id);
                     $approverId = $manager ? $manager->user_id : null;
                 }
             }
 
-            // Simulasi 3 kondisi: Izin yang masih nunggu, di-acc, dan ditolak
+            // Simulate 3 conditions: Pending, Approved, and Rejected
             $scenarios = [
                 ['status' => ApprovalStatus::PENDING->value, 'approved' => false],
                 ['status' => ApprovalStatus::APPROVED->value, 'approved' => true],
@@ -60,13 +60,13 @@ class EarlyLeaveSeeder extends Seeder
                     'uuid' => (string) Str::uuid(),
                     'attendance_id' => $attendance->id,
                     'employee_id' => $employee->id,
-                    'minutes_early' => rand(30, 120), // Pulang lebih awal 0.5 - 2 jam
-                    'reason' => "Izin pulang cepat karena " . fake()->randomElement(['keperluan keluarga', 'sakit tiba-tiba', 'urusan mendesak']),
+                    'minutes_early' => rand(30, 120), // Early leave 0.5 - 2 hours
+                    'reason' => "Early leave request due to " . fake()->randomElement(['family matters', 'sudden illness', 'urgent business']),
                     'attachment' => null,
                     'status' => $scenario['status'],
                     'approved_by_id' => $scenario['approved'] ? $approverId : null,
                     'approved_at' => $scenario['approved'] ? now() : null,
-                    'note' => $scenario['approved'] ? "Diberikan izin oleh atasan." : null,
+                    'note' => $scenario['approved'] ? "Permission granted by supervisor." : null,
                 ]);
             }
         }

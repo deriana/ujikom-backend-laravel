@@ -26,12 +26,12 @@ class LeaveSeeder extends Seeder
         $director = User::role(UserRole::DIRECTOR->value)->first();
 
         if ($employees->isEmpty() || $leaveTypes->isEmpty()) {
-            $this->command->warn('Seeder Leave gagal: pastikan ada data Employee dan LeaveType');
+            $this->command->warn('Leave Seeder failed: ensure Employee and LeaveType data exists');
             return;
         }
 
         foreach ($employees as $employee) {
-            // Owner tidak perlu cuti
+            // Owner does not need leave
             if ($employee->user->hasRole(UserRole::OWNER->value)) {
                 continue;
             }
@@ -39,7 +39,7 @@ class LeaveSeeder extends Seeder
             $leaveCount = rand(1, 2);
 
             for ($i = 0; $i < $leaveCount; $i++) {
-                // Filter jenis cuti berdasarkan gender employee
+                // Filter leave types based on employee gender
                 $suitableTypes = $leaveTypes->filter(function ($type) use ($employee) {
                     return $type->gender === 'all' || $type->gender === $employee->gender;
                 });
@@ -49,7 +49,7 @@ class LeaveSeeder extends Seeder
                 $type = $suitableTypes->random();
                 $startDate = Carbon::now()->subDays(rand(1, 30));
                 $endDate = (clone $startDate)->addDays(rand(0, 3));
-                $status = ApprovalStatus::PENDING; // Default pending untuk simulasi
+                $status = ApprovalStatus::PENDING; // Default pending for simulation
 
                 $leave = Leave::create([
                     'uuid' => Str::uuid(),
@@ -57,41 +57,41 @@ class LeaveSeeder extends Seeder
                     'leave_type_id' => $type->id,
                     'date_start' => $startDate,
                     'date_end' => $endDate,
-                    'reason' => "Pengajuan cuti {$type->name} - Testing Hirarki",
+                    'reason' => "Leave request {$type->name} - Hierarchy Testing",
                     'approval_status' => $status->value,
                     'is_half_day' => rand(0, 1) ? true : false,
                 ]);
 
                 /*
                 |--------------------------------------------------------------------------
-                | LOGIKA HIRARKI APPROVAL
+                | APPROVAL HIERARCHY LOGIC
                 |--------------------------------------------------------------------------
                 */
 
-                // 1. Jika yang cuti adalah Director, yang approve adalah OWNER
+                // 1. If the one taking leave is Director, the approver is OWNER
                 if ($employee->user->hasRole(UserRole::DIRECTOR->value)) {
                     if ($owner) {
                         $this->createApproval($leave->id, $owner->id, 0);
                     }
                 }
 
-                // 2. Jika yang cuti adalah Manager, HR, atau Finance, yang approve adalah DIRECTOR
+                // 2. If the one taking leave is Manager, HR, or Finance, the approver is DIRECTOR
                 elseif ($employee->user->hasRole([UserRole::MANAGER->value, UserRole::HR->value, UserRole::FINANCE->value])) {
                     if ($director) {
                         $this->createApproval($leave->id, $director->id, 0);
                     }
                 }
 
-                // 3. Jika Staff biasa, approve oleh Managernya, lalu HR
+                // 3. If regular Staff, approved by their Manager, then HR
                 else {
-                    // Level 0: Manager Langsung
+                    // Level 0: Direct Manager
                     if ($employee->manager_id) {
-                        // Ambil user_id dari manager si employee
+                        // Get user_id from the employee's manager
                         $managerUser = Employee::find($employee->manager_id)->user;
                         $this->createApproval($leave->id, $managerUser->id, 0);
                     }
 
-                    // Level 1: HR Departemen
+                    // Level 1: HR Department
                     $hr = User::role(UserRole::HR->value)->first();
                     if ($hr) {
                         $this->createApproval($leave->id, $hr->id, 1);
@@ -102,7 +102,7 @@ class LeaveSeeder extends Seeder
     }
 
     /**
-     * Helper untuk membuat data approval
+     * Helper to create approval data
      */
     private function createApproval($leaveId, $approverId, $level)
     {

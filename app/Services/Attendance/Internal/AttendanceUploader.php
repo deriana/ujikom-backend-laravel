@@ -53,7 +53,7 @@ class AttendanceUploader
         };
 
         if (! $ext) {
-            Log::warning('Invalid attendance photo mime type', ['mime' => $mime]);
+            // Log::warning('Invalid attendance photo mime type', ['mime' => $mime]);
 
             return null;
         }

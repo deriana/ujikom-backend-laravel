@@ -3,17 +3,16 @@
 namespace Database\Seeders;
 
 use App\Enums\UserRole;
+use App\Models\Attendance;
 use App\Models\Employee;
+use App\Services\WorkdayService;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class AttendanceSeeder extends Seeder
 {
-    public function run(): void
+    public function run(WorkdayService $workdayService): void
     {
-        // FILTER: Hanya ambil Employee yang BUKAN Owner dan BUKAN Director
         $employeeIds = Employee::whereHas('user', function ($q) {
             $q->withoutRole([
                 UserRole::OWNER->value,
@@ -40,13 +39,13 @@ class AttendanceSeeder extends Seeder
                 $daysBack = floor($count / count($employeeIds));
                 $date = Carbon::today()->subDays($daysBack);
 
-                // Lewati weekend
-                if ($date->isWeekend()) {
+                // Skip weekends and public holidays using WorkdayService
+                if (! $workdayService->isWorkday($date)) {
                     $count++;
                     continue;
                 }
 
-                // Simulasi jam
+                // Simulate clock-in and clock-out times
                 $clockIn = $date->copy()->setHour(rand(7, 9))->setMinute(rand(0, 59));
                 $clockOut = $date->copy()->setHour(rand(16, 18))->setMinute(rand(0, 59));
                 $status = rand(0, 10) > 1 ? 'present' : 'absent';
@@ -72,15 +71,16 @@ class AttendanceSeeder extends Seeder
                 $count++;
                 $this->command->getOutput()->progressAdvance();
 
+                // Insert in batches to optimize performance and memory usage
                 if (count($data) >= $batchSize) {
-                    DB::table('attendances')->insert($data);
+                    Attendance::insert($data);
                     $data = [];
                 }
             }
         }
 
         if (!empty($data)) {
-            DB::table('attendances')->insert($data);
+            Attendance::insert($data);
         }
 
         $this->command->getOutput()->progressFinish();

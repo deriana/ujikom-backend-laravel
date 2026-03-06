@@ -7,14 +7,14 @@ use App\Enums\UserRole;
 use App\Models\Employee;
 use App\Models\Position;
 use App\Models\Team;
-use App\Models\User; // Tambahkan ini
+use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class EmployeeSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Ambil User
+        // 1. Get Users
         $admin = User::where('email', 'admin@app.com')->first();
         $ownerUser = User::where('email', 'owner@app.com')->first();
         $directorUser = User::where('email', 'director@app.com')->first();
@@ -24,14 +24,14 @@ class EmployeeSeeder extends Seeder
         $hrUser = User::where('email', 'hr@app.com')->first();
         $employeeUser = User::where('email', 'employee@app.com')->first();
 
-        // 2. Ambil Team ID berdasarkan Nama
+        // 2. Get Team IDs by Name
         $teamBOD = Team::where('name', 'Board of Directors')->first()->id;
         $teamOwner = Team::where('name', 'Owner Relations')->first()->id;
         $teamPayroll = Team::where('name', 'Payroll & Tax')->first()->id;
         $teamBackend = Team::where('name', 'Backend')->first()->id;
         $teamRecruitment = Team::where('name', 'Recruitment')->first()->id;
 
-        // 3. Ambil Position ID berdasarkan Nama (Agar sinkron dengan PositionAllowanceSeeder)
+        // 3. Get Position IDs by Name (To sync with PositionAllowanceSeeder)
         $posOwner = Position::where('name', 'Owner')->first()->id;
         $posDirector = Position::where('name', 'Director')->first()->id;
         $posManager = Position::where('name', 'Manager')->first()->id;
@@ -47,7 +47,7 @@ class EmployeeSeeder extends Seeder
             'nik' => 'OWNER001',
             'user_id' => $ownerUser->id,
             'team_id' => $teamOwner,
-            'position_id' => $posOwner, // Pakai ID dari pencarian nama
+            'position_id' => $posOwner,
             'manager_id' => null,
             'employee_status' => EmployeeStatus::PERMANENT,
             'base_salary' => 0,
@@ -89,7 +89,7 @@ class EmployeeSeeder extends Seeder
             'nik' => 'FIN001',
             'user_id' => $financeUser->id,
             'team_id' => $teamPayroll,
-            'position_id' => $posSenior, // Finance masuk level Senior Staff
+            'position_id' => $posSenior, // Finance is Senior Staff level
             'manager_id' => $directorEmployee->id,
             'employee_status' => EmployeeStatus::PERMANENT,
             'base_salary' => 12000000,
@@ -148,7 +148,7 @@ class EmployeeSeeder extends Seeder
             'nik' => 'EMP20230002',
             'user_id' => $hrUser->id,
             'team_id' => $teamRecruitment,
-            'position_id' => $posSenior, // HR masuk level Senior Staff
+            'position_id' => $posSenior, // HR is Senior Staff level
             'manager_id' => $directorEmployee->id,
             'employee_status' => EmployeeStatus::PERMANENT,
             'base_salary' => 10000000,
@@ -169,7 +169,7 @@ class EmployeeSeeder extends Seeder
             'nik' => 'EMP20230003',
             'user_id' => $employeeUser->id,
             'team_id' => $teamBackend,
-            'position_id' => $posStaff, // Nikola level Staff
+            'position_id' => $posStaff, // Nikola is Staff level
             'manager_id' => $managerEmployee->id,
             'employee_status' => EmployeeStatus::CONTRACT,
             'contract_start' => now()->subMonths(6),
@@ -183,18 +183,16 @@ class EmployeeSeeder extends Seeder
             'created_by_id' => $admin->id,
         ]);
 
-        // Pastikan bagian akhir EmployeeSeeder.php kamu seperti ini:
-
         $admin = User::where('email', 'admin@app.com')->first();
         $teams = Team::pluck('id')->toArray();
         $posStaff = Position::where('name', 'Staff')->first()->id;
 
-        // Ambil semua Manager yang sudah dibuat di atas untuk dijadikan atasan random
+        // Get all Managers created above to be used as random supervisors
         $managers = Employee::whereHas('user.roles', function ($q) {
             $q->where('name', UserRole::MANAGER->value);
         })->pluck('id')->toArray();
 
-        // Ambil user ber-role EMPLOYEE yang BELUM punya profil Employee (agar tidak duplikat)
+        // Get users with EMPLOYEE role who DON'T have an Employee profile yet (to avoid duplicates)
         $usersWithoutEmployee = User::role(UserRole::EMPLOYEE->value)
             ->whereDoesntHave('employee')
             ->get();

@@ -13,7 +13,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 
 class Employee extends Model implements HasMedia
 {
-    use Blameable, InteractsWithMedia, SoftDeletes, Notificationable, Notifiable;
+    use Blameable, InteractsWithMedia, Notifiable, Notificationable, SoftDeletes;
 
     protected $fillable = [
         'nik',
@@ -169,6 +169,11 @@ class Employee extends Model implements HasMedia
     public function biometrics()
     {
         return $this->hasMany(BiometricUser::class);
+    }
+
+    public function getHasFaceDescriptorAttribute(): bool
+    {
+        return $this->biometrics()->exists();
     }
 
     public function attendances()

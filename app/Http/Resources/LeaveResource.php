@@ -12,23 +12,19 @@ class LeaveResource extends JsonResource
     public function toArray($request)
     {
         $user = Auth::user();
-        $employee = $user->employee; // Bisa null jika user adalah Admin
+        $employee = $user->employee;
 
         $currentApprovalUuid = null;
         $canApprove = false;
 
-        // 1. Cari tahap approval yang sedang PENDING dan level paling rendah
         $pendingApproval = $this->approvals()
             ->where('status', ApprovalStatus::PENDING->value)
             ->orderBy('level', 'asc')
             ->first();
 
-        // 2. Validasi Hak Approve
         if ($pendingApproval) {
-            // Cek jika user punya employee_id yang cocok (User biasa)
-            // ATAU jika user punya role admin (Sesuaikan dengan cara Anda cek role)
             $isTargetApprover = $employee && $pendingApproval->approver_id === $employee->id;
-            $isAdmin = $user->hasRole(UserRole::ADMIN); // Contoh jika pakai Spatie/Permission atau custom method
+            $isAdmin = $user->hasRole(UserRole::ADMIN);
 
             if ($isTargetApprover || $isAdmin) {
                 $currentApprovalUuid = $pendingApproval->uuid;

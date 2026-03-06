@@ -15,14 +15,14 @@ return new class extends Migration
             $table->id();
             $table->uuid('uuid')->unique();
 
-            // Relasi ke Absensi & Karyawan
-            // attendance_id penting untuk validasi menit lembur vs menit di absen
+            // Relationship to Attendance & Employee
+            // attendance_id is important for validating overtime minutes vs attendance minutes
             $table->foreignId('attendance_id')->constrained('attendances')->onDelete('cascade');
             $table->foreignId('employee_id')->constrained('employees')->onDelete('cascade');
 
-            // Data Lembur
-            $table->integer('duration_minutes')->default(0); // Diambil otomatis dari overtime_minutes di tabel attendance
-            $table->text('reason'); // Alasan yang diisi karyawan di mobile
+            // Overtime Data
+            $table->integer('duration_minutes')->default(0); // Automatically taken from overtime_minutes in attendance table
+            $table->text('reason'); // Reason filled by employee in mobile app
 
             // Status & Approval
             // 0: PENDING, 1: APPROVED, 2: REJECTED
@@ -34,7 +34,7 @@ return new class extends Migration
                 ->nullOnDelete();
 
             $table->timestamp('approved_at')->nullable();
-            $table->text('note')->nullable(); // Catatan jika ditolak atau ada revisi
+            $table->text('note')->nullable(); // Note if rejected or if there is a revision
 
             $table->timestamps();
         });

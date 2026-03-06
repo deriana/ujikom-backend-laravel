@@ -9,7 +9,7 @@ use Illuminate\Support\Str;
 
 class HolidaySeeder extends Seeder
 {
-    // PERBAIKI IS RECURRING BIAR TRUE TAPI HMMM NANTI AJA
+    // FIX IS_RECURRING TO BE TRUE LATER
     public function run(): void
     {
         $year = now()->year;
@@ -20,7 +20,7 @@ class HolidaySeeder extends Seeder
         ]);
 
         if ($response->failed()) {
-            $this->command->error('Gagal mengambil data holiday API');
+            $this->command->error('Failed to fetch holiday data from API');
             return;
         }
 
@@ -33,7 +33,7 @@ class HolidaySeeder extends Seeder
                     'end_date'   => null,
                 ],
                 [
-                    // Hanya dipakai saat INSERT
+                    // Only used during INSERT
                     'uuid' => (string) Str::uuid(),
 
                     'name' => $item['name'],

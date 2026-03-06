@@ -14,7 +14,7 @@ class PermissionSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Reset cache Spatie
+        // 1. Reset Spatie cache
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         $modules = [
@@ -158,8 +158,8 @@ class PermissionSeeder extends Seeder
                 'actions' => [
                     'index' => 'attendance.index',
                     'show' => 'attendance.show',
-                    'export' => 'attendance.export', // Wajib ada untuk rekap
-                    'sync' => 'attendance.sync',     // Tambahan: Untuk tarik data dari mesin/log jika ada delay
+                    'export' => 'attendance.export',
+                    'sync' => 'attendance.sync',
                 ],
                 'roles' => [
                     UserRole::ADMIN->value => ['index', 'show', 'sync'],
@@ -391,7 +391,7 @@ class PermissionSeeder extends Seeder
 
         DB::transaction(function () use ($modules) {
 
-            // 1️⃣ Buat roles dari enum
+            // 1️⃣ Create roles from enum
             foreach (UserRole::cases() as $roleEnum) {
                 Role::firstOrCreate(
                     [
@@ -404,17 +404,17 @@ class PermissionSeeder extends Seeder
                 );
             }
 
-            // 2️⃣ Buat modules + permissions + assign ke role
+            // 2️⃣ Create modules + permissions + assign to roles
             foreach ($modules as $moduleName => $config) {
 
                 Module::updateOrCreate(
                     ['name' => $moduleName],
-                    [] // jangan simpan actions, permission sudah punya tabel sendiri
+                    [] // do not save actions, permissions already have their own table
                 );
 
                 foreach ($config['actions'] as $actionKey => $permissionName) {
 
-                    // 🔥 WAJIB pakai guard_name
+                    // 🔥 MUST use guard_name
                     $permission = Permission::firstOrCreate([
                         'name' => $permissionName,
                         'guard_name' => 'api',
@@ -427,7 +427,7 @@ class PermissionSeeder extends Seeder
 
                             if (in_array($actionKey, $allowedActions)) {
 
-                                // 🔥 WAJIB sebutkan guard
+                                // 🔥 MUST specify guard
                                 $role = Role::findByName($roleName, 'api');
 
                                 if (! $role->hasPermissionTo($permission)) {
@@ -439,7 +439,7 @@ class PermissionSeeder extends Seeder
                 }
             }
 
-            // 3️⃣ Pastikan admin selalu punya semua permission
+            // 3️⃣ Ensure admin always has all permissions
             $admin = Role::findByName(UserRole::ADMIN->value, 'api');
             $admin->syncPermissions(Permission::where('guard_name', 'api')->get());
 

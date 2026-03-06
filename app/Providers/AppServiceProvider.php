@@ -30,7 +30,6 @@ class AppServiceProvider extends ServiceProvider
             $generalSetting = Setting::where('key', 'general')->first();
 
             if ($generalSetting && isset($generalSetting->values['site_name'])) {
-                // Ini akan mengubah app.name secara dinamis sesuai database
                 Config::set('app.name', $generalSetting->values['site_name']);
             }
         }

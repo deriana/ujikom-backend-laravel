@@ -14,37 +14,37 @@ return new class extends Migration
         Schema::create('employees', function (Blueprint $table) {
             $table->id();
 
-            // Identitas utama
+            // Primary identity
             $table->string('nik')->unique();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
 
-            // Struktur organisasi
+            // Organizational structure
             $table->foreignId('team_id')->constrained('teams')->cascadeOnDelete();
             $table->foreignId('position_id')->constrained('positions')->cascadeOnDelete();
 
-            // Atasan langsung (self relation)
+            // Direct supervisor (self relation)
             $table->foreignId('manager_id')
                 ->nullable()
                 ->constrained('employees')
                 ->nullOnDelete();
 
-            // Status karyawan (0=permanent,1=contract,2=intern,resigned handled by resign_date)
+            // Employee status (0=permanent, 1=contract, 2=intern, resigned handled by resign_date)
             $table->tinyInteger('employee_status')->default(3);
 
-            // Kontrak (khusus contract/intern)
+            // Contract details (specifically for contract/intern)
             $table->date('contract_start')->nullable();
             $table->date('contract_end')->nullable();
 
-            // Gaji dasar (boleh null kalau ikut position atau intern unpaid)
+            // Base salary (can be null if following position or unpaid intern)
             $table->decimal('base_salary', 15, 2)->nullable();
 
-            // Data personal
+            // Personal data
             $table->string('phone')->nullable()->unique();
             $table->enum('gender', ['male', 'female']);
             $table->date('date_of_birth')->nullable();
             $table->text('address');
 
-            // Data kerja
+            // Employment data
             $table->date('join_date');
             $table->date('resign_date')->nullable();
             $table->enum('employment_state', ['active', 'resigned', 'terminated'])->default('active');

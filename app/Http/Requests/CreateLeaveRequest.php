@@ -22,7 +22,7 @@ class CreateLeaveRequest extends FormRequest
     {
         $rules = [
             'leave_type_uuid' => ['required', 'uuid', 'exists:leave_types,uuid'],
-            'date_start' => ['required', 'date', 'after_or_equal:today'], // Opsional: cegah backdate
+            'date_start' => ['required', 'date', 'after_or_equal:today'],
             'date_end' => ['required', 'date', 'after_or_equal:date_start'],
             'reason' => ['required', 'string', 'max:500'],
             'attachment' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
@@ -50,15 +50,15 @@ class CreateLeaveRequest extends FormRequest
             // 1️⃣ Leave Type
             $leaveType = LeaveType::where('uuid', $this->leave_type_uuid)->first();
 
-            Log::info('LeaveType lookup', [
-                'uuid' => $this->leave_type_uuid,
-                'found' => (bool) $leaveType,
-                'is_active' => $leaveType?->is_active,
-            ]);
+            // Log::info('LeaveType lookup', [
+            //     'uuid' => $this->leave_type_uuid,
+            //     'found' => (bool) $leaveType,
+            //     'is_active' => $leaveType?->is_active,
+            // ]);
 
             if (! $leaveType || ! $leaveType->is_active) {
                 $validator->errors()->add('leave_type_uuid', 'The selected leave type is unavailable or inactive.');
-                Log::warning('LeaveType invalid');
+                // Log::warning('LeaveType invalid');
 
                 return;
             }
@@ -66,7 +66,7 @@ class CreateLeaveRequest extends FormRequest
             // 2️⃣ Half Day Validation
             if ($this->is_half_day && $this->date_start !== $this->date_end) {
                 $validator->errors()->add('is_half_day', 'Half-day leave must be on the same date.');
-                Log::warning('Half day invalid range');
+                // Log::warning('Half day invalid range');
 
                 return;
             }
@@ -90,9 +90,9 @@ class CreateLeaveRequest extends FormRequest
                 return;
             }
 
-            Log::info('Durasi dihitung', [
-                'days_requested' => $daysRequested,
-            ]);
+            // Log::info('Durasi dihitung', [
+            //     'days_requested' => $daysRequested,
+            // ]);
 
             // 4️⃣ Resolve Employee
             $employee = $this->input('employee_nik')
@@ -155,7 +155,7 @@ class CreateLeaveRequest extends FormRequest
         $days = 0;
         foreach (CarbonPeriod::create($startDate, $endDate) as $date) {
             $check = $workdayService->isWorkday($date);
-            Log::info('Checking date: '.$date->toDateString().' - Is Workday: '.($check ? 'YES' : 'NO'));
+            // Log::info('Checking date: '.$date->toDateString().' - Is Workday: '.($check ? 'YES' : 'NO'));
 
             if ($check) {
                 $days++;

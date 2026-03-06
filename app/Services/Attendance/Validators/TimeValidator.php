@@ -13,13 +13,26 @@ use Carbon\Carbon;
 
 class TimeValidator
 {
+    /**
+     * The workday service instance.
+     */
     protected WorkdayService $workdayService;
 
+    /**
+     * Create a new validator instance.
+     */
     public function __construct(WorkdayService $workdayService)
     {
         $this->workdayService = $workdayService;
     }
 
+    /**
+     * Validate if the given date is a valid workday for the employee.
+     *
+     * @param Carbon $date
+     * @param Employee|null $employee
+     * @throws TimeValidationException
+     */
     public function validateWorkday(Carbon $date, ?Employee $employee = null): void
     {
         if ($employee) {
@@ -36,13 +49,21 @@ class TimeValidator
         }
     }
 
+    /**
+     * Validate the clock-in window and determine attendance status.
+     *
+     * @param Employee $employee
+     * @param Carbon $now
+     * @return array
+     * @throws AttendanceException
+     */
     public function validateClockInWindow(Employee $employee, Carbon $now): array
     {
         $times = $this->getEmployeeScheduleTimes($employee, $now);
         $workStart = $times['work_start_time'];
 
-        // 1. Cek apakah terlalu awal (Misal: tidak boleh absen lebih dari 2 jam sebelum shift)
-        $maxEarlyMinutes = 120; // 2 jam
+        // 1. Check if it's too early (e.g., cannot clock in more than 2 hours before shift)
+        $maxEarlyMinutes = 120; // 2 hours
         if ($now->lt($workStart->copy()->subMinutes($maxEarlyMinutes))) {
             throw new AttendanceException(
                 'It is not time to clock in yet. Your shift starts at '.$workStart->format('H:i'),
@@ -50,11 +71,11 @@ class TimeValidator
             );
         }
 
-        // 2. Konfigurasi Toleransi
+        // 2. Tolerance Configuration
         $lateTolerance = (int) ($times['late_tolerance_minutes'] ?? 10);
         $absentThreshold = (int) ($times['absent_threshold_minutes'] ?? 60);
 
-        // 3. Hitung selisih
+        // 3. Calculate difference
         $diffMinutes = $workStart->diffInMinutes($now, false);
         $lateMinutes = max(0, $diffMinutes);
 
@@ -69,6 +90,13 @@ class TimeValidator
         ];
     }
 
+    /**
+     * Validate the clock-out window and calculate early leave or overtime.
+     *
+     * @param Employee $employee
+     * @param Carbon $now
+     * @return array
+     */
     public function validateClockOutWindow(Employee $employee, Carbon $now): array
     {
         $times = $this->getEmployeeScheduleTimes($employee, $now);
@@ -79,7 +107,7 @@ class TimeValidator
         $totalWorkDuration = $workStart->diffInMinutes($workEnd);
         $earliestClockOut = (clone $workStart)->addMinutes(intval($totalWorkDuration / 2));
 
-        // 1️⃣ Cek approval
+        // 1. Check for approved early leave request
         $isApproved = EarlyLeave::where('employee_id', $employee->id)
             ->where('status', ApprovalStatus::APPROVED->value)
             ->whereHas('attendance', function ($q) use ($now) {
@@ -87,7 +115,7 @@ class TimeValidator
             })
             ->exists();
 
-        // 2️⃣ Jika TIDAK approved → baru cek batas 50%
+        // 2. If NOT approved, check the 50% work duration threshold
         if (! $isApproved && $now->lt($earliestClockOut)) {
             throw new AttendanceException(
                 'It is not time to clock out yet. Minimum clock out time is '.$earliestClockOut->format('H:i'),
@@ -95,7 +123,7 @@ class TimeValidator
             );
         }
 
-        // 3️⃣ Hitung early leave & overtime
+        // 3. Calculate early leave and overtime minutes
         $earlyLeaveMinutes = $now->lt($workEnd)
             ? $now->diffInMinutes($workEnd)
             : 0;
@@ -167,6 +195,9 @@ class TimeValidator
         ];
     }
 
+    /**
+     * Get the default late tolerance from system settings.
+     */
     protected function getDefaultLateTolerance(): int
     {
         $setting = Setting::where('key', 'attendance')->first()?->values ?? [];

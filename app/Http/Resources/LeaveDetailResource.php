@@ -8,7 +8,6 @@ class LeaveDetailResource extends JsonResource
 {
     public function toArray($request)
     {
-        // Hitung sisa cuti dari EmployeeLeaveBalance
         $balance = $this->employee->leaveBalances()
             ->where('leave_type_id', $this->leave_type_id)
             ->first();
@@ -36,7 +35,7 @@ class LeaveDetailResource extends JsonResource
                 'exists' => true,
                 'filename' => basename($this->attachment),
                 'path' => $this->attachment,
-                'download_url' => url('/api/download-attachment/'.basename($this->attachment)),
+                'download_url' => url('/api/leaves/download-attachment/'.basename($this->attachment)),
             ] : null,
             'approval_status' => $this->approval_status,
             'next_approver' => optional($this->nextApprover())->name,

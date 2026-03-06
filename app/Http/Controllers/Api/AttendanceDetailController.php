@@ -73,14 +73,14 @@ class AttendanceDetailController extends Controller
             ? Carbon::parse($validated['end_date'])
             : now()->endOfDay();
 
-        if ($start->diffInDays($end) > 31) {
-            throw ValidationException::withMessages([
-                'end_date' => 'Maximum export range is 31 days.',
-            ]);
-        }
+        // if ($start->diffInDays($end) > 31) {
+        //     throw ValidationException::withMessages([
+        //         'end_date' => 'Maximum export range is 31 days.',
+        //     ]);
+        // }
 
         $fileName = 'attendances_' . $start->format('Y-m-d') . '_to_' . $end->format('Y-m-d') . '.xlsx';
-        Log::info($fileName);
+        // Log::info($fileName);
 
         return Excel::download(
             new AttendancesExport($validated),

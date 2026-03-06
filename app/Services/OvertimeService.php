@@ -14,12 +14,17 @@ use Illuminate\Support\Facades\DB;
 class OvertimeService
 {
     /**
-     * Ambil semua lembur yang diajukan sesuai role
+     * Get all overtime records with role-based filtering.
+     *
+     * @param \App\Models\User $user
+     * @return \Illuminate\Database\Eloquent\Collection
      */
     public function index($user)
     {
+        // 1. Initialize query with necessary relationships
         $query = Overtime::with(['employee.user', 'attendance', 'manager.user']);
 
+        // 2. High-level Roles (Admin, Owner, Director, HR, Finance) -> Can see all data
         if ($user->hasAnyRole([
             UserRole::ADMIN->value,
             UserRole::OWNER->value,
@@ -27,14 +32,17 @@ class OvertimeService
             UserRole::HR->value,
             UserRole::FINANCE->value,
         ])) {
-            // Bisa lihat semua
-        } elseif ($user->hasRole(UserRole::MANAGER->value)) {
+            // No filter applied
+        }
+        // 3. Manager -> Can see own requests and direct subordinates
+        elseif ($user->hasRole(UserRole::MANAGER->value)) {
             $employeeId = $user->employee->id;
             $query->where(function ($q) use ($employeeId) {
                 $q->where('employee_id', $employeeId)
                     ->orWhereHas('employee', fn ($sq) => $sq->where('manager_id', $employeeId));
             });
         } else {
+            // 4. Employee -> Can only see their own requests
             $query->where('employee_id', $user->employee->id);
         }
 
@@ -42,23 +50,25 @@ class OvertimeService
     }
 
     /**
-     * Ambil lembur yang perlu diapprove
+     * Get a list of pending overtime requests that require approval.
+     *
+     * @param \App\Models\User $user
+     * @return \Illuminate\Database\Eloquent\Collection
      */
     public function indexApproval($user)
     {
-        // 1. Inisialisasi query dasar
+        // 1. Initialize base query for pending requests
         $query = Overtime::with(['employee.user', 'attendance', 'manager.user'])
             ->pending()
             ->whereNull('approved_by_id');
 
-        // 2. Cek Role Admin/HR/Director/Owner (Akses Full)
+        // 2. High-level Roles -> Full access to all pending requests
         if ($user->hasAnyRole([UserRole::HR, UserRole::ADMIN, UserRole::DIRECTOR, UserRole::OWNER])) {
-            // Biarkan query tanpa filter tambahan (ambil semua)
+            // No additional filter
         }
 
-        // 3. Cek Role Manager (Hanya bawahan)
+        // 3. Manager Logic -> Can only see approvals for direct subordinates
         elseif ($user->hasRole(UserRole::MANAGER->value)) {
-            // Manager WAJIB punya relasi employee untuk tahu siapa bawahannya
             if (! $user->employee) {
                 return collect();
             }
@@ -67,7 +77,7 @@ class OvertimeService
             $query->whereHas('employee', fn ($q) => $q->where('manager_id', $employeeId));
         }
 
-        // 4. Jika bukan siapa-siapa (misal: Employee biasa)
+        // 4. Fallback for other roles
         else {
             return collect();
         }
@@ -75,21 +85,34 @@ class OvertimeService
         return $query->latest()->get();
     }
 
+    /**
+     * Show details of a specific overtime request.
+     *
+     * @param Overtime $overtime
+     * @return Overtime
+     */
     public function show(Overtime $overtime)
     {
+        // 1. Load relationships for detail view
         return $overtime->load(['employee.user', 'attendance', 'manager.user', 'employee.team.division']);
     }
 
     /**
-     * Ajukan lembur
+     * Store a new overtime request.
+     *
+     * @param \App\Models\User $user
+     * @param array $data
+     * @return Overtime
+     * @throws Exception
      */
     public function store($user, array $data): Overtime
     {
+        // 1. Find attendance and validate eligibility
         $attendance = Attendance::findOrFail($data['attendance_id']);
-
         $this->validateOvertimeEligibility($attendance);
 
         return DB::transaction(function () use ($data) {
+            // 2. Create the overtime record
             $overtime = Overtime::create([
                 'attendance_id' => $data['attendance_id'],
                 'employee_id' => $data['employee_id'],
@@ -97,7 +120,7 @@ class OvertimeService
                 'status' => ApprovalStatus::PENDING->value,
             ]);
 
-            // Notify employee about their new overtime request
+            // 3. Send notification
             $overtime->notifyCustom(
                 title: 'New Overtime Request Created',
                 message: 'Your overtime request has been submitted.'
@@ -108,20 +131,29 @@ class OvertimeService
     }
 
     /**
-     * Update lembur (misal alasan atau durasi manual)
+     * Update an existing overtime request.
+     *
+     * @param Overtime $overtime
+     * @param array $data
+     * @param \App\Models\User $user
+     * @return Overtime
+     * @throws Exception
      */
     public function update(Overtime $overtime, array $data, $user): Overtime
     {
         return DB::transaction(function () use ($overtime, $data, $user) {
+            // 1. Validate if the request can still be modified
             if ($overtime->status !== ApprovalStatus::PENDING->value &&
                 ! $user->hasAnyRole([UserRole::HR, UserRole::ADMIN])) {
                 throw new Exception('Processed overtime cannot be modified.');
             }
 
+            // 2. Update the record
             $overtime->update([
                 'reason' => $data['reason'] ?? $overtime->reason,
             ]);
 
+            // 3. Send notification
             $overtime->notifyCustom(
                 title: 'Overtime Request Updated',
                 message: 'Your overtime request has been updated.'
@@ -132,21 +164,30 @@ class OvertimeService
     }
 
     /**
-     * Approve / Reject lembur
+     * Process approval or rejection of an overtime request.
+     *
+     * @param Overtime $overtime
+     * @param \App\Models\User $user
+     * @param bool $approve
+     * @param string|null $note
+     * @return Overtime
+     * @throws Exception
      */
     public function approve(Overtime $overtime, $user, bool $approve, ?string $note = null)
     {
         return DB::transaction(function () use ($overtime, $user, $approve, $note) {
+            // 1. Ensure the request is still pending
             if ($overtime->status !== ApprovalStatus::PENDING->value) {
                 throw new Exception('Overtime has already been processed.');
             }
 
+            // 2. Permission check: Only direct manager or high-level roles can process
             $isManager = $overtime->employee?->manager_id === optional($user->employee)->id;
-
             if (! $isManager && ! $user->hasAnyRole([UserRole::HR, UserRole::ADMIN, UserRole::DIRECTOR, UserRole::OWNER])) {
                 throw new Exception('You do not have permission to approve this overtime.');
             }
 
+            // 3. Update the request status and approval details
             $overtime->update([
                 'status' => $approve ? ApprovalStatus::APPROVED->value : ApprovalStatus::REJECTED->value,
                 'approved_by_id' => optional($user->employee)->id,
@@ -154,6 +195,7 @@ class OvertimeService
                 'note' => $note,
             ]);
 
+            // 4. Send notification to the employee
             $overtime->notifyCustom(
                 title: $approve ? 'Overtime Approved' : 'Overtime Rejected',
                 message: $approve
@@ -166,14 +208,19 @@ class OvertimeService
     }
 
     /**
-     * Update durasi lembur saat clock out
+     * Update overtime duration automatically after clock out.
+     *
+     * @param Attendance $attendance
+     * @return void
      */
     public function updateDurationAfterClockOut(Attendance $attendance)
     {
+        // 1. Ensure employee has clocked out
         if (! $attendance->clock_out) {
             return;
         }
 
+        // 2. Determine shift end time from template or settings
         $employeeShift = $attendance->employee
             ->shifts()
             ->where('shift_date', $attendance->date)
@@ -189,8 +236,7 @@ class OvertimeService
             }
 
         } else {
-
-            // 🔁 Fallback ke default setting
+            // Fallback to default attendance settings
             $attendanceSetting = Setting::where('key', 'attendance')->first();
 
             if (! $attendanceSetting || ! isset($attendanceSetting->values['work_end_time'])) {
@@ -201,22 +247,25 @@ class OvertimeService
                 ->setTimeFromTimeString($attendanceSetting->values['work_end_time']);
         }
 
-        // Hitung overtime hanya jika clock_out > shift_end
+        // 3. Calculate overtime only if clock_out is after shift_end
         if ($attendance->clock_out->lte($shiftEnd)) {
             return;
         }
 
         $durationMinutes = $shiftEnd->diffInMinutes($attendance->clock_out);
 
+        // 4. Find existing pending overtime or create a new auto-generated record
         $overtime = Overtime::where('attendance_id', $attendance->id)
             ->pending()
             ->first();
 
         if ($overtime) {
+            // Update existing record with calculated duration
             $overtime->update([
                 'duration_minutes' => $durationMinutes,
             ]);
         } else {
+            // Create new auto-generated overtime record
             Overtime::create([
                 'employee_id' => $attendance->employee_id,
                 'attendance_id' => $attendance->id,
@@ -228,11 +277,15 @@ class OvertimeService
     }
 
     /**
-     * Hapus lembur
+     * Delete an overtime request.
+     *
+     * @param Overtime $overtime
+     * @return bool
      */
     public function delete(Overtime $overtime): bool
     {
         return DB::transaction(function () use ($overtime) {
+            // 1. Send notification before deletion
             $overtime->notifyCustom(
                 title: 'Overtime Request Deleted',
                 message: "Employee {$overtime->employee->user->name} has deleted their overtime request for {$overtime->attendance->date->toFormattedDateString()}."
@@ -243,18 +296,24 @@ class OvertimeService
     }
 
     /**
-     * Validasi pengajuan lembur
+     * Validate if the employee is eligible to submit an overtime request.
+     *
+     * @param Attendance $attendance
+     * @throws Exception
      */
     private function validateOvertimeEligibility(Attendance $attendance): void
     {
+        // 1. Check if the employee has clocked in
         if (! $attendance->clock_in) {
             throw new Exception('You have not clocked in yet.');
         }
 
+        // 2. Ensure the employee hasn't already clocked out
         if ($attendance->clock_out) {
             throw new Exception('Cannot request overtime after clocking out.');
         }
 
+        // 3. Prevent duplicate requests for the same attendance record
         if (Overtime::where('attendance_id', $attendance->id)->exists()) {
             throw new Exception('An overtime request has already been submitted for this attendance.');
         }

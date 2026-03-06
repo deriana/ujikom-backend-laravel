@@ -8,24 +8,41 @@ use Illuminate\Support\Facades\Http;
 
 class RefreshHolidays extends Command
 {
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
     protected $signature = 'holidays:refresh {year?}';
+
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
     protected $description = 'Refresh holidays from external API';
 
+    /**
+     * Execute the console command.
+     *
+     * @return int
+     */
     public function handle(): int
     {
+        // Determine the year to fetch, default to current year
         $year = $this->argument('year') ?? now()->year;
 
-        $response = Http::get("https://libur.deno.dev/api", [
-            'year' => $year
-        ]);
+        // Fetch holiday data from external API
+        $response = Http::get("https://libur.deno.dev/api", ['year' => $year]);
 
         if ($response->failed()) {
-            $this->error('Gagal mengambil data holiday API');
+            $this->error('Failed to fetch data from holiday API');
             return self::FAILURE;
         }
 
         $holidays = $response->json();
 
+        // Sync API data with local database
         foreach ($holidays as $item) {
             Holiday::updateOrCreate(
                 [
@@ -39,7 +56,7 @@ class RefreshHolidays extends Command
             );
         }
 
-        $this->info("Holidays {$year} berhasil di-refresh.");
+        $this->info("Holidays for {$year} successfully refreshed.");
         return self::SUCCESS;
     }
 }

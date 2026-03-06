@@ -23,15 +23,20 @@ use App\Http\Controllers\Api\ShiftTemplateController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\WorkScheduleController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Auth\VerificationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Auth\VerificationController;
 
 Route::middleware('throttle:api')->group(function () {
     Route::get('/ping', function () {
         return response()->json(['message' => 'pong'], 200);
     });
+    Route::get('/', function () {
+        return response()->json(['message' => 'Welcome to the HRIS API. Have a wonderful day!'], 200);
+    });
 });
+
+
 
 Route::group(['prefix' => 'auth', 'middleware' => 'throttle:api'], function () {
     Route::post('/register', [AuthController::class, 'register']);
@@ -61,6 +66,8 @@ Route::group(['prefix' => 'auth', 'middleware' => 'throttle:api'], function () {
 Route::post('/attendance/bulk-send', [AttendanceController::class, 'bulkAttendance']);
 Route::post('/attendance/single-send', [AttendanceController::class, 'singleAttendance']);
 route::get('/settings/get/general', [SettingController::class, 'getGeneral']);
+Route::get('/leaves/download-attachment/{filename}', [LeaveController::class, 'downloadAttachment']);
+Route::get('/early_leaves/download-attachment/{filename}', [EarlyLeaveController::class, 'downloadAttachment']);
 
 Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::get('/user', function (Request $request) {
@@ -138,12 +145,13 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
 
     Route::prefix('leaves')->group(function () {
         Route::get('/', [LeaveController::class, 'index']);
+        Route::get('/my-leaves', [LeaveController::class, 'myLeaves']);
         Route::post('/', [LeaveController::class, 'store']);
         Route::get('/{leave}', [LeaveController::class, 'show']);
         Route::post('/{leave}', [LeaveController::class, 'update']);
         Route::delete('/{leave}', [LeaveController::class, 'destroy']);
         Route::put('/approvals/{approval:uuid}/approve', [LeaveController::class, 'approve']);
-        Route::get('/download-attachment/{filename}', [LeaveController::class, 'downloadAttachment']);
+        // Route::get('/download-attachment/{filename}', [LeaveController::class, 'downloadAttachment']);
     });
 
     Route::prefix('early_leaves')->group(function () {
@@ -153,7 +161,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::post('/{early_leave}', [EarlyLeaveController::class, 'update']);
         Route::delete('/{early_leave}', [EarlyLeaveController::class, 'destroy']);
         Route::put('/approvals/{early_leave:uuid}/approve', [EarlyLeaveController::class, 'approve']);
-        Route::get('/download-attachment/{filename}', [EarlyLeaveController::class, 'downloadAttachment']);
+        // Route::get('/download-attachment/{filename}', [EarlyLeaveController::class, 'downloadAttachment']);
     });
 
     Route::apiResource('attendance_request', AttendanceRequestController::class);

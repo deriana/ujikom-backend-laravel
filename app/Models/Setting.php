@@ -12,6 +12,7 @@ class Setting extends Model implements HasMedia
     use HasFactory, InteractsWithMedia;
 
     // protected $guarded = [];
+
     protected $fillable = [
         'key', 'values',
     ];

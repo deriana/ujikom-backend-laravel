@@ -17,8 +17,8 @@ class ManagerResource extends JsonResource
         return [
             'name' => $this->name,
             'nik' => $this->employee?->nik,
-            'role' => $this->roles->first()?->name, // Menampilkan 'manager' atau 'director'
-            'position' => $this->employee?->position?->name, // Menampilkan nama jabatan (ex: 'Manager Backend')
+            'role' => $this->roles->first()?->name,
+            'position' => $this->employee?->position?->name, 
         ];
     }
 }

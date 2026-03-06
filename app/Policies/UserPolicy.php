@@ -9,8 +9,6 @@ class UserPolicy
 {
     use HandlesAuthorization;
 
-    // Tidak perlu 'before' lagi di sini
-
     public function viewAny(User $user): bool
     {
         return $user->can('user.index');
@@ -38,7 +36,6 @@ class UserPolicy
 
     public function restore(User $user, User $model): bool
     {
-        // Tetap pakai logic kepemilikan jika perlu
         return $user->can('user.restore') && $user->id === $model->created_by_id;
     }
 

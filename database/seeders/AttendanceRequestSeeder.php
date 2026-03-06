@@ -16,7 +16,7 @@ class AttendanceRequestSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Ambil data pendukung
+        // 1. Get supporting data
         $employees = Employee::whereHas('user', function ($q) {
             $q->whereDoesntHave('roles', function ($r) {
                 $r->where('name', UserRole::OWNER->value);
@@ -30,7 +30,7 @@ class AttendanceRequestSeeder extends Seeder
         $workSchedules = WorkSchedule::all();
 
         foreach ($employees as $employee) {
-            // Tentukan siapa yang berhak approve (Logic hierarki)
+            // Determine who is entitled to approve (Hierarchy logic)
             $approverId = null;
             if ($employee->user->hasRole(UserRole::DIRECTOR->value)) {
                 $approverId = $owner ? $owner->id : null;
@@ -50,7 +50,7 @@ class AttendanceRequestSeeder extends Seeder
             ];
 
             foreach ($scenarios as $scenario) {
-                // Tentukan secara acak apakah ini request SHIFT atau WORK_MODE
+                // Randomly determine if this is a SHIFT or WORK_MODE request
                 $type = fake()->randomElement(['SHIFT', 'WORK_MODE']);
 
                 AttendanceRequest::create([
@@ -58,7 +58,7 @@ class AttendanceRequestSeeder extends Seeder
                     'employee_id' => $employee->id,
                     'request_type' => $type,
 
-                    // Jika SHIFT, isi shift_template_id. Jika WORK_MODE, isi work_schedules_id.
+                    // If SHIFT, fill shift_template_id. If WORK_MODE, fill work_schedules_id.
                     'shift_template_id' => $type === 'SHIFT' ? $shiftTemplates->random()->id : null,
                     'work_schedules_id' => $type === 'WORK_MODE' ? $workSchedules->random()->id : null,
 

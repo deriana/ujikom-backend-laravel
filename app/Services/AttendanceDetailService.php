@@ -9,6 +9,12 @@ use Illuminate\Support\Facades\Auth;
 
 class AttendanceDetailService
 {
+    /**
+     * Get a list of attendance records based on user roles and filters.
+     *
+     * @param array $filters
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
     public function index(array $filters = [])
     {
         $user = Auth::user();
@@ -45,6 +51,13 @@ class AttendanceDetailService
 
         return $query->orderBy('date', 'desc')->get();
     }
+
+    /**
+     * Get the details of a specific attendance record.
+     *
+     * @param Attendance $attendance
+     * @return Attendance
+     */
     public function show(Attendance $attendance)
     {
         return $attendance->load('employee');

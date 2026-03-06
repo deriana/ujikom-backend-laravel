@@ -87,22 +87,10 @@ class Payroll extends Model
         return 'uuid';
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Relationships
-    |--------------------------------------------------------------------------
-    */
-
     public function employee()
     {
         return $this->belongsTo(Employee::class);
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Scopes
-    |--------------------------------------------------------------------------
-    */
 
     public function scopeDraft(Builder $query): Builder
     {
@@ -119,12 +107,6 @@ class Payroll extends Model
         return $query->where('period_start', $start)
             ->where('period_end', $end);
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Helpers
-    |--------------------------------------------------------------------------
-    */
 
     public function isDraft(): bool
     {
