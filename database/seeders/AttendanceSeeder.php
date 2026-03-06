@@ -3,17 +3,16 @@
 namespace Database\Seeders;
 
 use App\Enums\UserRole;
+use App\Models\Attendance;
 use App\Models\Employee;
+use App\Services\WorkdayService;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class AttendanceSeeder extends Seeder
 {
-    public function run(): void
+    public function run(WorkdayService $workdayService): void
     {
-        // FILTER: Hanya ambil Employee yang BUKAN Owner dan BUKAN Director
         $employeeIds = Employee::whereHas('user', function ($q) {
             $q->withoutRole([
                 UserRole::OWNER->value,
@@ -40,8 +39,8 @@ class AttendanceSeeder extends Seeder
                 $daysBack = floor($count / count($employeeIds));
                 $date = Carbon::today()->subDays($daysBack);
 
-                // Lewati weekend
-                if ($date->isWeekend()) {
+                // Lewati weekend & libur
+                if (! $workdayService->isWorkday($date)) {
                     $count++;
                     continue;
                 }
@@ -73,14 +72,14 @@ class AttendanceSeeder extends Seeder
                 $this->command->getOutput()->progressAdvance();
 
                 if (count($data) >= $batchSize) {
-                    DB::table('attendances')->insert($data);
+                    Attendance::insert($data);
                     $data = [];
                 }
             }
         }
 
         if (!empty($data)) {
-            DB::table('attendances')->insert($data);
+            Attendance::insert($data);
         }
 
         $this->command->getOutput()->progressFinish();

@@ -51,7 +51,7 @@ class AttendanceService
         } catch (AttendanceException $e) {
             return ['success' => false, 'message' => $e->getMessage()];
         } catch (Exception $e) {
-            Log::error('Attendance Error: '.$e->getMessage());
+            // Log::error('Attendance Error: '.$e->getMessage());
 
             return ['success' => false, 'message' => 'Terjadi kesalahan sistem.'];
         }
@@ -218,7 +218,7 @@ class AttendanceService
             DB::rollBack();
             $this->logger->logFailure('System Error: '.$e->getMessage(), ['user_agent' => $userAgent]);
 
-            Log::error('System Error: '.$e->getMessage());
+            // Log::error('System Error: '.$e->getMessage());
 
             return [
                 'success' => false,

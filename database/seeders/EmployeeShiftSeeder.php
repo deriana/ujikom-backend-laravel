@@ -40,7 +40,7 @@ class EmployeeShiftSeeder extends Seeder
                 ['employee' => $finance, 'template' => $shiftPagi],
                 ['employee' => $manager, 'template' => $shiftPagi],
                 ['employee' => $hr, 'template' => $shiftSore], // HR sesekali shift sore
-                ['employee' => $staff, 'template' => $shiftMalam], // Staff (Tesla) kena shift malam
+                // ['employee' => $staff, 'template' => $shiftPagi], // Staff (Tesla) kena shift malam
             ];
 
             foreach ($assignments as $assign) {

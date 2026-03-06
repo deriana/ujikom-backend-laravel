@@ -37,6 +37,16 @@ class LeaveController extends Controller
         );
     }
 
+    public function myLeaves()
+    {
+        $leaves = $this->leaveService->myLeaves(Auth::user());
+
+        return $this->successResponse(
+            $leaves,
+            'Leaves fetched successfully'
+        );
+    }
+
     /**
      * Show detail leave
      */
@@ -44,7 +54,7 @@ class LeaveController extends Controller
     {
         $this->authorize('view', $leave);
 
-        Log::info($leave);
+        // Log::info($leave);
 
         $detail = $this->leaveService->show($leave);
 
@@ -129,7 +139,7 @@ class LeaveController extends Controller
         $approve = $request->input('approve');
         $note = $request->input('note');
 
-        Log::info('Data Request Masuk:', $request->all());
+        // Log::info('Data Request Masuk:', $request->all());
 
         // 4. Panggil service
         $updated = $this->leaveService->approve($approval, Auth::user(), $approve, $note);

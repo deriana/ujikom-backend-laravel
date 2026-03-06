@@ -30,7 +30,7 @@ class AttendanceLogger
             'longitude' => $data['longitude'] ?? null,
         ]);
 
-        Log::info('ATTENDANCE_EVENT', $data);
+        // Log::info('ATTENDANCE_EVENT', $data);
     }
 
     public function logFailure(string $reason, array $context = []): void

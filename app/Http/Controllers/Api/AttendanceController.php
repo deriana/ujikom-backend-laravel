@@ -33,7 +33,7 @@ class AttendanceController extends Controller
             'longitude' => $request->longitude,
         ];
 
-        Log::info('Single attendance payload parsed', ['payload' => $payload]);
+        // Log::info('Single attendance payload parsed', ['payload' => $payload]);
 
         $result = $this->attendanceService->handleAttendance(
             $payload,
@@ -75,32 +75,32 @@ class AttendanceController extends Controller
             'attendances' => $attendances,
         ];
 
-        Log::info('Bulk payload parsed', ['count' => count($attendances)]);
+        // Log::info('Bulk payload parsed', ['count' => count($attendances)]);
 
         $result = $this->attendanceService->handleBulkAttendance(
             $payload,
             $request->header('User-Agent')
         );
 
-        Log::info('BULK_ATTENDANCE_REQUEST', [
-            'ip' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-            'latitude' => $request->latitude,
-            'longitude' => $request->longitude,
-            'faces_count' => count($attendances),
-            'faces' => collect($attendances)->map(function ($a, $i) {
-                $desc = is_array($a['descriptor'])
-                    ? $a['descriptor']
-                    : json_decode($a['descriptor'], true);
+        // Log::info('BULK_ATTENDANCE_REQUEST', [
+        //     'ip' => $request->ip(),
+        //     'user_agent' => $request->userAgent(),
+        //     'latitude' => $request->latitude,
+        //     'longitude' => $request->longitude,
+        //     'faces_count' => count($attendances),
+        //     'faces' => collect($attendances)->map(function ($a, $i) {
+        //         $desc = is_array($a['descriptor'])
+        //             ? $a['descriptor']
+        //             : json_decode($a['descriptor'], true);
 
-                return [
-                    'index' => $i,
-                    'descriptor_length' => is_array($desc) ? count($desc) : null,
-                    'descriptor_sample' => is_array($desc) ? array_slice($desc, 0, 5) : null,
-                    'photo_present' => ! empty($a['photo']),
-                ];
-            }),
-        ]);
+        //         return [
+        //             'index' => $i,
+        //             'descriptor_length' => is_array($desc) ? count($desc) : null,
+        //             'descriptor_sample' => is_array($desc) ? array_slice($desc, 0, 5) : null,
+        //             'photo_present' => ! empty($a['photo']),
+        //         ];
+        //     }),
+        // ]);
 
         return $this->successResponse($result['summary'], 'Bulk Attendance Processed');
     }

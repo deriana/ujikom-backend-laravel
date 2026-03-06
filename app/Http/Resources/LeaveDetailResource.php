@@ -36,7 +36,7 @@ class LeaveDetailResource extends JsonResource
                 'exists' => true,
                 'filename' => basename($this->attachment),
                 'path' => $this->attachment,
-                'download_url' => url('/api/download-attachment/'.basename($this->attachment)),
+                'download_url' => url('/api/leaves/download-attachment/'.basename($this->attachment)),
             ] : null,
             'approval_status' => $this->approval_status,
             'next_approver' => optional($this->nextApprover())->name,

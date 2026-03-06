@@ -31,7 +31,7 @@ class PayrollResource extends JsonResource
             'status' => $this->status,
             'finalized_at' => $this->finalized_at,
             'can' => [
-                'update' => $user->can('update', $this->resource),
+                'update' => $this->status == $statusDraft && $user->can('update', $this->resource),
                 'pay' => $this->status == $statusDraft && $user->can('pay', $this->resource),
             ],
         ];

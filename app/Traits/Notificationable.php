@@ -58,7 +58,7 @@ trait Notificationable
         $notificationService = App::make(\App\Services\NotificationService::class);
         $notifyUsers = $customUsers ?? self::getNotifyUsers($this);
 
-        Log::info("Custom Notification [{$title}] for [".class_basename($this).":{$this->id}]");
+        // Log::info("Custom Notification [{$title}] for [".class_basename($this).":{$this->id}]");
 
         $notificationService->notifyCrud(
             \App\Enums\CrudAction::UPDATED,
@@ -93,7 +93,7 @@ trait Notificationable
             return "{$user->name}({$roleName})";
         })->join(', ');
 
-        Log::info("Notification [{$action->value}] for model [".class_basename($model).":{$model->id}] will be sent to: $userInfo");
+        // Log::info("Notification [{$action->value}] for model [".class_basename($model).":{$model->id}] will be sent to: $userInfo");
 
         $notificationService->notifyCrud($action, $model, $notifyUsers, $title, $message, $url);
     }

@@ -123,7 +123,7 @@ class UserService
     public function show(User $user)
     {
         return $user->load([
-            'employee.position',
+            'employee.position.allowances',
             'employee.team.division',
             'employee.manager.user',
             'employee.biometrics',

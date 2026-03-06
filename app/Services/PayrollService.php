@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\UserRole;
 use App\Http\Resources\PayrollDetailResource;
+use App\Jobs\GeneratePayrollSlipJob;
 use App\Models\Payroll;
 use App\Models\Setting;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -25,7 +26,7 @@ class PayrollService
             UserRole::DIRECTOR->value,
             UserRole::OWNER->value,
             UserRole::HR->value,
-            UserRole::FINANCE->value 
+            UserRole::FINANCE->value,
         ])) {
         } elseif ($user->hasRole(UserRole::MANAGER->value)) {
             $query->whereHas('employee', function ($q) use ($currentUserEmployee) {
@@ -110,8 +111,7 @@ class PayrollService
 
     public function finalize(Payroll $payroll): Payroll
     {
-        return DB::transaction(function () use ($payroll) {
-
+        DB::transaction(function () use ($payroll) {
             if ($payroll->isVoided()) {
                 throw new \Exception('Cannot finalize a voided payroll.');
             }
@@ -121,15 +121,16 @@ class PayrollService
             }
 
             $payroll->finalize();
-            $this->generateSlip($payroll);
 
             $payroll->notifyCustom(
                 title: 'Payroll Finalized',
                 message: "The payroll for period {$payroll->period_start->format('M Y')} has been finalized."
             );
-
-            return $payroll;
         });
+
+        GeneratePayrollSlipJob::dispatch($payroll);
+
+        return $payroll;
     }
 
     public function void(Payroll $payroll, string $note, int $userId): Payroll

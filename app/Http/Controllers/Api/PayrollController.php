@@ -66,10 +66,12 @@ class PayrollController extends Controller
     {
         $this->authorize('pay', $payroll);
 
-        $finalized = $this->payrollService->finalize($payroll);
+        $payroll->load(['employee.user', 'employee.manager']);
+
+        $this->payrollService->finalize($payroll);
 
         return $this->successResponse(
-            new PayrollResource($finalized),
+            null,
             'Payroll finalized successfully'
         );
     }

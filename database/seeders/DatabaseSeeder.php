@@ -17,15 +17,16 @@ class DatabaseSeeder extends Seeder
         $this->call([
             PermissionSeeder::class,
             UserSeeder::class,
+            HolidaySeeder::class,
             SettingSeeder::class,
             DivisionSeeder::class,
             PositionAllowanceSeeder::class,
             AllowanceSeeder::class,
             EmployeeSeeder::class,
-            AttendanceSeeder::class, // Developing
+            // AttendanceSeeder::class, // Developing
+            AttendanceYearSeeder::class,
             // BiometricSeeder::class,
             BiometricUserSeeder::class,
-            HolidaySeeder::class,
             WorkModeSeeder::class,
             WorkScheduleSeeder::class,
             EmployeeWorkScheduleSeeder::class,
@@ -38,6 +39,7 @@ class DatabaseSeeder extends Seeder
             EarlyLeaveSeeder::class,
             AttendanceRequestSeeder::class,
             OvertimeSeeder::class,
+            PayrollSeeder::class
         ]);
     }
 }

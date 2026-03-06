@@ -104,7 +104,7 @@ class UserSeeder extends Seeder
         ]);
         $employee->assignRole(UserRole::EMPLOYEE->value);
 
-        $totalTesting = 100; // Ubah angka ini sesuai kebutuhan testingmu
+        $totalTesting = 15; // Ubah angka ini sesuai kebutuhan testingmu
 
         for ($i = 1; $i <= $totalTesting; $i++) {
             $user = User::create([

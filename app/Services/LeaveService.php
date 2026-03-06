@@ -67,6 +67,17 @@ class LeaveService
         return LeaveResource::collection($query->latest()->get());
     }
 
+
+    public function myLeaves($user)
+    {
+        $leaves = Leave::with(['leaveType', 'approvals'])
+            ->where('employee_id', $user->employee->id)
+            ->latest()
+            ->paginate(10);
+
+        return LeaveResource::collection($leaves);
+    }
+
     public function indexApprovals($user)
     {
         // 1. Inisialisasi Query Dasar
@@ -124,7 +135,7 @@ class LeaveService
      */
     public function store(array $data, $user)
     {
-        return DB::transaction(function () use ($data, $user) {
+        return DB::transaction(function () use ($data) {
             $employeeId = $data['employee_id'];
             $leaveTypeId = $data['leave_type_id'];
             $isHalfDay = $data['is_half_day'] ?? false;
@@ -279,7 +290,7 @@ class LeaveService
     {
         return DB::transaction(function () use ($leave, $data, $user) {
 
-            Log::info($leave);
+            // Log::info($leave);
 
             if (
                 $leave->approval_status !== ApprovalStatus::PENDING->value &&

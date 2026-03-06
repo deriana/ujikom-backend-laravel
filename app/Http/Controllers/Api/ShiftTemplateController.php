@@ -22,7 +22,7 @@ class ShiftTemplateController extends Controller
 
     public function index(): JsonResponse
     {
-        $this->authorize('viewAny', ShiftTemplate::class);
+        // $this->authorize('viewAny', ShiftTemplate::class);
 
         $shift_templates = $this->shiftTemplateService->index();
 

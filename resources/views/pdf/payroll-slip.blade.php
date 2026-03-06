@@ -118,25 +118,25 @@
             <table class="data-table">
                 <tr>
                     <td>Basic Salary</td>
-                    <td class="text-right">{{ number_format($data['earnings']['base_salary'], 2) }}</td>
+                    <td class="text-right">{{ number_format($data['earnings']['base_salary'], 0) }}</td>
                 </tr>
                 @foreach($data['earnings']['allowances'] ?? [] as $allowance)
                     <tr>
                         <td>{{ $allowance['name'] }}</td>
-                        <td class="text-right">{{ number_format($allowance['amount'], 2) }}</td>
+                        <td class="text-right">{{ number_format($allowance['amount'], 0) }}</td>
                     </tr>
                 @endforeach
                 <tr>
                     <td>Overtime Pay</td>
-                    <td class="text-right">{{ number_format($data['earnings']['overtime_pay'], 2) }}</td>
+                    <td class="text-right">{{ number_format($data['earnings']['overtime_pay'], 0) }}</td>
                 </tr>
                 <tr>
                     <td>Adjustments</td>
-                    <td class="text-right">{{ number_format($data['earnings']['manual_adjustment'], 2) }}</td>
+                    <td class="text-right">{{ number_format($data['earnings']['manual_adjustment'], 0) }}</td>
                 </tr>
                 <tr class="total-row bold">
                     <td style="padding-top: 10px;">GROSS SALARY</td>
-                    <td class="text-right">{{ number_format($data['earnings']['gross_salary'], 2) }}</td>
+                    <td class="text-right">{{ number_format($data['earnings']['gross_salary'], 0) }}</td>
                 </tr>
             </table>
         </td>
@@ -146,22 +146,22 @@
             <table class="data-table">
                 <tr>
                     <td>Late Arrival</td>
-                    <td class="text-right">{{ number_format($data['deductions']['late_deduction'], 2) }}</td>
+                    <td class="text-right">{{ number_format($data['deductions']['late_deduction'], 0) }}</td>
                 </tr>
                 <tr>
                     <td>Early Leave</td>
-                    <td class="text-right">{{ number_format($data['deductions']['early_leave_deduction'], 2) }}</td>
+                    <td class="text-right">{{ number_format($data['deductions']['early_leave_deduction'], 0) }}</td>
                 </tr>
                 <tr>
                     <td>Income Tax (PPh 21)</td>
-                    <td class="text-right">{{ number_format($data['deductions']['tax_amount'], 2) }}</td>
+                    <td class="text-right">{{ number_format($data['deductions']['tax_amount'], 0) }}</td>
                 </tr>
                 {{-- Spacer untuk menjaga keseimbangan visual --}}
                 <tr><td>&nbsp;</td><td>&nbsp;</td></tr>
                 <tr><td>&nbsp;</td><td>&nbsp;</td></tr>
                 <tr class="total-row bold">
                     <td style="padding-top: 10px;">TOTAL DEDUCTIONS</td>
-                    <td class="text-right">{{ number_format($data['deductions']['total_deduction'], 2) }}</td>
+                    <td class="text-right">{{ number_format($data['deductions']['total_deduction'], 0) }}</td>
                 </tr>
             </table>
         </td>
@@ -173,7 +173,7 @@
         <tr class="bold">
             <td width="60%" style="font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1px;">Take Home Pay</td>
             <td class="text-right" style="font-size: 20px; color: #0f172a;">
-                IDR {{ number_format($data['summary']['net_salary'], 2) }}
+                IDR {{ number_format($data['summary']['net_salary'], 0) }}
             </td>
         </tr>
     </table>

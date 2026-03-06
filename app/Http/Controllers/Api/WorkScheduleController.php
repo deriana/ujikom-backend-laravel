@@ -22,7 +22,7 @@ class WorkScheduleController extends Controller
 
     public function index(): JsonResponse
     {
-        $this->authorize('viewAny', WorkSchedule::class);
+        // $this->authorize('viewAny', WorkSchedule::class);
 
         $workSchedules = $this->workScheduleService->index();
 
