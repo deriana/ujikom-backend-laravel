@@ -18,13 +18,10 @@ class OvertimeResource extends JsonResource
     {
         $user = Auth::user();
 
-        // Gunakan optional() atau null safe operator (?) untuk menghindari error jika user bukan employee
         $myEmployeeId = $user->employee?->id;
 
-        // Pastikan relasi employee ada sebelum akses manager_id
         $requesterManagerId = $this->employee?->manager_id;
 
-        // Tambahkan pengecekan agar tidak error jika salah satunya null
         $isApprover = ($myEmployeeId && $requesterManagerId == $myEmployeeId)
                       && ($this->status === ApprovalStatus::PENDING->value);
 

@@ -21,7 +21,7 @@ class PositionAllowanceSeeder extends Seeder
             'uuid' => Str::uuid(),
             'name' => 'Transport',
             'type' => 'fixed',
-            'amount' => 150000, // Nilai default
+            'amount' => 150000, // Default value
             'created_by_id' => $creatorId,
         ]);
 
@@ -65,11 +65,11 @@ class PositionAllowanceSeeder extends Seeder
         $owner = Position::create([
             'uuid' => Str::uuid(),
             'name' => 'Owner',
-            'base_salary' => 0, // Sesuai diskusi, owner ambil profit
+            'base_salary' => 0, // Per discussion, owner takes profit
             'created_by_id' => $creatorId,
             'system_reserve' => true
         ]);
-        // Owner tidak perlu tunjangan teknis, atau dikosongkan saja
+        // Owner doesn't need technical allowances, or leave empty
 
         // --- DIRECTOR ---
         $director = Position::create([
@@ -79,8 +79,8 @@ class PositionAllowanceSeeder extends Seeder
             'created_by_id' => $creatorId,
         ]);
         $director->allowances()->attach([
-            $transport->id => ['amount' => 2000000], // Tunjangan khusus bensin mobil mewah
-            $jabatan->id   => ['amount' => 25],      // 25% dari Gaji Pokok
+            $transport->id => ['amount' => 2000000], // Special luxury car fuel allowance
+            $jabatan->id   => ['amount' => 25],      // 25% of Base Salary
             $health->id    => ['amount' => 2000000],
             $comm->id      => ['amount' => 1000000],
         ]);
@@ -94,12 +94,12 @@ class PositionAllowanceSeeder extends Seeder
         ]);
         $manager->allowances()->attach([
             $transport->id => ['amount' => 1000000],
-            $meal->id      => ['amount' => null], // Pakai default
+            $meal->id      => ['amount' => null], // Use default
             $jabatan->id   => ['amount' => 15],
             $comm->id      => ['amount' => 500000],
         ]);
 
-        // --- HR & FINANCE (Level Staff Senior) ---
+        // --- HR & FINANCE (Senior Staff Level) ---
         $seniorStaff = Position::create([
             'uuid' => Str::uuid(),
             'name' => 'Senior Staff',

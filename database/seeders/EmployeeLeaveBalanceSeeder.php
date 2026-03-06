@@ -16,12 +16,12 @@ class EmployeeLeaveBalanceSeeder extends Seeder
         $currentYear = now()->year;
 
         foreach ($employees as $employee) {
-            // --- PROTEKSI UNTUK OWNER ---
-            // Pastikan user terkait tidak punya role 'owner'
+            // --- OWNER PROTECTION ---
+            // Ensure the related user does not have the 'owner' role
             if ($employee->user->hasRole(\App\Enums\UserRole::OWNER->value)) {
                 continue;
             }
-            // ----------------------------
+            // ------------------------
 
             foreach ($leaveTypes as $type) {
                 if ($type->default_days === null) {

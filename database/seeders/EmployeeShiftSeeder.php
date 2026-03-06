@@ -20,22 +20,22 @@ class EmployeeShiftSeeder extends Seeder
         $today = Carbon::today();
         $creatorId = User::first()->id;
 
-        // Ambil Template Shift yang sudah dibuat di ShiftTemplateSeeder
+        // Get Shift Templates created in ShiftTemplateSeeder
         $shiftPagi = ShiftTemplate::where('name', 'like', '%Shift Regular%')->first();
         $shiftMalam = ShiftTemplate::where('name', 'like', '%Shift Malam%')->first();
         $shiftSore = ShiftTemplate::where('name', 'like', '%Shift Sore%')->first();
 
-        // Ambil Employee berdasarkan NIK agar akurat
+        // Get Employees by NIK for accuracy
         $finance = Employee::where('nik', 'FIN001')->first();
         $manager = Employee::where('nik', 'EMP20230001')->first();
         $hr = Employee::where('nik', 'EMP20230002')->first();
         $staff = Employee::where('nik', 'EMP20230003')->first();
 
-        // Kita buat jadwal untuk 7 hari ke depan
+        // Create schedule for the next 7 days
         for ($i = 0; $i < 7; $i++) {
             $date = $today->copy()->addDays($i)->toDateString();
 
-            // Tentukan list penugasan untuk hari tersebut
+            // Define assignment list for that day
             $assignments = [
                 ['employee' => $finance, 'template' => $shiftPagi],
                 ['employee' => $manager, 'template' => $shiftPagi],

@@ -18,13 +18,10 @@ class AttendanceRequestResource extends JsonResource
     {
         $user = Auth::user();
 
-        // Gunakan optional() atau null safe operator (?) untuk menghindari error jika user bukan employee
         $myEmployeeId = $user->employee?->id;
 
-        // Pastikan relasi employee ada sebelum akses manager_id
         $requesterManagerId = $this->employee?->manager_id;
 
-        // Tambahkan pengecekan agar tidak error jika salah satunya null
         $isApprover = ($myEmployeeId && $requesterManagerId == $myEmployeeId)
                       && ($this->status === ApprovalStatus::PENDING->value);
 
@@ -36,7 +33,6 @@ class AttendanceRequestResource extends JsonResource
             'start_date' => $this->start_date,
             'end_date' => $this->end_date,
             'employee' => [
-                // Gunakan null safe operator untuk relasi yang dalam
                 'name' => $this->employee?->user?->name,
                 'nik' => $this->employee?->nik,
             ],
@@ -54,8 +50,6 @@ class AttendanceRequestResource extends JsonResource
             }),
             'approved_by' => $this->when($this->approved_by_id, function () {
                 return [
-                    // Hati-hati: relasi 'approver' kamu di model mengarah ke Employee,
-                    // jadi ambil namanya dari user
                     'name' => $this->approver?->user?->name ?? 'System',
                 ];
             }),

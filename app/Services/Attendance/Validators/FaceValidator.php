@@ -8,10 +8,21 @@ use App\Models\Employee;
 
 class FaceValidator
 {
+    /**
+     * Minimum similarity score required to consider a face match valid (0.0 to 1.0).
+     */
     protected float $threshold = 0.90;
 
+    /**
+     * Minimum gap between the top match and the second-best match to prevent ambiguity.
+     */
     protected float $minGap = 0.03;
 
+    /**
+     * Validate an input face descriptor against all registered biometric data.
+     *
+     * @throws FaceValidationException
+     */
     public function validate(?array $inputDescriptor): array
     {
         if (empty($inputDescriptor)) {
@@ -30,6 +41,11 @@ class FaceValidator
         return $match;
     }
 
+    /**
+     * Verify if the input face descriptor matches a specific employee's registered biometrics.
+     *
+     * @throws FaceValidationException
+     */
     public function verifyMatch(Employee $employee, ?array $inputDescriptor): array
     {
         $this->ensureDescriptorExists($inputDescriptor);
@@ -54,6 +70,9 @@ class FaceValidator
         return ['employee' => $employee, 'score' => $bestScore];
     }
 
+    /**
+     * Ensure the provided descriptor is not empty.
+     */
     protected function ensureDescriptorExists(?array $inputDescriptor): void
     {
         if (empty($inputDescriptor)) {
@@ -61,6 +80,10 @@ class FaceValidator
         }
     }
 
+    /**
+     * Iterate through all stored biometric descriptors to find the best matching employee
+     * based on cosine similarity and defined thresholds.
+     */
     protected function findBestMatch(array $inputDescriptor): array
     {
         $descriptors = BiometricUser::with('employee')->get();
@@ -77,7 +100,7 @@ class FaceValidator
             $score = $this->cosineSimilarity($inputDescriptor, $stored);
             $employeeId = $desc->employee_id;
 
-            // Simpan skor tertinggi per employee
+            // Store the highest score per employee
             if (! isset($scores[$employeeId]) || $score > $scores[$employeeId]['score']) {
                 $scores[$employeeId] = [
                     'employee' => $desc->employee,
@@ -90,7 +113,7 @@ class FaceValidator
             return ['employee' => null, 'score' => 0];
         }
 
-        // Urutkan skor tertinggi
+        // Sort by highest score
         usort($scores, fn ($a, $b) => $b['score'] <=> $a['score']);
 
         $top1 = $scores[0];
@@ -109,6 +132,9 @@ class FaceValidator
         ];
     }
 
+    /**
+     * Calculate the cosine similarity between two numerical vectors.
+     */
     protected function cosineSimilarity(array $a, array $b): float
     {
         $dot = 0;

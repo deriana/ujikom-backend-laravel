@@ -15,24 +15,24 @@ return new class extends Migration
             $table->id();
             $table->uuid('uuid')->unique();
 
-            // Relasi ke Absensi hari itu & Karyawan
+            // Relationship to daily attendance & Employee
             $table->foreignId('attendance_id')->constrained('attendances')->onDelete('cascade');
             $table->foreignId('employee_id')->constrained('employees')->onDelete('cascade');
 
-            // Data Kejadian
-            $table->integer('minutes_early')->default(0); // Selisih menit dari jam pulang seharusnya
-            $table->text('reason'); // Alasan (Sakit, Urusan Keluarga, dll)
-            $table->string('attachment')->nullable(); // Foto surat dokter atau bukti lainnya
+            // Incident Data
+            $table->integer('minutes_early')->default(0); // Difference in minutes from the scheduled clock-out time
+            $table->text('reason'); // Reason (Sick, Family Matters, etc.)
+            $table->string('attachment')->nullable(); // Photo of doctor's note or other evidence
 
-            // Status & Approval (Oleh Manager)
+            // Status & Approval (By Manager)
             $table->tinyInteger('status')->default(0); // PENDING=0, APPROVED=1, REJECTED=2
-            $table->foreignId('approved_by_id') // ID User (Manager) yang approve
+            $table->foreignId('approved_by_id') // Employee ID of the Manager who approves
                 ->nullable()
                 ->constrained('employees')
                 ->nullOnDelete();
 
             $table->timestamp('approved_at')->nullable();
-            $table->text('note')->nullable(); // Catatan tambahan dari manager (misal alasan nolak)
+            $table->text('note')->nullable(); // Additional notes from the manager (e.g., reason for rejection)
 
             $table->timestamps();
         });

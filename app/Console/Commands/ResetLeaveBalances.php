@@ -10,25 +10,39 @@ use Illuminate\Console\Command;
 
 class ResetLeaveBalances extends Command
 {
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
     protected $signature = 'leave:reset-balances';
 
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
     protected $description = 'Reset leave balances for all employees at the start of a new year';
 
+    /**
+     * Execute the console command.
+     *
+     * @return void
+     */
     public function handle()
     {
-        // --- FILTER: KECUALI OWNER ---
-        // Kita hanya ambil employee yang usernya BUKAN Owner
+        // Fetch all employees except those with the OWNER role
         $employees = Employee::whereHas('user', function ($q) {
             $q->withoutRole(UserRole::OWNER->value);
         })->get();
-        // -----------------------------
 
+        // Get active leave types that have a defined quota
         $leaveTypes = LeaveType::where('is_active', true)
-            ->whereNotNull('default_days') // Hanya yang punya kuota
+            ->whereNotNull('default_days')
             ->get();
 
         $currentYear = now()->year;
-        $count = 0;
+        $balanceCount = 0;
 
         foreach ($employees as $employee) {
             foreach ($leaveTypes as $type) {
@@ -37,6 +51,7 @@ class ResetLeaveBalances extends Command
                     continue;
                 }
 
+                // Create or update the balance record for the current year
                 $balance = EmployeeLeaveBalance::updateOrCreate(
                     [
                         'employee_id' => $employee->id,
@@ -49,10 +64,10 @@ class ResetLeaveBalances extends Command
                     ]
                 );
 
-                $count++;
+                $balanceCount++;
             }
         }
 
-        $this->info("Successfully reset/created {$count} leave balances for {$currentYear}. (Owner skipped)");
+        $this->info("Successfully reset/created {$balanceCount} leave balances for {$currentYear}. (Owner skipped)");
     }
 }

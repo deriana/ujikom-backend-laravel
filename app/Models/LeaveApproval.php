@@ -39,8 +39,6 @@ class LeaveApproval extends Model
         return 'uuid';
     }
 
-    // RELASI
-
     public function leave()
     {
         return $this->belongsTo(Leave::class);
@@ -51,7 +49,6 @@ class LeaveApproval extends Model
         return $this->belongsTo(Employee::class, 'approver_id');
     }
 
-    // CHECK STATUS
     public function isPending()
     {
         return $this->status === ApprovalStatus::PENDING->value;

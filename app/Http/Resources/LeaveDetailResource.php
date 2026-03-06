@@ -8,7 +8,6 @@ class LeaveDetailResource extends JsonResource
 {
     public function toArray($request)
     {
-        // Hitung sisa cuti dari EmployeeLeaveBalance
         $balance = $this->employee->leaveBalances()
             ->where('leave_type_id', $this->leave_type_id)
             ->first();

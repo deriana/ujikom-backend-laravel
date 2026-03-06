@@ -29,7 +29,7 @@ class LeaveTypeSeeder extends Seeder
                 'name' => 'Cuti Sakit',
                 'description' => 'Cuti karena gangguan kesehatan (Wajib surat dokter).',
                 'is_active' => true,
-                'default_days' => null, // Tidak terbatas selama ada bukti medis
+                'default_days' => null, // Unlimited
                 'gender' => 'all',
                 'requires_family_status' => false,
                 'is_unlimited' => true,

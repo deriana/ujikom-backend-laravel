@@ -21,17 +21,14 @@ class AttendanceRequestDetailResource extends JsonResource
             'start_date' => $this->start_date,
             'end_date' => $this->end_date,
 
-            // Info Karyawan Lengkap
             'employee' => [
                 'name' => $this->employee->user->name ?? null,
                 'nik' => $this->employee->nik ?? null,
-                'position' => $this->employee->position->name ?? null, // Tambahan jika ada
+                'position' => $this->employee->position->name ?? null,
             ],
 
-            // Detail Perubahan (Kondisional)
             'change_details' => $this->getChangeDetails(),
 
-            // Info Approver & Audit
             'approval_info' => [
                 'is_processed' => $this->approved_by_id !== null,
                 'approver_name' => $this->approver->name ?? null,
@@ -41,12 +38,8 @@ class AttendanceRequestDetailResource extends JsonResource
         ];
     }
 
-    /**
-     * Helper untuk merapikan detail perubahan berdasarkan type
-     */
     private function getChangeDetails(): ?array
     {
-        // 1. Jika Request Ganti Shift (Harian)
         if ($this->shift_template_id) {
             return [
                 'type' => 'shift',
@@ -58,7 +51,6 @@ class AttendanceRequestDetailResource extends JsonResource
             ];
         }
 
-        // 2. Jika Request Ganti Jadwal (Rentang Waktu)
         if ($this->work_schedules_id) {
             return [
                 'type' => 'work_schedule',

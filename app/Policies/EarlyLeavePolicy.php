@@ -4,8 +4,8 @@ namespace App\Policies;
 
 use App\Models\EarlyLeave;
 use App\Models\User;
-use App\Enums\UserRole; // Pastikan enum ini diimport
-use App\Enums\ApprovalStatus; // Pastikan enum status diimport
+use App\Enums\UserRole;
+use App\Enums\ApprovalStatus; 
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class EarlyLeavePolicy

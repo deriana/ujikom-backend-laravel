@@ -8,6 +8,9 @@ use Exception;
 
 class AllowanceService
 {
+    /**
+     * Get all allowances with their creator and associated positions.
+     */
     public function index()
     {
         return Allowance::with(['creator', 'positions'])
@@ -15,6 +18,9 @@ class AllowanceService
             ->get();
     }
 
+    /**
+     * Store a new allowance in the database.
+     */
     public function store(array $data, int $userId): Allowance
     {
         return DB::transaction(function () use ($data, $userId) {
@@ -26,6 +32,11 @@ class AllowanceService
         });
     }
 
+    /**
+     * Update an existing allowance.
+     *
+     * @throws Exception if the allowance is already soft-deleted.
+     */
     public function update(Allowance $allowance, array $data, int $userId): Allowance
     {
         if ($allowance->trashed()) {
@@ -43,6 +54,11 @@ class AllowanceService
         });
     }
 
+    /**
+     * Soft delete an allowance.
+     *
+     * @throws Exception if the allowance is already soft-deleted.
+     */
     public function delete(Allowance $allowance): bool
     {
         if ($allowance->trashed()) {
@@ -52,6 +68,11 @@ class AllowanceService
         return DB::transaction(fn () => $allowance->delete());
     }
 
+    /**
+     * Restore a soft-deleted allowance by its UUID.
+     *
+     * @throws Exception if the allowance is not in trashed state.
+     */
     public function restore(string $uuid): Allowance
     {
         return DB::transaction(function () use ($uuid) {
@@ -67,6 +88,9 @@ class AllowanceService
         });
     }
 
+    /**
+     * Permanently delete an allowance from the database.
+     */
     public function forceDelete(string $uuid): bool
     {
         return DB::transaction(function () use ($uuid) {
@@ -75,6 +99,9 @@ class AllowanceService
         });
     }
 
+    /**
+     * Get all soft-deleted allowances.
+     */
     public function getTrashed()
     {
         return Allowance::onlyTrashed()->latest()->get();

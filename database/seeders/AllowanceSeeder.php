@@ -22,7 +22,7 @@ class AllowanceSeeder extends Seeder
         }
 
         $allowances = [
-            // --- Kategori Operasional (Fixed) ---
+            // --- Operational Category (Fixed) ---
             [
                 'name' => 'Transport Allowance',
                 'amount' => 500000,
@@ -39,31 +39,31 @@ class AllowanceSeeder extends Seeder
                 'type' => 'fixed',
             ],
 
-            // --- Kategori Jabatan & Skill (Percentage) ---
+            // --- Position & Skill Category (Percentage) ---
             [
-                'name' => 'Position Allowance', // Tunjangan Jabatan
-                'amount' => 15, // 15% dari Gaji Pokok
+                'name' => 'Position Allowance',
+                'amount' => 15, // 15% of Base Salary
                 'type' => 'percentage',
             ],
             [
-                'name' => 'Expertise Allowance', // Tunjangan Skill/Sertifikasi
+                'name' => 'Expertise Allowance', // Skill/Certification Allowance
                 'amount' => 10,
                 'type' => 'percentage',
             ],
 
-            // --- Kategori Performa & Kehadiran (Percentage/Fixed) ---
+            // --- Performance & Attendance Category (Percentage/Fixed) ---
             [
                 'name' => 'Performance Bonus',
                 'amount' => 20,
                 'type' => 'percentage',
             ],
             [
-                'name' => 'Attendance Incentive', // Insentif Kehadiran Full
+                'name' => 'Attendance Incentive', // Full Attendance Incentive
                 'amount' => 250000,
                 'type' => 'fixed',
             ],
 
-            // --- Kategori Kesejahteraan (Fixed) ---
+            // --- Welfare Category (Fixed) ---
             [
                 'name' => 'Health & Wellness',
                 'amount' => 750000,
@@ -76,7 +76,7 @@ class AllowanceSeeder extends Seeder
             ],
             [
                 'name' => 'Family Allowance',
-                'amount' => 5, // 5% per anak/istri (logikanya nanti di payroll)
+                'amount' => 5, // 5% per child/spouse (logic handled in payroll)
                 'type' => 'percentage',
             ],
         ];

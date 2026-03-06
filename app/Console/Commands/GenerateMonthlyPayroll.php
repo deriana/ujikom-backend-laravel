@@ -12,6 +12,11 @@ use Illuminate\Support\Facades\DB;
 
 class GenerateMonthlyPayroll extends Command
 {
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
     protected $signature = '
         payroll:generate
         {--payday=26 : Tanggal gajian}
@@ -19,8 +24,18 @@ class GenerateMonthlyPayroll extends Command
         {--year= : Tahun payroll}
     ';
 
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
     protected $description = 'Generate monthly payroll draft for active employees';
 
+    /**
+     * Execute the console command.
+     *
+     * @return int
+     */
     public function handle(): int
     {
         $today = Carbon::today();
@@ -32,7 +47,7 @@ class GenerateMonthlyPayroll extends Command
 
         $this->info("Generating payroll for period {$periodStart->toDateString()} - {$periodEnd->toDateString()}");
 
-        // 1. FILTER: Hanya ambil karyawan yang aktif, sudah join, dan kontrak belum habis
+        // 1. FILTER: Fetch active employees who have joined and whose contracts have not expired
         $employees = Employee::whereHas('user.roles', function ($query) {
                 $query->where('name', '!=', UserRole::OWNER->value);
             })
@@ -58,7 +73,7 @@ class GenerateMonthlyPayroll extends Command
         DB::beginTransaction();
         try {
             foreach ($employees as $employee) {
-                // Cek duplikasi payroll
+                // Check for duplicate payroll records for the same period
                 $exists = Payroll::where('employee_id', $employee->id)
                     ->where('period_start', $periodStart->toDateString())
                     ->where('period_end', $periodEnd->toDateString())
@@ -69,7 +84,7 @@ class GenerateMonthlyPayroll extends Command
                 $baseSalary = (float) ($employee->base_salary ?? 0);
                 $hourlyRate = $baseSalary > 0 ? ($baseSalary / 173) : 0;
 
-                // --- 1. ALLOWANCE ---
+                // --- 1. CALCULATE ALLOWANCES ---
                 $allowanceTotal = 0;
                 if ($employee->position) {
                     foreach ($employee->position->allowances as $allowance) {
@@ -80,13 +95,13 @@ class GenerateMonthlyPayroll extends Command
                     }
                 }
 
-                // --- 2. OVERTIME ---
+                // --- 2. CALCULATE OVERTIME ---
                 $overtimeMinutes = $employee->overtimes->sum('duration_minutes');
                 $overtimePay = ($overtimeMinutes / 60) * $hourlyRate;
 
                 $grossSalary = $baseSalary + $allowanceTotal + $overtimePay;
 
-                // --- 3. ATTENDANCE DEDUCTION ---
+                // --- 3. CALCULATE ATTENDANCE DEDUCTIONS (Late & Early Leave) ---
                 $lateMinutes = $employee->attendances->sum('late_minutes');
                 $earlyLeaveMinutes = $employee->attendances
                     ->where('is_early_leave_approved', false)
@@ -96,13 +111,13 @@ class GenerateMonthlyPayroll extends Command
                 $earlyLeaveDeduction = ($earlyLeaveMinutes / 60) * $hourlyRate;
                 $attendanceDeduction = $lateDeduction + $earlyLeaveDeduction;
 
-                // --- 4. TAX CALCULATION ---
+                // --- 4. TAX CALCULATION (Simplified PPh21) ---
                 $taxableIncome = $grossSalary - $attendanceDeduction;
                 $ptkp = 5000000;
                 $taxRate = 0.05;
                 $taxAmount = $taxableIncome > $ptkp ? ($taxableIncome - $ptkp) * $taxRate : 0;
 
-                // --- 5. FINAL CALCULATION ---
+                // --- 5. FINAL CALCULATION & PERSISTENCE ---
                 $totalDeduction = $attendanceDeduction + $taxAmount;
                 $netSalary = $grossSalary - $totalDeduction;
 
@@ -126,8 +141,8 @@ class GenerateMonthlyPayroll extends Command
                     'created_by_id' => 1,
                 ]);
 
-                // --- 6. NOTIFY CUSTOM ---
-                // Kirim notifikasi ke karyawan bahwa slip gaji draft sudah tersedia
+                // --- 6. SEND NOTIFICATION ---
+                // Notify employee that their draft payslip is available
                 $payroll->notifyCustom(
                     title: 'Payroll Draft Generated',
                     message: "Hello {$employee->user->name}, your payslip for the period {$periodStart->format('M Y')} has been generated (Draft). Please check the details.",

@@ -23,7 +23,6 @@ class EmployeeWorkSchedulePolicy
      */
     public function view(User $user, EmployeeWorkSchedule $schedule): bool
     {
-        // Bisa diakses jika user punya permission atau dia pembuat jadwal
         return $user->can('employee-work-schedule.show') || $user->id === $schedule->creator_id;
     }
 

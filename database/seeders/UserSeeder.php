@@ -14,7 +14,7 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        // 1. ADMIN SYSTEM
+        // 1. SYSTEM ADMIN
         $admin = User::create([
             'uuid' => (string) \Illuminate\Support\Str::uuid(),
             'name' => 'Admin System',
@@ -26,7 +26,7 @@ class UserSeeder extends Seeder
         ]);
         $admin->assignRole(UserRole::ADMIN->value);
 
-        // 2. OWNER (Pemilik Perusahaan)
+        // 2. OWNER (Company Owner)
         $owner = User::create([
             'uuid' => (string) \Illuminate\Support\Str::uuid(),
             'name' => 'Bapak Owner',
@@ -38,7 +38,7 @@ class UserSeeder extends Seeder
         ]);
         $owner->assignRole(UserRole::OWNER->value);
 
-        // 3. DIRECTOR (Pucuk Pimpinan Operasional)
+        // 3. DIRECTOR (Top Operational Leadership)
         $director = User::create([
             'uuid' => (string) \Illuminate\Support\Str::uuid(),
             'name' => 'Ibu Direktur',
@@ -49,7 +49,7 @@ class UserSeeder extends Seeder
         ]);
         $director->assignRole(UserRole::DIRECTOR->value);
 
-        // 4. HR (Pengelola SDM)
+        // 4. HR (Human Resources Management)
         $hr = User::create([
             'uuid' => (string) \Illuminate\Support\Str::uuid(),
             'name' => 'Project HR',
@@ -60,7 +60,7 @@ class UserSeeder extends Seeder
         ]);
         $hr->assignRole(UserRole::HR->value);
 
-        // 5. FINANCE (Pengelola Gaji/Payroll)
+        // 5. FINANCE (Payroll/Finance Management)
         $finance = User::create([
             'uuid' => (string) \Illuminate\Support\Str::uuid(),
             'name' => 'Bagian Keuangan',
@@ -71,7 +71,7 @@ class UserSeeder extends Seeder
         ]);
         $finance->assignRole(UserRole::FINANCE->value);
 
-        // 6. MANAGER (Kepala Divisi)
+        // 6. MANAGER (Division Head)
         $manager = User::create([
             'uuid' => (string) \Illuminate\Support\Str::uuid(),
             'name' => 'Project Manager',
@@ -93,7 +93,7 @@ class UserSeeder extends Seeder
         ]);
         $manager2->assignRole(UserRole::MANAGER->value);
 
-        // 7. EMPLOYEE (Staff Biasa)
+        // 7. EMPLOYEE (Regular Staff)
         $employee = User::create([
             'uuid' => (string) \Illuminate\Support\Str::uuid(),
             'name' => 'Nikola Tesla',
@@ -104,7 +104,7 @@ class UserSeeder extends Seeder
         ]);
         $employee->assignRole(UserRole::EMPLOYEE->value);
 
-        $totalTesting = 15; // Ubah angka ini sesuai kebutuhan testingmu
+        $totalTesting = 15; // Change this number according to your testing needs
 
         for ($i = 1; $i <= $totalTesting; $i++) {
             $user = User::create([

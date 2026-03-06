@@ -75,10 +75,10 @@ class User extends Authenticatable
         return $this->hasOneThrough(
             Team::class,
             Employee::class,
-            'user_id',   // FK di employees
-            'id',        // PK di teams
-            'id',        // PK di users
-            'team_id'    // FK di employees ke teams
+            'user_id',
+            'id',
+            'id',
+            'team_id'
         );
     }
 

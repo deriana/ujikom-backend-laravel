@@ -80,6 +80,6 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->render(function (DomainException $e, Request $request) use ($makeResponder) {
             $responder = $makeResponder();
 
-            return $responder->errorResponse($e->getMessage(), 400); // 400 Bad Request untuk error bisnis
+            return $responder->errorResponse($e->getMessage(), 400); // 400 Bad Request for bussiness error
         });
     })->create();

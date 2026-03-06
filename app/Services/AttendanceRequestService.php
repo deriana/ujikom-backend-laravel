@@ -26,7 +26,10 @@ class AttendanceRequestService
     }
 
     /**
-     * Display a listing of requests based on user role.
+     * Get a list of attendance requests filtered by user roles.
+     *
+     * @param \App\Models\User $user
+     * @return \Illuminate\Database\Eloquent\Collection
      */
     public function index($user)
     {
@@ -37,7 +40,7 @@ class AttendanceRequestService
             'workSchedule',
         ]);
 
-        // 1️⃣ OWNER, DIRECTOR, HR, & ADMIN → Bisa lihat semua data
+        // 1️⃣ OWNER, DIRECTOR, HR, & ADMIN → Can see all data
         if ($user->hasAnyRole([
             UserRole::ADMIN->value,
             UserRole::OWNER->value,
@@ -47,7 +50,7 @@ class AttendanceRequestService
             // No filter
         }
 
-        // 2️⃣ MANAGER → Milik sendiri + bawahan langsung
+        // 2️⃣ MANAGER → Own requests + direct subordinates
         elseif ($user->hasRole(UserRole::MANAGER->value)) {
             $query->where(function ($q) use ($user) {
                 $q->where('employee_id', $user->employee->id)
@@ -57,7 +60,7 @@ class AttendanceRequestService
             });
         }
 
-        // 3️⃣ EMPLOYEE → Hanya milik sendiri
+        // 3️⃣ EMPLOYEE → Only own requests
         else {
             $query->where('employee_id', $user->employee->id);
         }
@@ -65,28 +68,33 @@ class AttendanceRequestService
         return $query->latest()->get();
     }
 
+    /**
+     * Get a list of pending attendance requests that require approval.
+     *
+     * @param \App\Models\User $user
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
     public function indexApproval($user)
     {
-        // 1. Inisialisasi query dasar
+        // 1. Initialize base query
         $query = AttendanceRequest::with([
             'employee.user',
             'approver.user',
             'shiftTemplate',
             'workSchedule',
         ])
-            ->pending() // hanya status pending
-            ->whereNull('approved_by_id'); // belum diapprove
+            ->pending() // only pending status
+            ->whereNull('approved_by_id'); // not yet approved
 
-        // 2. Logika Berdasarkan Role
+        // 2. Logic based on Role
         if ($user->hasRole(UserRole::MANAGER->value)) {
-            // Manager WAJIB punya employee profile
+            // Manager MUST have an employee profile
             if (! $user->employee) {
                 return collect();
             }
 
             $employeeId = $user->employee->id;
-
-            $query->where('employee_id', '!=', $employeeId) // Jangan approve diri sendiri
+            $query->where('employee_id', '!=', $employeeId) // Cannot approve own request
                 ->whereHas('employee.user', function ($q) {
                     $q->whereDoesntHave('roles', function ($q2) {
                         $q2->whereIn('name', ['manager', 'hr']);
@@ -97,7 +105,7 @@ class AttendanceRequestService
                 });
         }
 
-        // 3. Role Tinggi (Director / HR / Finance / Owner / Admin)
+        // 3. High-level Roles (Director / HR / Finance / Owner / Admin)
         elseif ($user->hasAnyRole([
             UserRole::DIRECTOR->value,
             UserRole::HR->value,
@@ -105,14 +113,14 @@ class AttendanceRequestService
             UserRole::OWNER->value,
             UserRole::ADMIN->value,
         ])) {
-            // Jika Admin punya profil employee, tambahkan filter jangan ambil diri sendiri
-            // Jika tidak punya (null), maka abaikan filter ini (bisa lihat semua)
+            // If the user has an employee profile, prevent them from seeing their own requests
+            // If they don't (null), ignore this filter (can see all)
             if ($user->employee) {
                 $query->where('employee_id', '!=', $user->employee->id);
             }
         }
 
-        // 4. Jika bukan siapa-siapa
+        // 4. Fallback for other roles
         else {
             return collect();
         }
@@ -122,6 +130,9 @@ class AttendanceRequestService
 
     /**
      * Show details of a specific request.
+     *
+     * @param AttendanceRequest $attendanceRequest
+     * @return AttendanceRequest
      */
     public function show(AttendanceRequest $attendanceRequest)
     {
@@ -134,17 +145,22 @@ class AttendanceRequestService
     }
 
     /**
-     * Create a new request (Inisiatif Employee).
+     * Store a new attendance request in the database.
+     *
+     * @param array $data
+     * @return AttendanceRequest
+     * @throws Exception
      */
     public function store(array $data): AttendanceRequest
     {
         return DB::transaction(function () use ($data) {
-            // 1. Ambil Employee (employee_id sudah di-merge dari FormRequest)
+            // 1. Retrieve Employee (employee_id is merged from FormRequest)
             $employee = Employee::findOrFail($data['employee_id']);
 
             $shiftTemplateId = null;
             $workScheduleId = null;
 
+            // 2. Handle SHIFT request type: validate and find template ID
             if ($data['request_type'] === 'SHIFT') {
                 if (empty($data['shift_template_uuid'])) {
                     throw new \Exception('Shift template is required for SHIFT request type.');
@@ -158,6 +174,7 @@ class AttendanceRequestService
                 }
             }
 
+            // 3. Handle WORK_MODE request type: validate and find schedule ID
             if ($data['request_type'] === 'WORK_MODE') {
                 if (empty($data['work_schedule_uuid'])) {
                     throw new \Exception('Work schedule is required for WORK_MODE request type.');
@@ -171,6 +188,7 @@ class AttendanceRequestService
                 }
             }
 
+            // 4. Create the attendance request record
             $attendanceRequest = AttendanceRequest::create([
                 'employee_id' => $employee->id,
                 'request_type' => $data['request_type'],
@@ -182,6 +200,7 @@ class AttendanceRequestService
                 'status' => ApprovalStatus::PENDING->value,
             ]);
 
+            // 5. Send notification to relevant parties
             $attendanceRequest->notifyCustom(
                 title: 'New Attendance Request',
                 message: "Employee {$employee->user->name} has submitted a new attendance request for {$data['start_date']}."
@@ -193,17 +212,25 @@ class AttendanceRequestService
 
     /**
      * Update a pending request.
+     *
+     * @param AttendanceRequest $attendanceRequest
+     * @param array $data
+     * @param \App\Models\User $user
+     * @return AttendanceRequest
      */
     public function update(AttendanceRequest $attendanceRequest, array $data, $user): AttendanceRequest
     {
         return DB::transaction(function () use ($attendanceRequest, $data, $user) {
-            if ($attendanceRequest->status !== ApprovalStatus::PENDING->value &&
-                ! $user->hasAnyRole([UserRole::HR, UserRole::ADMIN])) {
+            // 1. Check if the request is still pending
+            if (
+                $attendanceRequest->status !== ApprovalStatus::PENDING->value &&
+                ! $user->hasAnyRole([UserRole::HR, UserRole::ADMIN])
+            ) {
                 throw new \Exception('Processed requests cannot be modified.');
             }
 
+            // 2. Determine request type and IDs
             $requestType = $data['request_type'] ?? $attendanceRequest->request_type;
-
             $shiftTemplateId = $attendanceRequest->shift_template_id;
             $workScheduleId = $attendanceRequest->work_schedules_id;
 
@@ -227,6 +254,7 @@ class AttendanceRequestService
                 $shiftTemplateId = null;
             }
 
+            // 3. Update the record
             $attendanceRequest->update([
                 'request_type' => $requestType,
                 'shift_template_id' => $shiftTemplateId,
@@ -236,6 +264,7 @@ class AttendanceRequestService
                 'reason' => $data['reason'] ?? $attendanceRequest->reason,
             ]);
 
+            // 4. Send notification
             $attendanceRequest->notifyCustom(
                 title: 'Attendance Request Updated',
                 message: "Employee {$attendanceRequest->employee->user->name} has updated their attendance request."
@@ -247,23 +276,29 @@ class AttendanceRequestService
 
     /**
      * Process approval and execute synchronization to main schedule tables.
+     *
+     * @param AttendanceRequest $attendanceRequest
+     * @param \App\Models\User $user
+     * @param bool $approve
+     * @param string|null $note
+     * @return AttendanceRequest
      */
     public function approve(AttendanceRequest $attendanceRequest, $user, bool $approve, ?string $note = null)
     {
         return DB::transaction(function () use ($attendanceRequest, $user, $approve, $note) {
 
-            // 1️⃣ Pastikan masih pending
+            // 1. Ensure the request is still pending
             if ($attendanceRequest->status !== ApprovalStatus::PENDING->value) {
                 throw new Exception('Request has already been processed.');
             }
 
-            // 2️⃣ Role & Manager Check
+            // 2. Role & Manager Check
             $isManager = $attendanceRequest->employee?->manager_id === optional($user->employee)->id;
             if (! $isManager && ! $user->hasAnyRole([UserRole::HR, UserRole::ADMIN, UserRole::DIRECTOR])) {
                 throw new Exception('You do not have permission to process this request.');
             }
 
-            // 3️⃣ Jika disetujui, tembak Service terkait untuk Sinkronisasi Data
+            // 3. If approved, trigger the related Service for Data Synchronization
             if ($approve) {
                 if ($attendanceRequest->request_type === 'SHIFT') {
                     $template = ShiftTemplate::findOrFail($attendanceRequest->shift_template_id);
@@ -290,7 +325,7 @@ class AttendanceRequestService
                 message: "Your attendance request for {$attendanceRequest->start_date} has been " . ($approve ? 'approved' : 'rejected') . "."
             );
 
-            // 4️⃣ Update status request
+            // 4. Update request status
             $attendanceRequest->update([
                 'status' => $approve ? ApprovalStatus::APPROVED->value : ApprovalStatus::REJECTED->value,
                 'approved_by_id' => optional($user->employee)->id,
@@ -304,6 +339,9 @@ class AttendanceRequestService
 
     /**
      * Delete a request.
+     *
+     * @param AttendanceRequest $attendanceRequest
+     * @return bool
      */
     public function delete(AttendanceRequest $attendanceRequest): bool
     {
@@ -312,7 +350,7 @@ class AttendanceRequestService
                 title: 'Attendance Request Deleted',
                 message: "Employee {$attendanceRequest->employee->user->name} has deleted their attendance request for {$attendanceRequest->start_date}."
             );
-            // Optional: Tambahkan validasi hanya bisa hapus jika masih pending
+            // Optional: Add validation to only allow deletion if still pending
             return $attendanceRequest->delete();
         });
     }

@@ -26,23 +26,23 @@ class OvertimeSeeder extends Seeder
         $director = \App\Models\User::role(UserRole::DIRECTOR->value)->first();
 
         foreach ($employees as $employee) {
-            // Tentukan siapa yang approve
+            // Determine who will approve
             $approverId = $this->getApproverId($employee, $owner, $director);
 
-            // AMBIL LEBIH BANYAK ATTENDANCE (Misal 10-15 data per orang)
+            // FETCH MORE ATTENDANCE (e.g., 10-15 records per person)
             $attendances = Attendance::where('employee_id', $employee->id)
-                ->latest('date') // Ambil yang paling baru
+                ->latest('date') // Get the most recent ones
                 ->take(15)
                 ->get();
 
             foreach ($attendances as $attendance) {
-                // Peluang 70% attendance ini ada lemburnya, biar gak semua hari lembur (gak logis)
+                // 70% chance this attendance has overtime, so not every day is overtime (unrealistic)
                 if (fake()->boolean(70)) {
 
-                    // Status random: 80% Approved biar payroll-nya nanti ada angkanya
+                    // Random status: Higher chance for Approved so payroll data is populated
                     $status = fake()->randomElement([
                         ApprovalStatus::APPROVED->value,
-                        ApprovalStatus::APPROVED->value, // Double biar chance lebih gede
+                        ApprovalStatus::APPROVED->value, // Double to increase chance
                         ApprovalStatus::PENDING->value,
                         ApprovalStatus::REJECTED->value,
                     ]);
@@ -57,10 +57,10 @@ class OvertimeSeeder extends Seeder
                         'reason' => fake()->randomElement(['Kejar deadline fitur payroll', 'Fix bug Ujikom', 'Update dokumen HRIS']),
                         'status' => $status,
                         'approved_by_id' => $isApproved ? $approverId : null,
-                        // Approved di hari yang sama dengan absen, jam 9 malam
+                        // Approved on the same day as attendance, at 9 PM
                         'approved_at' => $isApproved ? Carbon::parse($attendance->date)->setHour(21) : null,
                         'note' => $isApproved ? 'Lanjutkan, kerja bagus.' : null,
-                        // Created_at ikut tanggal absen jam 5 sore
+                        // Created_at follows attendance date at 5 PM
                         'created_at' => Carbon::parse($attendance->date)->setHour(17),
                         'updated_at' => now(),
                     ]);
@@ -69,7 +69,7 @@ class OvertimeSeeder extends Seeder
         }
     }
 
-    // Helper biar kode di atas rapi
+    // Helper to keep the code clean
     private function getApproverId($employee, $owner, $director)
     {
         if ($employee->user->hasRole(UserRole::DIRECTOR->value)) {

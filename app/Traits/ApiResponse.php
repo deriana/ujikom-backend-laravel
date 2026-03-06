@@ -7,7 +7,7 @@ use Illuminate\Http\JsonResponse;
 trait ApiResponse
 {
     /**
-     * Respon sukses standar.
+     * Succes Ress
      */
     public function successResponse($data, string $message = 'Success', int $code = 200): JsonResponse
     {
@@ -19,7 +19,7 @@ trait ApiResponse
     }
 
     /**
-     * Respon error standar.
+     * Error Ress
      */
     public function errorResponse(string $message, int $code, $errors = null): JsonResponse
     {

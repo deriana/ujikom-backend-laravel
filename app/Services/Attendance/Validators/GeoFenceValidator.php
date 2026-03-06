@@ -7,6 +7,13 @@ use App\Models\Setting;
 
 class GeoFenceValidator
 {
+    /**
+     * Validate if the provided coordinates are within the allowed office radius.
+     *
+     * @param float $lat Latitude of the user
+     * @param float $lon Longitude of the user
+     * @throws GeoLocationException If user is outside the allowed radius
+     */
     public function validate(float $lat, float $lon): void
     {
         $geoSettings = $this->getGeoSetting();
@@ -25,14 +32,19 @@ class GeoFenceValidator
 
         if ($distance > $geoSettings['radius_meters']) {
             throw GeoLocationException::outsideRadius(
-                $distance, 
-                $geoSettings['radius_meters'], 
-                $lat, 
+                $distance,
+                $geoSettings['radius_meters'],
+                $lat,
                 $lon
             );
         }
     }
 
+    /**
+     * Retrieve geo-fencing configuration from settings.
+     *
+     * @return array|null
+     */
     protected function getGeoSetting(): ?array
     {
         $setting = Setting::where('key', 'geo_fencing')->first();
@@ -40,6 +52,15 @@ class GeoFenceValidator
         return $setting?->values;
     }
 
+    /**
+     * Calculate the distance between two points using the Haversine formula.
+     *
+     * @param float $lat1 Latitude of point 1
+     * @param float $lon1 Longitude of point 1
+     * @param float $lat2 Latitude of point 2
+     * @param float $lon2 Longitude of point 2
+     * @return float Distance in meters
+     */
     protected function distanceInMeters($lat1, $lon1, $lat2, $lon2): float
     {
         $earthRadius = 6371000; // Earth radius in meters

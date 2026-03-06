@@ -15,43 +15,42 @@ return new class extends Migration
             $table->id();
             $table->uuid('uuid')->unique();
 
-            // Relasi ke Employee
+            // Relationship to Employee
             $table->foreignId('employee_id')->constrained()->cascadeOnDelete();
 
-            // Tipe Request: Ganti Jam (SHIFT) atau Ganti Mode Kerja (WORK_MODE)
+            // Request Type: Change Shift (SHIFT) or Change Work Mode (WORK_MODE)
             $table->enum('request_type', ['SHIFT', 'WORK_MODE']);
 
-            // Jika request_type = SHIFT, maka ini wajib diisi
+            // Required if request_type = SHIFT
             $table->foreignId('shift_template_id')
                 ->nullable()
                 ->constrained('shift_templates')
                 ->nullOnDelete();
 
-            // Jika request_type = WORK_MODE, maka ini wajib diisi (untuk Jadwal Kerja)
+            // Required if request_type = WORK_MODE (for Work Schedule)
             $table->foreignId('work_schedules_id')
                 ->nullable()
                 ->constrained('work_schedules')
                 ->nullOnDelete();
 
-            // Rentang waktu perubahan
+            // Date range for the change
             $table->date('start_date');
-            $table->date('end_date')->nullable(); // Bisa null jika cuma minta ganti shift 1 hari
+            $table->date('end_date')->nullable(); // Can be null if requesting a shift change for only 1 day
 
-            // Alasan dari karyawan
+            // Reason from employee
             $table->text('reason')->nullable();
 
-            // Alur Persetujuan
-            // Status & Approval
+            // Approval Workflow: Status & Approval
             // 0: PENDING, 1: APPROVED, 2: REJECTED
             $table->tinyInteger('status')->default(0);
 
-            // Siapa yang menyetujui/menolak
+            // Approver identity
             $table->foreignId('approved_by_id')
                 ->nullable()
                 ->constrained('employees')
                 ->nullOnDelete();
 
-            $table->text('note')->nullable(); // Catatan jika ditolak
+            $table->text('note')->nullable(); // Note if rejected
 
             $table->timestamps();
             $table->softDeletes();

@@ -45,7 +45,7 @@ class AttendanceYearSeeder extends Seeder
                     continue;
                 }
 
-                // Simulasi jam
+                // Time Simulation
                 $clockIn = $date->copy()->setHour(rand(7, 9))->setMinute(rand(0, 59));
                 $clockOut = $date->copy()->setHour(rand(16, 18))->setMinute(rand(0, 59));
                 $status = rand(0, 10) > 1 ? 'present' : 'absent';

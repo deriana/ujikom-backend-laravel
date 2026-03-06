@@ -12,7 +12,7 @@ class AttendanceNowSeeder extends Seeder
 {
     public function run(): void
     {
-        // Ambil Employee kecuali Owner & Director
+        // Get Employees except Owner & Director
         $employeeIds = Employee::whereHas('user', function ($q) {
             $q->withoutRole([
                 UserRole::OWNER->value,
@@ -28,7 +28,7 @@ class AttendanceNowSeeder extends Seeder
 
         $today = Carbon::today();
 
-        // Jika hari ini weekend, tidak generate
+        // If today is weekend, do not generate
         if ($today->isWeekend()) {
             $this->command->info('Today is weekend. No attendance generated.');
 

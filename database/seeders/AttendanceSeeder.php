@@ -39,13 +39,13 @@ class AttendanceSeeder extends Seeder
                 $daysBack = floor($count / count($employeeIds));
                 $date = Carbon::today()->subDays($daysBack);
 
-                // Lewati weekend & libur
+                // Skip weekends and public holidays using WorkdayService
                 if (! $workdayService->isWorkday($date)) {
                     $count++;
                     continue;
                 }
 
-                // Simulasi jam
+                // Simulate clock-in and clock-out times
                 $clockIn = $date->copy()->setHour(rand(7, 9))->setMinute(rand(0, 59));
                 $clockOut = $date->copy()->setHour(rand(16, 18))->setMinute(rand(0, 59));
                 $status = rand(0, 10) > 1 ? 'present' : 'absent';
@@ -71,6 +71,7 @@ class AttendanceSeeder extends Seeder
                 $count++;
                 $this->command->getOutput()->progressAdvance();
 
+                // Insert in batches to optimize performance and memory usage
                 if (count($data) >= $batchSize) {
                     Attendance::insert($data);
                     $data = [];

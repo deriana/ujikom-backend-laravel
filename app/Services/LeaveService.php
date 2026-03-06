@@ -31,14 +31,17 @@ class LeaveService
     }
 
     /**
-     * List leave untuk index/table
+     * Get a list of leave requests with role-based filtering.
+     *
+     * @param \App\Models\User $user
+     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
     public function index($user)
     {
+        // 1. Initialize query with necessary relationships
         $query = Leave::with(['employee.user', 'leaveType', 'approvals.approver.user']);
 
-        // 1️⃣ ROLE AUDITOR/ADMIN (OWNER, DIRECTOR, HR, FINANCE)
-        // Mereka bisa lihat SEMUA data untuk monitoring & laporan
+        // 2. High-level Roles (Admin, Owner, Director, HR, Finance) -> Can see all data
         if ($user->hasAnyRole([
             UserRole::ADMIN->value,
             UserRole::OWNER->value,
@@ -46,10 +49,10 @@ class LeaveService
             UserRole::FINANCE->value,
             UserRole::HR->value,
         ])) {
-            // Tanpa filter query tambahan
+            // No filter applied
         }
 
-        // 2️⃣ MANAGER
+        // 3. Manager -> Can see own requests and direct subordinates
         elseif ($user->hasRole(UserRole::MANAGER->value)) {
             $query->where(function ($q) use ($user) {
                 $q->where('employee_id', $user->employee->id)
@@ -59,7 +62,7 @@ class LeaveService
             });
         }
 
-        // 3️⃣ EMPLOYEE
+        // 4. Employee -> Can only see their own requests
         else {
             $query->where('employee_id', $user->employee->id);
         }
@@ -67,9 +70,15 @@ class LeaveService
         return LeaveResource::collection($query->latest()->get());
     }
 
-
+    /**
+     * Get the authenticated user's leave history.
+     *
+     * @param \App\Models\User $user
+     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+     */
     public function myLeaves($user)
     {
+        // 1. Retrieve paginated leave records for the specific employee
         $leaves = Leave::with(['leaveType', 'approvals'])
             ->where('employee_id', $user->employee->id)
             ->latest()
@@ -78,32 +87,36 @@ class LeaveService
         return LeaveResource::collection($leaves);
     }
 
+    /**
+     * Get a list of pending leave requests that require approval.
+     *
+     * @param \App\Models\User $user
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
     public function indexApprovals($user)
     {
-        // 1. Inisialisasi Query Dasar
+        // 1. Initialize base query for pending requests
         $query = Leave::with([
             'employee.user',
             'leaveType',
             'approvals.approver.user',
         ])->pending();
 
-        // 2. Cek Role Manager (Hanya melihat approval milik bawahannya)
+        // 2. Manager Logic -> Can only see approvals assigned to them
         if ($user->hasRole(UserRole::MANAGER->value)) {
-            // Manager WAJIB punya profil employee untuk identifikasi ID-nya di tabel approvals
             if (! $user->employee) {
                 return collect();
             }
 
             $employeeId = $user->employee->id;
 
-            // Filter: Hanya ambil leave di mana user ini terdaftar sebagai approver yang PENDING
             $query->whereHas('approvals', function ($q) use ($employeeId) {
                 $q->where('approver_id', $employeeId)
                     ->where('status', ApprovalStatus::PENDING->value);
             });
         }
 
-        // 3. Cek Role Tinggi / Admin (Akses Full / Tanpa Filter Approver ID)
+        // 3. High-level Roles -> Full access to all pending requests
         elseif ($user->hasAnyRole([
             UserRole::DIRECTOR->value,
             UserRole::HR->value,
@@ -111,11 +124,10 @@ class LeaveService
             UserRole::OWNER->value,
             UserRole::ADMIN->value,
         ])) {
-            // Admin/HR bisa melihat semua yang statusnya 'pending' secara global
-            // Tanpa filter whereHas('approvals')
+            // No additional filter
         }
 
-        // 4. Role lain (Employee biasa) tidak punya akses approval
+        // 4. Fallback for other roles
         else {
             return collect();
         }
@@ -123,19 +135,32 @@ class LeaveService
         return $query->latest()->get();
     }
 
+    /**
+     * Show details of a specific leave request.
+     *
+     * @param Leave $leave
+     * @return LeaveDetailResource
+     */
     public function show(Leave $leave)
     {
+        // 1. Load relationships for detail view
         $leave->load(['employee', 'leaveType', 'approvals', 'employeeLeave', 'employee.leaveBalances']);
 
         return new LeaveDetailResource($leave);
     }
 
     /**
-     * Buat leave baru
+     * Store a new leave request.
+     *
+     * @param array $data
+     * @param \App\Models\User $user
+     * @return Leave
+     * @throws Exception
      */
     public function store(array $data, $user)
     {
         return DB::transaction(function () use ($data) {
+            // 1. Extract basic request data
             $employeeId = $data['employee_id'];
             $leaveTypeId = $data['leave_type_id'];
             $isHalfDay = $data['is_half_day'] ?? false;
@@ -143,12 +168,7 @@ class LeaveService
             $start = Carbon::parse($data['date_start']);
             $end = Carbon::parse($data['date_end']);
 
-            // $employee = $user->employee;
-            // if (! $employee) {
-            //     throw new \Exception('Employee profile not found.');
-            // }
-
-            // 1. Hitung Hari Kerja (Skip Libur/Weekend)
+            // 2. Calculate actual working days requested
             $daysRequested = $this->calculateWorkDays(
                 $start->toDateString(),
                 $end->toDateString(),
@@ -160,15 +180,12 @@ class LeaveService
                 throw new \Exception('There are no working days in the selected date range.');
             }
 
-            // 🔒 Lock & Check Saldo
-            // 1. Ambil data tipe cuti untuk cek apakah ini 'Infinite' atau tidak
+            // 3. Validate leave balance
             $leaveType = LeaveType::findOrFail($leaveTypeId);
 
-            // 2. Logika pengecekan saldo
-            if ($leaveType->is_unlimited) { // Pastikan Anda punya kolom boolean 'is_unlimited' di tabel leave_types
-                $balance = null; // Tidak perlu cek saldo jika unlimited
+            if ($leaveType->is_unlimited) {
+                $balance = null;
             } else {
-                // Hanya cari dan kunci saldo jika cuti ini BERKUOTA
                 $balance = EmployeeLeaveBalance::where('employee_id', $employeeId)
                     ->where('leave_type_id', $leaveTypeId)
                     ->lockForUpdate()
@@ -183,7 +200,7 @@ class LeaveService
                 }
             }
 
-            // Attachment Logic
+            // 4. Handle file attachment upload
             $attachmentPath = null;
             if (! empty($data['attachment']) && $data['attachment'] instanceof UploadedFile) {
                 $filename = Str::uuid().'.'.$data['attachment']->getClientOriginalExtension();
@@ -193,7 +210,7 @@ class LeaveService
             $employee = Employee::findOrFail($employeeId);
             $requestorUser = $employee->user;
 
-            // 2. Simpan Data Leave
+            // 5. Create the leave record
             $leave = Leave::create([
                 'uuid' => (string) Str::uuid(),
                 'employee_id' => $employeeId,
@@ -207,36 +224,29 @@ class LeaveService
                 'duration' => $daysRequested,
             ]);
 
-            // 3. LOGIKA APPROVAL BERJENJANG (Dinamis sesuai Role)
+            // 6. Multi-level Approval Logic based on Role
 
-            // --- SKENARIO A: DIRECTOR mengajukan cuti ---
-            // --- DI DALAM FUNGSI STORE ---
-
-            // --- SKENARIO A: DIRECTOR mengajukan cuti ---
+            // Scenario A: Director requests leave (Auto-approved by Owner)
             if ($requestorUser->hasRole(UserRole::DIRECTOR->value)) {
-
-                // ambil employee owner
                 $ownerEmployee = Employee::whereHas('user', function ($q) {
                     $q->role(UserRole::OWNER->value);
                 })->first();
 
-                // update status leave jadi APPROVED
                 $leave->update(['approval_status' => ApprovalStatus::APPROVED->value]);
 
-                // buat record approval
                 if ($ownerEmployee) {
                     $this->createApproval(
                         $leave->id,
-                        $ownerEmployee->id,   // ✅ pakai employee_id
+                        $ownerEmployee->id,
                         0,
                         ApprovalStatus::APPROVED->value
                     );
                 }
 
+                // Finalize immediately for Director
                 $this->finalizeLeave($leave, $daysRequested);
             }
-
-            // --- SKENARIO B: MANAGER, HR, atau FINANCE mengajukan cuti ---
+            // Scenario B: Manager, HR, or Finance requests leave (Requires Director approval)
             elseif ($requestorUser->hasAnyRole([
                 UserRole::MANAGER->value,
                 UserRole::HR->value,
@@ -255,25 +265,20 @@ class LeaveService
                     );
                 }
             }
-
-            // --- SKENARIO C: STAFF (EMPLOYEE) mengajukan cuti ---
+            // Scenario C: Regular Staff requests leave (Requires Manager approval)
             else {
-
                 if (! $employee->manager_id) {
                     throw new \Exception('Manager not assigned.');
                 }
 
-                // Level 0 → Manager
                 $this->createApproval(
                     $leave->id,
-                    $employee->manager_id, // ✅ pakai employee_id
+                    $employee->manager_id,
                     0
                 );
-
-                // Level 1 → HR (tetap jangan dibuat sekarang kalau mau flow bersih)
-                // bisa dibuat nanti saat manager approve
             }
 
+            // 7. Send notification
             $leave->notifyCustom(
                 title: 'New Leave Request',
                 message: "Employee {$employee->user->name} has requested {$leave->leaveType->name} for {$daysRequested} day(s).",
@@ -284,14 +289,18 @@ class LeaveService
     }
 
     /**
-     * Update leave
+     * Update an existing leave request.
+     *
+     * @param Leave $leave
+     * @param array $data
+     * @param \App\Models\User $user
+     * @return Leave
+     * @throws Exception
      */
     public function update(Leave $leave, array $data, $user)
     {
         return DB::transaction(function () use ($leave, $data, $user) {
-
-            // Log::info($leave);
-
+            // 1. Validate if the request can still be modified
             if (
                 $leave->approval_status !== ApprovalStatus::PENDING->value &&
                 ! $user->hasAnyRole([UserRole::ADMIN, UserRole::HR])
@@ -299,14 +308,14 @@ class LeaveService
                 throw new Exception('Processed leave requests cannot be modified.');
             }
 
-            // 2️⃣ Jangan izinkan ubah leave yang sudah lewat
+            // 2. Prevent modification of past or ongoing leave
             if (now()->gt($leave->date_start)) {
                 throw new Exception('Leave that has already started or passed cannot be modified.');
             }
 
             $oldDuration = $leave->duration;
 
-            // 3️⃣ Hitung ulang durasi
+            // 3. Recalculate duration
             $newDuration = $this->calculateWorkDays(
                 $data['date_start'],
                 $data['date_end'],
@@ -315,7 +324,7 @@ class LeaveService
 
             );
 
-            // 4️⃣ Jika tanggal berubah → reset approval
+            // 4. Reset approval status if dates changed
             if (
                 $leave->date_start != $data['date_start'] ||
                 $leave->date_end != $data['date_end']
@@ -323,7 +332,7 @@ class LeaveService
                 $leave->approval_status = ApprovalStatus::PENDING->value;
             }
 
-            // 5️⃣ Handle attachment
+            // 5. Handle attachment update and delete old file
             if (! empty($data['attachment']) && $data['attachment'] instanceof UploadedFile) {
 
                 if ($leave->attachment && Storage::exists($leave->attachment)) {
@@ -336,12 +345,13 @@ class LeaveService
                     ->storeAs('private/leave_attachments', $filename);
             }
 
+            // 6. Send notification
             $leave->notifyCustom(
                 title: 'Leave Request Updated',
                 message: "Employee {$leave->employee->user->name} has updated their leave request. New duration: {$newDuration} day(s).",
             );
 
-            // 6️⃣ Update leave
+            // 7. Update the record
             $leave->update([
                 'date_start' => $data['date_start'],
                 'date_end' => $data['date_end'],
@@ -355,17 +365,24 @@ class LeaveService
     }
 
     /**
-     * Approve / Reject leave
+     * Process approval or rejection of a leave request.
+     *
+     * @param LeaveApproval $approval
+     * @param \App\Models\User $user
+     * @param bool $approve
+     * @param string|null $note
+     * @return LeaveApproval
+     * @throws Exception
      */
     public function approve(LeaveApproval $approval, $user, bool $approve, ?string $note = null)
     {
         return DB::transaction(function () use ($approval, $user, $approve, $note) {
-
+            // 1. Ensure the approval record is still pending
             if ($approval->status !== ApprovalStatus::PENDING->value) {
-                throw new \Exception('Approval sudah diproses');
+                throw new \Exception('Approval has already been processed.');
             }
 
-            // 1. Update status record approval yang sedang diproses
+            // 2. Update the specific approval record
             $approval->update([
                 'status' => $approve ? ApprovalStatus::APPROVED->value : ApprovalStatus::REJECTED->value,
                 'approved_at' => now(),
@@ -373,13 +390,12 @@ class LeaveService
             ]);
 
             $leave = $approval->leave;
-            $requestor = $leave->employee->user; // Pemilik cuti
+            $requestor = $leave->employee->user;
 
-            // ❌ SKENARIO: DITOLAK
+            // 3. Handle Rejection Scenario
             if (! $approve) {
                 $leave->update(['approval_status' => ApprovalStatus::REJECTED->value]);
 
-                // Kirim notif ke pembuat cuti bahwa cutinya ditolak
                 $leave->notifyCustom(
                     title: 'Leave Request Rejected',
                     message: "Your leave request has been rejected by {$user->name}. Note: ".($note ?? '-'),
@@ -389,8 +405,7 @@ class LeaveService
                 return $approval;
             }
 
-            // ✅ SKENARIO: LANJUT KE HR (Level 1)
-            // Jika yang approve adalah manager (level 0), buatkan record approval untuk HR
+            // 4. Handle Progression to HR (Level 1) if Manager (Level 0) approved
             if ($approval->level === 0 && $leave->employee->manager_id === $approval->approver_id) {
                 $hrEmployee = Employee::whereHas('user', function ($q) {
                     $q->role(UserRole::HR->value);
@@ -400,10 +415,9 @@ class LeaveService
                     $this->createApproval(
                         $leave->id,
                         $hrEmployee->id,
-                        1 // level HR
+                        1
                     );
 
-                    // Notif ke semua user HR bahwa ada cuti yang butuh approval level 2
                     $leave->notifyCustom(
                         title: 'New Leave Approval Needed',
                         message: "Leave request from {$requestor->name} has been approved by the Manager and requires HR verification.",
@@ -412,13 +426,11 @@ class LeaveService
                 }
             }
 
-            // 🏁 SKENARIO: FINAL APPROVAL
-            // Cek apakah masih ada pending approval di tabel approvals
+            // 5. Final Approval Scenario: Check if all levels are completed
             $hasPending = $leave->approvals()
                 ->where('status', ApprovalStatus::PENDING->value)
                 ->exists();
 
-            // Jika sudah tidak ada yang pending, berarti semua level sudah approve
             if (! $hasPending) {
                 $leave->update(['approval_status' => ApprovalStatus::APPROVED->value]);
 
@@ -429,7 +441,7 @@ class LeaveService
                     $this->workdayService
                 );
 
-                // Buat data realisasi untuk Payroll
+                // Create realization record for Payroll
                 EmployeeLeave::create([
                     'employee_id' => $leave->employee_id,
                     'leave_type_id' => $leave->leave_type_id,
@@ -439,7 +451,7 @@ class LeaveService
                     'status' => ApprovalStatus::APPROVED->value,
                 ]);
 
-                // Potong saldo jika cuti berkuota
+                // Deduct balance if applicable
                 if (! $leave->leaveType->is_unlimited) {
                     $leaveYear = Carbon::parse($leave->date_start)->year;
                     $balance = EmployeeLeaveBalance::where([
@@ -460,7 +472,7 @@ class LeaveService
                     $balance->useDays($days);
                 }
 
-                // Notif ke pembuat cuti bahwa cutinya SUDAH FINAL disetujui
+                // Send final approval notification
                 $leave->notifyCustom(
                     title: 'Leave Request Approved',
                     message: "Congratulations! Your leave request for {$leave->date_start->format('d M Y')} has been fully approved.",
@@ -473,18 +485,22 @@ class LeaveService
     }
 
     /**
-     * Delete / cancel leave
+     * Delete or cancel a leave request.
+     *
+     * @param Leave $leave
+     * @param \App\Models\User $user
+     * @return bool
+     * @throws Exception
      */
     public function delete(Leave $leave, $user): bool
     {
         return DB::transaction(function () use ($leave, $user) {
-
-            // Ensure only pending leave can be deleted
+            // 1. Ensure only pending leave can be deleted
             if ((string) $leave->approval_status !== (string) ApprovalStatus::PENDING->value) {
                 throw new Exception('Only pending leave requests can be deleted.');
             }
 
-            // Check access rights: admin/HR or leave owner
+            // 2. Permission check: Admin/HR or the owner of the request
             $userEmployeeId = optional($user->employee)->id;
             if (
                 ! $user->hasAnyRole([UserRole::ADMIN, UserRole::HR]) &&
@@ -493,23 +509,34 @@ class LeaveService
                 throw new Exception('You do not have permission to delete this leave request.');
             }
 
+            // 3. Send notification
             $leave->notifyCustom(
                 title: 'Leave Request Cancelled',
                 message: "Employee {$leave->employee->user->name} has cancelled their leave request."
             );
 
-            // Delete all related approvals
+            // 4. Delete associated approvals
             $leave->approvals()->delete();
 
-            // Delete leave
+            // 5. Delete the leave record
             $leave->delete();
 
             return true;
         });
     }
 
+    /**
+     * Calculate actual working days between two dates.
+     *
+     * @param string $start
+     * @param string $end
+     * @param bool $isHalfDay
+     * @param WorkdayService $workdayService
+     * @return float
+     */
     private function calculateWorkDays(string $start, string $end, bool $isHalfDay, WorkdayService $workdayService): float
     {
+        // 1. Handle half-day shortcut
         if ($isHalfDay) {
             return 0.5;
         }
@@ -517,6 +544,7 @@ class LeaveService
         $startDate = Carbon::parse($start)->startOfDay();
         $endDate = Carbon::parse($end)->startOfDay();
 
+        // 2. Validate date range
         if ($startDate->gt($endDate)) {
             return 0;
         }
@@ -524,6 +552,7 @@ class LeaveService
         $days = 0;
         $period = CarbonPeriod::create($startDate, $endDate);
 
+        // 3. Iterate through period and count valid workdays
         foreach ($period as $date) {
             if ($workdayService->isWorkday($date)) {
                 $days++;
@@ -534,11 +563,14 @@ class LeaveService
     }
 
     /**
-     * Finalisasi cuti: Buat data realisasi dan potong saldo
+     * Finalize leave: Create realization record and deduct balance.
+     *
+     * @param Leave $leave
+     * @param float $days
      */
     private function finalizeLeave($leave, $days)
     {
-        // Simpan ke data realisasi untuk kebutuhan Payroll
+        // 1. Create realization record for Payroll
         EmployeeLeave::create([
             'employee_id' => $leave->employee_id,
             'leave_type_id' => $leave->leave_type_id,
@@ -548,7 +580,7 @@ class LeaveService
             'status' => ApprovalStatus::APPROVED->value,
         ]);
 
-        // Potong Saldo
+        // 2. Deduct leave balance
         $balance = EmployeeLeaveBalance::where([
             'employee_id' => $leave->employee_id,
             'leave_type_id' => $leave->leave_type_id,
@@ -561,10 +593,17 @@ class LeaveService
     }
 
     /**
-     * Buat data approval dengan status dinamis
+     * Create an approval record for a leave request.
+     *
+     * @param int $leaveId
+     * @param int $approverId
+     * @param int $level
+     * @param string|null $status
+     * @return LeaveApproval
      */
     private function createApproval($leaveId, $approverId, $level, $status = null)
     {
+        // 1. Create the approval record with provided or default status
         return LeaveApproval::create([
             'leave_id' => $leaveId,
             'approver_id' => $approverId,
