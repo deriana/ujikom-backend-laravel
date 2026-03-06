@@ -31,7 +31,12 @@ Route::middleware('throttle:api')->group(function () {
     Route::get('/ping', function () {
         return response()->json(['message' => 'pong'], 200);
     });
+    Route::get('/', function () {
+        return response()->json(['message' => 'Welcome to the HRIS API. Have a wonderful day!'], 200);
+    });
 });
+
+
 
 Route::group(['prefix' => 'auth', 'middleware' => 'throttle:api'], function () {
     Route::post('/register', [AuthController::class, 'register']);
