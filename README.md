@@ -1,5 +1,7 @@
 # HRIS Backend API
 
+![banner](https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExeXVmbTBzbWJ6NTJ4YWlhamVvcndrYWY5bjd5aDNtMXl0OW83Z2ZwbiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/QC9MzR2rNckD1trvCv/giphy.gif)
+
 ## Overview
 
 HRIS Backend API is a **headless Human Resource Information System (HRIS)** built with Laravel 12. It exposes a RESTful JSON API consumed by a separate frontend application. The system covers the full employee lifecycle — from onboarding and daily attendance tracking through payroll generation and leave management — and is designed to be role-based, modular, and automation-friendly via scheduled commands.
