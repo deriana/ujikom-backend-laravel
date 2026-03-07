@@ -24,6 +24,7 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\WorkScheduleController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\VerificationController;
+use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -34,9 +35,18 @@ Route::middleware('throttle:api')->group(function () {
     Route::get('/', function () {
         return response()->json(['message' => 'Welcome to the HRIS API. Have a wonderful day!'], 200);
     });
+    Route::get('/quote', function () {
+        $rawQuote = Inspiring::quote();
+
+        $cleanQuote = preg_replace('/<[^>]*>/', '', $rawQuote);
+
+        $cleanQuote = trim($cleanQuote);
+
+        return response()->json([
+            'quote' => $cleanQuote,
+        ]);
+    });
 });
-
-
 
 Route::group(['prefix' => 'auth', 'middleware' => 'throttle:api'], function () {
     Route::post('/register', [AuthController::class, 'register']);
