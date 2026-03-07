@@ -417,4 +417,53 @@ class PayrollService
             ])
             ->get();
     }
+
+    public function generateMonthlyPayroll(Carbon $periodStart, Carbon $periodEnd, int $userId)
+    {
+        // Get all eligible employees' NIKs
+        $eligibleEmployees = $this->getEligibleEmployeesForMonthly($periodStart, $periodEnd);
+        $employeeNiks = $eligibleEmployees->pluck('nik')->toArray();
+
+        // Prepare data for store method
+        $data = [
+            'month' => $periodStart->format('Y-m'),
+            'employee_niks' => $employeeNiks,
+        ];
+
+        // Call the existing store method
+        return $this->store($data, $userId);
+    }
+
+    /**
+     * Fetch employees who are eligible for monthly payroll in a specific period (public version).
+     *
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getEligibleEmployeesForMonthly(Carbon $periodStart, Carbon $periodEnd)
+    {
+        return Employee::whereHas('user.roles', function ($query) {
+            $query->where('name', '!=', UserRole::OWNER->value);
+        })
+            ->where('employment_state', EmployeeState::ACTIVE->value)
+            ->where('join_date', '<=', $periodEnd)
+            ->where(function ($query) use ($periodStart) {
+                $query->whereNull('contract_end')
+                    ->orWhere('contract_end', '>=', $periodStart);
+            })
+            ->whereNull('resign_date')
+            ->with([
+                'position.allowances',
+                'user',
+                'attendances' => function ($q) use ($periodStart, $periodEnd) {
+                    $q->whereBetween('date', [$periodStart, $periodEnd]);
+                },
+                'overtimes' => function ($q) use ($periodStart, $periodEnd) {
+                    $q->approved()
+                        ->whereHas('attendance', function ($query) use ($periodStart, $periodEnd) {
+                            $query->whereBetween('date', [$periodStart, $periodEnd]);
+                        });
+                },
+            ])
+            ->get();
+    }
 }

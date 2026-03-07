@@ -71,7 +71,7 @@ class UserResource extends JsonResource
                     'phone' => $this->employee->phone,
                     'profile_photo' => $this->employee->getFirstMediaUrl('profile_photo') ?: null,
                     'gender' => $this->employee->gender,
-                    'leave_balances' => $this->all_leave_types->map(function ($type) {
+                    'leave_balances' => $this->when(isset($this->all_leave_types), fn() => $this->all_leave_types->map(function ($type) {
                         $balance = $this->employee->leaveBalances->where('leave_type_id', $type->id)->first();
 
                         return [
@@ -83,7 +83,7 @@ class UserResource extends JsonResource
                             'is_unlimited' => (bool) $type->is_unlimited,
                             'description' => $type->description,
                         ];
-                    }),
+                    })),
                 ];
             }),
         ];
