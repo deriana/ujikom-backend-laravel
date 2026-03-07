@@ -22,6 +22,7 @@ class PayrollResource extends JsonResource
         return [
             'uuid' => $this->uuid,
             'employee_name' => $this->employee?->user?->name,
+            'employee_nik' => $this->employee?->nik,
             'period_start' => $this->period_start->format('Y-m-d'),
             'period_end' => $this->period_end->format('Y-m-d'),
             'net_salary' => $this->net_salary,

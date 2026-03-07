@@ -304,9 +304,11 @@ POST /api/attendance/bulk-send
 | Endpoint | Method | URL | Description | Auth Required |
 |---|---|---|---|---|
 | List Payrolls | GET | `/payrolls` | List all payroll records | Yes |
+| Create Payroll | POST | `/payrolls` | Generate a new payroll with bulk methode record | Yes |
 | Get Payroll | GET | `/payrolls/{payroll}` | View a payroll record | Yes |
 | Update Payroll | PUT | `/payrolls/{payroll}` | Update payroll data | Yes |
 | Finalize Payroll | PUT | `/payrolls/{payroll:uuid}/finalize` | Lock and finalize payroll | Yes |
+| Bulk Finalize | POST | `/payrolls/bulk-finalize` | Generate bulk finalized payroll records | Yes |
 | Void Payroll | PUT | `/payrolls/{payroll:uuid}/void` | Void a finalized payroll | Yes |
 | Download Payslip | GET | `/payrolls/{payroll:uuid}/download` | Download PDF payslip | Yes |
 

@@ -173,10 +173,12 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::prefix('payrolls')->group(function () {
         Route::get('/', [PayrollController::class, 'index']);
         Route::get('/{payroll}', [PayrollController::class, 'show']);
+        Route::post('/', [PayrollController::class, 'store']);
         Route::put('/{payroll}', [PayrollController::class, 'update']);
         Route::put('/{payroll:uuid}/finalize', [PayrollController::class, 'finalize']);
         Route::put('/{payroll:uuid}/void', [PayrollController::class, 'void']);
         Route::get('/{payroll:uuid}/download', [PayrollController::class, 'downloadSlip']);
+        Route::post('/bulk-finalize', [PayrollController::class, 'bulkFinalize']);
     });
 
     Route::prefix('notifications')->group(function () {

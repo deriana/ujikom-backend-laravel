@@ -71,6 +71,19 @@ class UserResource extends JsonResource
                     'phone' => $this->employee->phone,
                     'profile_photo' => $this->employee->getFirstMediaUrl('profile_photo') ?: null,
                     'gender' => $this->employee->gender,
+                    'leave_balances' => $this->all_leave_types->map(function ($type) {
+                        $balance = $this->employee->leaveBalances->where('leave_type_id', $type->id)->first();
+
+                        return [
+                            'leave_type' => $type->name,
+                            'year' => $balance->year ?? now()->year,
+                            'total_days' => $type->is_unlimited ? '∞' : ($balance->total_days ?? $type->default_days),
+                            'used_days' => $balance->used_days ?? 0,
+                            'remaining_days' => $type->is_unlimited ? '∞' : ($balance->remaining_days ?? $type->default_days),
+                            'is_unlimited' => (bool) $type->is_unlimited,
+                            'description' => $type->description,
+                        ];
+                    }),
                 ];
             }),
         ];

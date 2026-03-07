@@ -2,12 +2,15 @@
 
 namespace App\Services;
 
+use App\Enums\EmployeeState;
 use App\Enums\UserRole;
 use App\Http\Resources\PayrollDetailResource;
 use App\Jobs\GeneratePayrollSlipJob;
+use App\Models\Employee;
 use App\Models\Payroll;
 use App\Models\Setting;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -55,9 +58,6 @@ class PayrollService
 
     /**
      * Show details of a specific payroll record.
-     *
-     * @param Payroll $payroll
-     * @return Payroll
      */
     public function show(Payroll $payroll): Payroll
     {
@@ -66,12 +66,63 @@ class PayrollService
     }
 
     /**
+     * Store payroll records for specified employees in a given month.
+     *
+     * @throws \Exception
+     */
+    public function store(array $data, int $userId)
+    {
+        return DB::transaction(function () use ($data, $userId) {
+            $month = $data['month']; // Format: Y-m
+            $employeeNiks = $data['employee_niks'];
+
+            $periodStart = Carbon::createFromFormat('Y-m', $month)->startOfMonth();
+            $periodEnd = Carbon::createFromFormat('Y-m', $month)->endOfMonth();
+
+            $employees = $this->getEligibleEmployees($employeeNiks, $periodStart, $periodEnd);
+
+            $payrolls = collect();
+
+            foreach ($employees as $employee) {
+                // Check for duplicate payroll records for the same period
+                $exists = Payroll::where('employee_id', $employee->id)
+                    ->where('period_start', $periodStart->toDateString())
+                    ->where('period_end', $periodEnd->toDateString())
+                    ->where('status', '!=', Payroll::STATUS_VOIDED)
+                    ->where('is_void', false)
+                    ->exists();
+
+                if ($exists) {
+                    continue;
+                }
+
+                $calculations = $this->calculatePayroll($employee, $periodStart, $periodEnd);
+
+                $payroll = Payroll::create(array_merge($calculations, [
+                    'employee_id' => $employee->id,
+                    'period_start' => $periodStart,
+                    'period_end' => $periodEnd,
+                    'status' => Payroll::STATUS_DRAFT,
+                    'created_by_id' => $userId,
+                ]));
+
+                // --- 6. SEND NOTIFICATION ---
+                $payroll->notifyCustom(
+                    title: 'Payroll Draft Generated',
+                    message: "Hello {$employee->user->name}, your payslip for the period {$periodStart->format('M Y')} has been generated (Draft). Please check the details.",
+                    customUsers: collect([$employee->user])
+                );
+
+                $payrolls->push($payroll);
+            }
+
+            return $payrolls;
+        });
+    }
+
+    /**
      * Update an existing payroll record with manual adjustments and recalculate totals.
      *
-     * @param Payroll $payroll
-     * @param array $data
-     * @param int $userId
-     * @return Payroll
      * @throws \Exception
      */
     public function update(Payroll $payroll, array $data, int $userId): Payroll
@@ -136,8 +187,6 @@ class PayrollService
     /**
      * Finalize a payroll record and trigger slip generation.
      *
-     * @param Payroll $payroll
-     * @return Payroll
      * @throws \Exception
      */
     public function finalize(Payroll $payroll): Payroll
@@ -169,17 +218,47 @@ class PayrollService
     }
 
     /**
+     * Bulk finalize payroll records.
+     */
+    public function bulkFinalize(array $uuids): array
+    {
+        return DB::transaction(function () use ($uuids) {
+            // 1. Retrieve payroll records with necessary relationships
+            $payrolls = Payroll::with(['employee.user'])->whereIn('uuid', $uuids)->get();
+
+            $results = [
+                'success' => 0,
+                'failed' => 0,
+                'errors' => [],
+            ];
+
+            // 2. Iterate through each payroll and attempt to finalize
+            foreach ($payrolls as $payroll) {
+                try {
+                    $this->finalize($payroll);
+                    $results['success']++;
+                } catch (\Exception $e) {
+                    // 3. Track failures without breaking the entire batch
+                    $results['failed']++;
+                    $results['errors'][] = [
+                        'uuid' => $payroll->uuid,
+                        'message' => $e->getMessage(),
+                    ];
+                }
+            }
+
+            return $results;
+        });
+    }
+
+    /**
      * Void a payroll record with a reason.
      *
-     * @param Payroll $payroll
-     * @param string $note
-     * @param int $userId
-     * @return Payroll
      * @throws \Exception
      */
     public function void(Payroll $payroll, string $note, int $userId): Payroll
     {
-        return DB::transaction(function () use ($payroll, $note, $userId) {
+        return DB::transaction(function () use ($payroll, $note) {
             // 1. Validate state
             if ($payroll->isFinalized()) {
                 throw new \Exception('Cannot void finalized payroll.');
@@ -189,12 +268,8 @@ class PayrollService
                 throw new \Exception('Payroll already voided.');
             }
 
-            // 2. Update record with void status and note
-            $payroll->update([
-                'is_void' => true,
-                'void_note' => $note,
-                'updated_by_id' => $userId,
-            ]);
+            // 2. Update record
+            $payroll->void($note);
 
             // 3. Send notification
             $payroll->notifyCustom(
@@ -209,8 +284,8 @@ class PayrollService
     /**
      * Generate a PDF payroll slip and store it.
      *
-     * @param Payroll $payroll
      * @return Payroll
+     *
      * @throws \Exception
      */
     public function generateSlip(Payroll $payroll)
@@ -248,5 +323,98 @@ class PayrollService
         ]);
 
         return $payroll;
+    }
+
+    /**
+     * Calculate payroll for a single employee for a given period.
+     */
+    private function calculatePayroll(Employee $employee, Carbon $periodStart, Carbon $periodEnd): array
+    {
+        $baseSalary = (float) ($employee->base_salary ?? 0);
+        $hourlyRate = $baseSalary > 0 ? ($baseSalary / 173) : 0;
+
+        // --- 1. CALCULATE ALLOWANCES ---
+        $allowanceTotal = 0;
+        if ($employee->position) {
+            foreach ($employee->position->allowances as $allowance) {
+                $amount = $allowance->pivot?->amount ?? $allowance->amount;
+                $allowanceTotal += ($allowance->type === 'percentage')
+                    ? $baseSalary * ($amount / 100)
+                    : (float) $amount;
+            }
+        }
+
+        // --- 2. CALCULATE OVERTIME ---
+        $overtimeMinutes = $employee->overtimes->sum('duration_minutes');
+        $overtimePay = ($overtimeMinutes / 60) * $hourlyRate;
+
+        $grossSalary = $baseSalary + $allowanceTotal + $overtimePay;
+
+        // --- 3. CALCULATE ATTENDANCE DEDUCTIONS (Late & Early Leave) ---
+        $lateMinutes = $employee->attendances->sum('late_minutes');
+        $earlyLeaveMinutes = $employee->attendances
+            ->where('is_early_leave_approved', false)
+            ->sum('early_leave_minutes');
+
+        $lateDeduction = ($lateMinutes / 60) * $hourlyRate;
+        $earlyLeaveDeduction = ($earlyLeaveMinutes / 60) * $hourlyRate;
+        $attendanceDeduction = $lateDeduction + $earlyLeaveDeduction;
+
+        // --- 4. TAX CALCULATION (Simplified PPh21) ---
+        $taxableIncome = $grossSalary - $attendanceDeduction;
+        $ptkp = 5000000;
+        $taxRate = 0.05;
+        $taxAmount = $taxableIncome > $ptkp ? ($taxableIncome - $ptkp) * $taxRate : 0;
+
+        // --- 5. FINAL CALCULATION ---
+        $totalDeduction = $attendanceDeduction + $taxAmount;
+        $netSalary = $grossSalary - $totalDeduction;
+
+        return [
+            'base_salary' => $baseSalary,
+            'allowance_total' => $allowanceTotal,
+            'overtime_pay' => $overtimePay,
+            'late_deduction' => $lateDeduction,
+            'early_leave_deduction' => $earlyLeaveDeduction,
+            'total_deduction' => $totalDeduction,
+            'gross_salary' => $grossSalary,
+            'taxable_income' => $taxableIncome,
+            'ptkp' => $ptkp,
+            'tax_rate' => $taxRate,
+            'tax_amount' => $taxAmount,
+            'net_salary' => $netSalary,
+        ];
+    }
+
+    /**
+     * Fetch employees who are eligible for payroll in a specific period.
+     */
+    private function getEligibleEmployees(array $employeeNiks, Carbon $periodStart, Carbon $periodEnd)
+    {
+        return Employee::whereIn('nik', $employeeNiks)
+            ->whereHas('user.roles', function ($query) {
+                $query->where('name', '!=', UserRole::OWNER->value);
+            })
+            ->where('employment_state', EmployeeState::ACTIVE->value)
+            ->where('join_date', '<=', $periodEnd)
+            ->where(function ($query) use ($periodStart) {
+                $query->whereNull('contract_end')
+                    ->orWhere('contract_end', '>=', $periodStart);
+            })
+            ->whereNull('resign_date')
+            ->with([
+                'position.allowances',
+                'user',
+                'attendances' => function ($q) use ($periodStart, $periodEnd) {
+                    $q->whereBetween('date', [$periodStart, $periodEnd]);
+                },
+                'overtimes' => function ($q) use ($periodStart, $periodEnd) {
+                    $q->approved()
+                        ->whereHas('attendance', function ($query) use ($periodStart, $periodEnd) {
+                            $query->whereBetween('date', [$periodStart, $periodEnd]);
+                        });
+                },
+            ])
+            ->get();
     }
 }

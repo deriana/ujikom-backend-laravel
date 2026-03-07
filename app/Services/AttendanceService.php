@@ -15,7 +15,6 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class AttendanceService
 {
@@ -31,18 +30,14 @@ class AttendanceService
 
     /**
      * Handle a single attendance request for the authenticated user.
-     *
-     * @param array $data
-     * @param string $userAgent
-     * @return array
      */
     public function handleAttendance(array $data, string $userAgent): array
     {
         try {
             // 1. Retrieve the currently authenticated user and verify employee profile
             $user = Auth::user();
-            if (!$user->employee) {
-                return ['success' => false, 'message' => 'Profil karyawan tidak ditemukan.'];
+            if (! $user->employee) {
+                return ['success' => false, 'message' => 'Employee profile not found.'];
             }
 
             // 2. Parse the face descriptor from the request data
@@ -57,7 +52,7 @@ class AttendanceService
         } catch (AttendanceException $e) {
             return ['success' => false, 'message' => $e->getMessage()];
         } catch (Exception $e) {
-            return ['success' => false, 'message' => 'Terjadi kesalahan sistem.'];
+            return ['success' => false, 'message' => 'A system error occurred.'];
         }
     }
 
@@ -138,10 +133,6 @@ class AttendanceService
 
     /**
      * Handle bulk attendance requests (e.g., from a shared terminal).
-     *
-     * @param array $data
-     * @param string $userAgent
-     * @return array
      */
     public function handleBulkAttendance(array $data, string $userAgent): array
     {
@@ -185,7 +176,7 @@ class AttendanceService
 
             // 1. Check if the user's role is exempt from daily attendance
             if ($user->hasRole([\App\Enums\UserRole::DIRECTOR->value, \App\Enums\UserRole::OWNER->value])) {
-                throw new AttendanceException('Jabatan ini dibebaskan dari absensi harian.');
+                throw new AttendanceException('This position is exempt from daily attendance.');
             }
 
             // 2. Validate geographical location and workday status
@@ -198,20 +189,20 @@ class AttendanceService
             $now = Carbon::now();
             $photoPath = isset($data['photo']) ? $this->uploader->upload($data['photo'], $employee->id, $today) : null;
 
-            $resultMessage = 'Already attended today';
+            $resultMessage = 'Already completed attendance for today';
 
             $actionType = null;
             // 4. Determine whether to process Clock-In or Clock-Out
             if (! $attendance->clock_in) {
                 $actionType = 'clock_in';
                 $this->processClockIn($attendance, $now, $data, $photoPath);
-                $resultMessage = 'Clock-in berhasil';
+                $resultMessage = 'Clock-in successful';
             } elseif (! $attendance->clock_out) {
                 $actionType = 'clock_out';
                 $this->processClockOut($attendance, $now, $data, $photoPath);
-                $resultMessage = 'Clock-out berhasil';
+                $resultMessage = 'Clock-out successful';
             } else {
-                throw new AttendanceException('Sudah melakukan clock-in dan clock-out hari ini.');
+                throw new AttendanceException('You have already clocked in and out today.');
             }
 
             // 5. Log the successful action and commit the transaction
@@ -245,6 +236,7 @@ class AttendanceService
             DB::rollBack();
             // Log generic system errors
             $this->logger->logFailure('System Error: '.$e->getMessage(), ['user_agent' => $userAgent]);
+
             return [
                 'success' => false,
                 'message' => 'A system error occurred',

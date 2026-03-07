@@ -208,7 +208,6 @@ class Employee extends Model implements HasMedia
 
     public function leaveBalances()
     {
-
         return $this->hasMany(EmployeeLeaveBalance::class, 'employee_id');
     }
 

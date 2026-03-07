@@ -38,6 +38,7 @@ return new class extends Migration
             // Status
             // 0 = draft
             // 1 = finalized
+            // 2 = void
             $table->tinyInteger('status')->default(0);
 
             $table->decimal('late_deduction', 15, 2)->default(0);
@@ -66,7 +67,7 @@ return new class extends Migration
 
             $table->timestamps();
 
-            $table->unique(['employee_id', 'period_start', 'period_end']);
+            $table->index(['employee_id', 'period_start', 'period_end']);
         });
 
     }

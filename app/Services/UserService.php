@@ -150,14 +150,33 @@ class UserService
      */
     public function show(User $user)
     {
-        // 1. Load nested relationships for detailed view
-        return $user->load([
+        $currentYear = now()->year;
+        $userGender = $user->employee->gender;
+
+        $allLeaveTypes = \App\Models\LeaveType::where('is_active', true)
+        ->where(function ($query) use ($userGender) {
+            $query->where('gender', 'all')
+                    ->when($userGender, function($q) use ($userGender) {
+                        return $q->orWhere('gender', $userGender);
+                });
+            })
+            ->get();
+
+        $user->load([
             'employee.position.allowances',
             'employee.team.division',
             'employee.manager.user',
             'employee.biometrics',
             'roles',
+            'employee.leaveBalances' => function ($query) use ($currentYear) {
+                $query->where('year', $currentYear);
+            },
+            'employee.leaveBalances.leaveType',
         ]);
+
+        $user->all_leave_types = $allLeaveTypes;
+
+        return $user;
     }
 
     /**
