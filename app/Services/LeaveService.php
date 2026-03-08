@@ -183,16 +183,22 @@ class LeaveService
             // 3. Validate leave balance
             $leaveType = LeaveType::findOrFail($leaveTypeId);
 
+            $employee = Employee::findOrFail($employeeId);
+            if ($leaveType->gender !== 'all' && $employee->gender !== $leaveType->gender) {
+                throw new \Exception("This leave type is only available for {$leaveType->gender} employees.");
+            }
+
             if ($leaveType->is_unlimited) {
                 $balance = null;
             } else {
                 $balance = EmployeeLeaveBalance::where('employee_id', $employeeId)
                     ->where('leave_type_id', $leaveTypeId)
+                    ->where('year', $start->year)
                     ->lockForUpdate()
                     ->first();
 
                 if (! $balance) {
-                    throw new \Exception('Leave balance record not found for this leave type.');
+                    throw new \Exception("Leave balance record not found for this leave type in year {$start->year}.");
                 }
 
                 if ($balance->remaining_days < $daysRequested) {
@@ -207,7 +213,6 @@ class LeaveService
                 $attachmentPath = $data['attachment']->storeAs('private/leave_attachments', $filename);
             }
 
-            $employee = Employee::findOrFail($employeeId);
             $requestorUser = $employee->user;
 
             // 5. Create the leave record

@@ -14,6 +14,11 @@ class NotificationController extends Controller
 
     public function getUnreadNotifications()
     {
+        $count = Auth::user()->unreadNotifications()->count();
+        if ($count === 0) {
+            return response()->json([]);
+        }
+
         return Auth::user()->unreadNotifications()->latest()->get();
     }
 
@@ -48,5 +53,5 @@ class NotificationController extends Controller
         Auth::user()->notifications()->delete();
 
         return response()->json(['message' => 'All notifications deleted']);
-    }   
+    }
 }

@@ -8,6 +8,7 @@ use DomainException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class AuthService
 {
@@ -79,6 +80,11 @@ class AuthService
     public function logout(User $user): bool
     {
         // 1. Delete the specific token used for the current request
-        return (bool) $user->currentAccessToken()?->delete();
+        $token = $user->currentAccessToken();
+        if ($token instanceof PersonalAccessToken) {
+            return (bool) $token->delete();
+        }
+
+        return false;
     }
 }

@@ -53,12 +53,16 @@ Route::group(['prefix' => 'auth', 'middleware' => 'throttle:api'], function () {
     Route::post('/login', [AuthController::class, 'login']);
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/me', function (Request $request) {
-            $user = $request->user()->load([
-                'roles',
-                'employee.position',
-                'employee.team.division',
-                'employee.manager.user',
-            ]);
+            $userId = $request->user()->id;
+
+            $user = Illuminate\Support\Facades\Cache::remember("user_me_{$userId}", 3600, function () use ($request) {
+                return $request->user()->load([
+                    'roles',
+                    'employee.position',
+                    'employee.team.division',
+                    'employee.manager.user',
+                ]);
+            });
 
             return new App\Http\Resources\MeResource($user);
         });

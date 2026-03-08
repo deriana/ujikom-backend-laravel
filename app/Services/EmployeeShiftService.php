@@ -34,40 +34,35 @@ class EmployeeShiftService
     public function store(array $data): EmployeeShift
     {
         return DB::transaction(function () use ($data) {
-            // 1. Parse the requested shift date
-            $date = Carbon::parse($data['shift_date']);
-
-            // 2. Validate if the date is a valid workday (not a holiday or weekend)
-            $isWorkday = $this->workdayService->isWorkday($date);
-            if (! $isWorkday) {
+            // 1. Validate if the date is a valid workday (not a holiday or weekend)
+            if (! $this->workdayService->isWorkday(Carbon::parse($data['shift_date']))) {
                 throw new \Exception("Failed: Date {$data['shift_date']} is a holiday or weekend.");
             }
 
-            // 3. Retrieve employee and shift template by their identifiers
-            $employee = Employee::where('nik', $data['employee_nik'])->firstOrFail();
-            $template = ShiftTemplate::where('uuid', $data['shift_template_uuid'])->firstOrFail();
+            // 2. Retrieve employee and shift template (Select only needed columns)
+            $employee = Employee::select('id', 'nik', 'user_id')
+                ->with('user:id,name')
+                ->where('nik', $data['employee_nik'])
+                ->firstOrFail();
 
-            // 4. Prevent duplicate shift assignments for the same employee on the same date
-            $exists = EmployeeShift::where('employee_id', $employee->id)
-                ->where('shift_date', $data['shift_date'])
-                ->exists();
-            if ($exists) {
-                throw new \Exception('Employee already has a shift assigned on this date.');
-            }
+            $template = ShiftTemplate::select('id', 'uuid', 'name')
+                ->where('uuid', $data['shift_template_uuid'])
+                ->firstOrFail();
 
-            // 5. Create the shift record
-            $shift = new EmployeeShift([
-                'employee_id' => $employee->id,
-                'shift_template_id' => $template->id,
-                'shift_date' => $data['shift_date'],
-            ]);
+            // 3. Use updateOrCreate to prevent duplicates and reduce queries
+            $shift = EmployeeShift::updateOrCreate(
+                [
+                    'employee_id' => $employee->id,
+                    'shift_date' => $data['shift_date'],
+                ],
+                ['shift_template_id' => $template->id]
+            );
 
-            // 6. Set custom notification data
+            // 4. Set custom notification data
             $shift->customNotification = [
                 'title' => 'Shift Assigned',
                 'message' => "A new shift has been assigned to {$employee->user->name} on {$data['shift_date']} with template {$template->name}.",
             ];
-
             $shift->save();
 
             return $shift->load(['employee', 'shiftTemplate']);
@@ -80,17 +75,15 @@ class EmployeeShiftService
     public function update(EmployeeShift $shift, array $data): EmployeeShift
     {
         return DB::transaction(function () use ($shift, $data) {
-            // 1. Parse and validate the new shift date
-            $date = Carbon::parse($data['shift_date']);
-            $isWorkday = $this->workdayService->isWorkday($date);
-            if (! $isWorkday) {
+            // 1. Validate the new shift date
+            if (! $this->workdayService->isWorkday(Carbon::parse($data['shift_date']))) {
                 throw new \Exception("Failed: Date {$data['shift_date']} is a holiday or weekend.");
             }
 
             // 2. Find the requested shift template
-            $template = ShiftTemplate::where('uuid', $data['shift_template_uuid'])->firstOrFail();
+            $template = ShiftTemplate::select('id', 'name')->where('uuid', $data['shift_template_uuid'])->firstOrFail();
 
-            // 3. Set custom notification data for the update
+            // 3. Set custom notification data
             $shift->customNotification = [
                 'title' => 'Shift Updated',
                 'message' => "Shift schedule for {$shift->employee->user->name} has been updated to {$data['shift_date']} with template {$template->name}.",
