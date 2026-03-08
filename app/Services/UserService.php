@@ -9,6 +9,7 @@ use App\Models\Position;
 use App\Models\Role;
 use App\Models\Team;
 use App\Models\User;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -78,7 +79,7 @@ class UserService
             $user = User::create([
                 'name' => $data['name'],
                 'email' => $data['email'],
-                'password' => Hash::make(Str::random(32)),
+                'password' => Hash::make('password'),
                 'is_active' => $data['is_active'],
             ]);
 
@@ -575,5 +576,32 @@ class UserService
                 ]);
             }
         });
+    }
+
+    /**
+     * Get all employee leave balances for a given year.
+     *
+     * @param int|null $year
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getEmployeeLeaveBalances(?int $year = null)
+    {
+        $year = $year ?? Carbon::now()->year;
+
+        // 1. Retrieve all active employees with their leave balances for the specified year
+        return Employee::with([
+            'user:id,name,email',
+            'position:id,name',
+            'leaveBalances' => function ($query) use ($year) {
+                $query->where('year', $year);
+            },
+            'leaveBalances.leaveType:id,name,is_unlimited',
+            'media',
+        ])
+        ->active() // Only active employees
+        ->whereHas('user', function ($query) {
+            $query->where('system_reserve', false);
+        })
+        ->get();
     }
 }

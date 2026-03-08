@@ -103,6 +103,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::get('/profile', [UserController::class, 'getProfile']);
         Route::put('/change-password', [UserController::class, 'changePassword']);
         Route::put('/update-biometric', [UserController::class, 'updateBiometricDescriptors']);
+        Route::get('/employee-leave-balances', [UserController::class, 'getEmployeeLeaveBalances']);
     });
     Route::apiResource('users', UserController::class);
     Route::prefix('divisions')->group(function () {
@@ -196,12 +197,12 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     });
 
     Route::prefix('notifications')->group(function () {
+        Route::delete('/delete-all', [NotificationController::class, 'deleteAll']);
         Route::get('/', [NotificationController::class, 'getNotifications']);
         Route::get('/unread', [NotificationController::class, 'getUnreadNotifications']);
         Route::patch('/{id}/read', [NotificationController::class, 'markAsRead']);
         Route::patch('/mark-all-read', [NotificationController::class, 'markAllAsRead']);
         Route::delete('/{id}', [NotificationController::class, 'delete']);
-        Route::delete('/delete-all', [NotificationController::class, 'deleteAll']);
     });
 
     Route::get('/dashboard/admin', [DashboardController::class, 'getAdminDashboard']);
