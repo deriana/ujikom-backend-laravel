@@ -21,6 +21,8 @@ class Payroll extends Model
 
     const STATUS_FINALIZED = 1;
 
+    const STATUS_VOIDED = 2;
+
     protected $fillable = [
         'employee_id',
         'period_start',
@@ -45,6 +47,8 @@ class Payroll extends Model
         'is_void',
         'void_note',
         'slip_generated_at',
+        'updated_by_id',
+        'created_by_id',
     ];
 
     protected $casts = [
@@ -118,6 +122,28 @@ class Payroll extends Model
         return $this->status == self::STATUS_FINALIZED;
     }
 
+    public function isVoided(): bool
+    {
+        return $this->status === self::STATUS_VOIDED || (bool) $this->is_void;
+    }
+
+    public function getStatusLabel(): string
+    {
+        if ($this->isVoided()) {
+            return 'Voided';
+        }
+        if ($this->isFinalized()) {
+            return 'Finalized';
+        }
+
+        return 'Draft';
+    }
+
+    public function isEditable(): bool
+    {
+        return $this->isDraft() && ! $this->isVoided();
+    }
+
     public function finalize(): void
     {
         $this->update([
@@ -126,8 +152,12 @@ class Payroll extends Model
         ]);
     }
 
-    public function isVoided(): bool
+    public function void(string $note): void
     {
-        return (bool) $this->is_void;
+        $this->update([
+            'status' => self::STATUS_VOIDED,
+            'is_void' => true,
+            'void_note' => $note,
+        ]);
     }
 }

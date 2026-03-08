@@ -149,7 +149,11 @@ class EarlyLeaveService
             // 2. Find today's attendance record
             $attendance = Attendance::where('employee_id', $employee->id)
                 ->whereDate('date', $today)
-                ->firstOrFail();
+                ->first();
+
+            if (! $attendance) {
+                throw new Exception('Attendance record for today not found. You must clock in first.');
+            }
 
             // 3. Validate if the employee is eligible to request early leave
             $this->validateEarlyLeaveEligibility($attendance);

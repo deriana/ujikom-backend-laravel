@@ -106,23 +106,23 @@ class CreateLeaveRequest extends FormRequest
             }
 
             // 5️⃣ Cek Saldo
-            if ($leaveType->default_days !== null) {
+            // if ($leaveType->default_days !== null) {
 
-                $balance = EmployeeLeaveBalance::where('employee_id', $employee->id)
-                    ->where('leave_type_id', $leaveType->id)
-                    ->first();
+            //     $balance = EmployeeLeaveBalance::where('employee_id', $employee->id)
+            //         ->where('leave_type_id', $leaveType->id)
+            //         ->first();
 
-                $remaining = $balance ? $balance->remaining_days : 0;
+            //     $remaining = $balance ? $balance->remaining_days : 0;
 
-                if ($daysRequested > $remaining) {
-                    $validator->errors()->add(
-                        'date_end',
-                        "Insufficient balance. Remaining: $remaining days, Requested: $daysRequested days."
-                    );
+            //     if ($daysRequested > $remaining) {
+            //         $validator->errors()->add(
+            //             'date_end',
+            //             "Insufficient balance. Remaining: $remaining days, Requested: $daysRequested days."
+            //         );
 
-                    return;
-                }
-            }
+            //         return;
+            //     }
+            // }
 
             $this->merge([
                 'employee_id' => $employee->id,

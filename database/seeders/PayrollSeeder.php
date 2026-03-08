@@ -14,8 +14,8 @@ class PayrollSeeder extends Seeder
     {
         Artisan::call('payroll:generate', [
             '--payday' => 26,
-            '--month' => now()->month,
-            '--year' => now()->year,
+            '--month' => 11,
+            '--year' => 2025,
         ]);
 
         $this->command->info('Payroll data has been generated successfully!');

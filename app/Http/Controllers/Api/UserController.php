@@ -2,14 +2,17 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Enums\ApprovalStatus;
+// use App\Enums\ApprovalStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CreateUserRequest;
 use App\Http\Requests\UpdateUserRequest;
+use App\Http\Resources\EmployeeLeaveBalanceResource;
 use App\Http\Resources\EmployeeLiteResources;
 use App\Http\Resources\ManagerResource;
 use App\Http\Resources\UserDetailResource;
 use App\Http\Resources\UserResource;
+use App\Models\Employee;
+use App\Models\EmployeeLeaveBalance;
 use App\Models\User;
 use App\Services\UserService;
 use Illuminate\Http\JsonResponse;
@@ -273,6 +276,16 @@ class UserController extends Controller
         return $this->successResponse(
             null,
             'Biometric descriptors updated successfully'
+        );
+    }
+
+        public function getEmployeeLeaveBalances(): JsonResponse
+    {
+        $leave_balances = $this->userService->getEmployeeLeaveBalances();
+
+        return $this->successResponse(
+            EmployeeLeaveBalanceResource::collection($leave_balances),
+            'LeaveBalances fetched successfully'
         );
     }
 }

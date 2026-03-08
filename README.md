@@ -8,6 +8,20 @@ HRIS Backend API is a **headless Human Resource Information System (HRIS)** buil
 
 ---
 
+## 📖 Technical Documentation
+
+We have provided detailed documentation for every aspect of the system. Please click the links below:
+
+| Document | Description |
+| :--- | :--- |
+| 📑 [**Overview**](./docs/overview.md) | Project vision, main features, and system modules. |
+| 🏗️ [**Architecture**](./docs/architecture.md) | Folder structure, design patterns (Service/Repository), and data flow. |
+| 🛢️ [**Database Seeder**](./docs/database-seeder.md) | Dummy data guide for testing (Roles, Users, Positions). |
+| 🔌 [**API Reference**](./docs/api.md) | REST API endpoint documentation for Frontend integration. |
+| ⚙️ [**Setup Guide**](./docs/setup.md) | Environment installation steps (Laravel & React). |
+
+---
+
 ## Features
 
 - **Authentication & Account Activation** – Sanctum-based token authentication, email verification flow, password reset, and biometric descriptor storage.

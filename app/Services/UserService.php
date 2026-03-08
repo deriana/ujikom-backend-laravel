@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Enums\EmploymentState;
 use App\Enums\UserRole;
 use App\Mail\VerifyEmail;
 use App\Models\Employee;
@@ -10,10 +9,12 @@ use App\Models\Position;
 use App\Models\Role;
 use App\Models\Team;
 use App\Models\User;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
@@ -46,7 +47,7 @@ class UserService
             UserRole::DIRECTOR->value,
             UserRole::OWNER->value,
             UserRole::HR->value,
-            UserRole::FINANCE->value
+            UserRole::FINANCE->value,
         ])) {
             // High-level roles can see all data
         } elseif ($user->hasRole(UserRole::MANAGER->value)) {
@@ -69,20 +70,16 @@ class UserService
 
     /**
      * Store a new user and their employee profile.
-     *
-     * @param array $data
-     * @param int $creatorId
-     * @return User
      */
     public function store(array $data, int $creatorId): User
     {
-        return DB::transaction(function () use ($data, $creatorId) {
+        $result = DB::transaction(function () use ($data, $creatorId) {
 
             // 1. Create the user record with a random password
             $user = User::create([
                 'name' => $data['name'],
                 'email' => $data['email'],
-                'password' => Hash::make(Str::random(32)),
+                'password' => Hash::make('password'),
                 'is_active' => $data['is_active'],
             ]);
 
@@ -127,13 +124,6 @@ class UserService
                 'url' => "/users/{$employee->user->uuid}/show",
             ];
 
-            // 7. Generate email verification token
-            $verificationService = app(EmailVerificationService::class);
-            $token = $verificationService->generateToken($user);
-
-            // 8. Send verification email
-            Mail::to($user->email)->send(new VerifyEmail($user, $token));
-
             return $user->load([
                 'roles',
                 'employee.position',
@@ -141,32 +131,57 @@ class UserService
                 'employee.manager.user',
             ]);
         });
+
+        try {
+            // 7. Send verification email
+            $verificationService = app(EmailVerificationService::class);
+            $token = $verificationService->generateToken($result);
+
+            Mail::to($result->email)->queue(new VerifyEmail($result, $token));
+        } catch (\Exception $e) {
+            Log::error('Gagal mengirim email verifikasi: '.$e->getMessage());
+        }
+
+        return $result;
     }
 
     /**
      * Show details of a specific user.
-     *
-     * @param User $user
      */
     public function show(User $user)
     {
-        // 1. Load nested relationships for detailed view
-        return $user->load([
+        $currentYear = now()->year;
+
+        $userGender = $user->employee->gender ?? null;
+
+        $allLeaveTypes = \App\Models\LeaveType::where('is_active', true)
+            ->where(function ($query) use ($userGender) {
+                $query->where('gender', 'all')
+                    ->when($userGender, function ($q) use ($userGender) {
+                        return $q->orWhere('gender', $userGender);
+                    });
+            })
+            ->get();
+
+        $user->load([
             'employee.position.allowances',
             'employee.team.division',
             'employee.manager.user',
             'employee.biometrics',
             'roles',
+            'employee.leaveBalances' => function ($query) use ($currentYear) {
+                $query->where('year', $currentYear);
+            },
+            'employee.leaveBalances.leaveType',
         ]);
+
+        $user->all_leave_types = $allLeaveTypes;
+
+        return $user;
     }
 
     /**
      * Update an existing user and their employee profile.
-     *
-     * @param User $user
-     * @param array $data
-     * @param int $updaterId
-     * @return User
      */
     public function update(User $user, array $data, int $updaterId): User
     {
@@ -256,9 +271,6 @@ class UserService
 
     /**
      * Soft delete a user and their employee profile.
-     *
-     * @param User $user
-     * @return bool
      */
     public function delete(User $user): bool
     {
@@ -289,9 +301,6 @@ class UserService
 
     /**
      * Restore a soft-deleted user and their employee profile.
-     *
-     * @param string $uuid
-     * @return User
      */
     public function restore(string $uuid): User
     {
@@ -325,9 +334,6 @@ class UserService
 
     /**
      * Permanently delete a user and their employee profile.
-     *
-     * @param string $uuid
-     * @return bool
      */
     public function forceDelete(string $uuid): bool
     {
@@ -352,12 +358,6 @@ class UserService
 
     /**
      * Terminate an employee's employment.
-     *
-     * @param string $uuid
-     * @param string $state
-     * @param string|null $date
-     * @param int $adminId
-     * @return User
      */
     public function terminateEmployment(string $uuid, string $state, ?string $date, int $adminId): User
     {
@@ -398,10 +398,6 @@ class UserService
 
     /**
      * Change the authenticated user's password.
-     *
-     * @param User $user
-     * @param string $currentPassword
-     * @param string $newPassword
      */
     public function changePassword(User $user, string $currentPassword, string $newPassword): void
     {
@@ -423,9 +419,6 @@ class UserService
 
     /**
      * Change a user's password by an administrator.
-     *
-     * @param string $uuid
-     * @param string $newPassword
      */
     public function adminChangePassword(string $uuid, string $newPassword): void
     {
@@ -446,11 +439,6 @@ class UserService
 
     /**
      * Toggle a user's active status.
-     *
-     * @param string $uuid
-     * @param bool $isActive
-     * @param int $adminId
-     * @return User
      */
     public function status(string $uuid, bool $isActive, int $adminId): User
     {
@@ -507,10 +495,8 @@ class UserService
     /**
      * Upload and set a profile photo for a user.
      *
-     * @param User $user
-     * @param mixed $photoFile
-     * @param string $uuid
-     * @return User
+     * @param  mixed  $photoFile
+     * @param  string  $uuid
      */
     public function uploadProfilePhoto(User $user, $photoFile, $uuid): User
     {
@@ -570,9 +556,6 @@ class UserService
 
     /**
      * Update biometric descriptors for a user.
-     *
-     * @param User $user
-     * @param array $descriptors
      */
     public function updateBiometricDescriptors(User $user, array $descriptors): void
     {
@@ -593,5 +576,32 @@ class UserService
                 ]);
             }
         });
+    }
+
+    /**
+     * Get all employee leave balances for a given year.
+     *
+     * @param int|null $year
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getEmployeeLeaveBalances(?int $year = null)
+    {
+        $year = $year ?? Carbon::now()->year;
+
+        // 1. Retrieve all active employees with their leave balances for the specified year
+        return Employee::with([
+            'user:id,name,email',
+            'position:id,name',
+            'leaveBalances' => function ($query) use ($year) {
+                $query->where('year', $year);
+            },
+            'leaveBalances.leaveType:id,name,is_unlimited',
+            'media',
+        ])
+        ->active() // Only active employees
+        ->whereHas('user', function ($query) {
+            $query->where('system_reserve', false);
+        })
+        ->get();
     }
 }

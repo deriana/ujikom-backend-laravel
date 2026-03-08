@@ -12,7 +12,6 @@ class AttendanceDetailService
     /**
      * Get a list of attendance records based on user roles and filters.
      *
-     * @param array $filters
      * @return \Illuminate\Database\Eloquent\Collection
      */
     public function index(array $filters = [])
@@ -20,13 +19,20 @@ class AttendanceDetailService
         $user = Auth::user();
         $currentUserEmployee = $user->employee;
 
-        $query = Attendance::query()->with('employee.user');
+        $query = Attendance::query()->select([
+            'id', 'employee_id', 'date', 'status',
+            'clock_in', 'clock_out', 'late_minutes',
+            'work_minutes', 'overtime_minutes',
+        ])->with([
+            'employee:id,nik,user_id',
+            'employee.user:id,name',
+        ]);
 
         if ($user->hasAnyRole([
             UserRole::ADMIN->value,
             UserRole::DIRECTOR->value,
             UserRole::OWNER->value,
-            UserRole::HR->value
+            UserRole::HR->value,
         ])) {
         } elseif ($user->hasRole(UserRole::MANAGER->value)) {
             $query->whereHas('employee', function ($q) use ($currentUserEmployee) {
@@ -40,7 +46,7 @@ class AttendanceDetailService
         }
 
         // --- FILTER DATE RANGE (Logika kamu sebelumnya) ---
-        if (!empty($filters['start_date']) && !empty($filters['end_date'])) {
+        if (! empty($filters['start_date']) && ! empty($filters['end_date'])) {
             $query->whereBetween('date', [
                 Carbon::parse($filters['start_date'])->startOfDay(),
                 Carbon::parse($filters['end_date'])->endOfDay(),
@@ -55,7 +61,6 @@ class AttendanceDetailService
     /**
      * Get the details of a specific attendance record.
      *
-     * @param Attendance $attendance
      * @return Attendance
      */
     public function show(Attendance $attendance)

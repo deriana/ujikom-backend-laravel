@@ -24,6 +24,7 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\WorkScheduleController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\VerificationController;
+use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -34,21 +35,34 @@ Route::middleware('throttle:api')->group(function () {
     Route::get('/', function () {
         return response()->json(['message' => 'Welcome to the HRIS API. Have a wonderful day!'], 200);
     });
+    Route::get('/quote', function () {
+        $rawQuote = Inspiring::quote();
+
+        $cleanQuote = preg_replace('/<[^>]*>/', '', $rawQuote);
+
+        $cleanQuote = trim($cleanQuote);
+
+        return response()->json([
+            'quote' => $cleanQuote,
+        ]);
+    });
 });
-
-
 
 Route::group(['prefix' => 'auth', 'middleware' => 'throttle:api'], function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/me', function (Request $request) {
-            $user = $request->user()->load([
-                'roles',
-                'employee.position',
-                'employee.team.division',
-                'employee.manager.user',
-            ]);
+            $userId = $request->user()->id;
+
+            $user = Illuminate\Support\Facades\Cache::remember("user_me_{$userId}", 3600, function () use ($request) {
+                return $request->user()->load([
+                    'roles',
+                    'employee.position',
+                    'employee.team.division',
+                    'employee.manager.user',
+                ]);
+            });
 
             return new App\Http\Resources\MeResource($user);
         });
@@ -89,6 +103,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::get('/profile', [UserController::class, 'getProfile']);
         Route::put('/change-password', [UserController::class, 'changePassword']);
         Route::put('/update-biometric', [UserController::class, 'updateBiometricDescriptors']);
+        Route::get('/employee-leave-balances', [UserController::class, 'getEmployeeLeaveBalances']);
     });
     Route::apiResource('users', UserController::class);
     Route::prefix('divisions')->group(function () {
@@ -173,19 +188,21 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::prefix('payrolls')->group(function () {
         Route::get('/', [PayrollController::class, 'index']);
         Route::get('/{payroll}', [PayrollController::class, 'show']);
+        Route::post('/', [PayrollController::class, 'store']);
         Route::put('/{payroll}', [PayrollController::class, 'update']);
         Route::put('/{payroll:uuid}/finalize', [PayrollController::class, 'finalize']);
         Route::put('/{payroll:uuid}/void', [PayrollController::class, 'void']);
         Route::get('/{payroll:uuid}/download', [PayrollController::class, 'downloadSlip']);
+        Route::post('/bulk-finalize', [PayrollController::class, 'bulkFinalize']);
     });
 
     Route::prefix('notifications')->group(function () {
+        Route::delete('/delete-all', [NotificationController::class, 'deleteAll']);
         Route::get('/', [NotificationController::class, 'getNotifications']);
         Route::get('/unread', [NotificationController::class, 'getUnreadNotifications']);
         Route::patch('/{id}/read', [NotificationController::class, 'markAsRead']);
         Route::patch('/mark-all-read', [NotificationController::class, 'markAllAsRead']);
         Route::delete('/{id}', [NotificationController::class, 'delete']);
-        Route::delete('/delete-all', [NotificationController::class, 'deleteAll']);
     });
 
     Route::get('/dashboard/admin', [DashboardController::class, 'getAdminDashboard']);

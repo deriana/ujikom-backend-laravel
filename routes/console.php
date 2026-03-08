@@ -13,3 +13,6 @@ Schedule::command('attendance:mark-absent')
 Schedule::command('holidays:refresh')->yearlyOn(1, 1, '00:00');
 Schedule::command('leave:reset-balances')->yearlyOn(1, 1, '00:00');
 Schedule::command('payroll:generate')->monthlyOn(26, '00:00');
+Schedule::command('app:auto-deactivate-employee')->dailyAt('00:05');
+
+// contoh manual php artisan app:auto-deactivate-employee

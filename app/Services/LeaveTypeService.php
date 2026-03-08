@@ -31,11 +31,13 @@ class LeaveTypeService
         return DB::transaction(function () use ($data) {
             // 1. Create the leave type record in the database
             return LeaveType::create([
-                'name'      => $data['name'],
-                'is_active' => $data['is_active'] ?? false,
+                'name' => $data['name'],
+                'description' => $data['description'] ?? null,
+                'is_active' => $data['is_active'] ?? true,
                 'default_days' => $data['default_days'] ?? null,
-                'gender' => $data['gender'] ?? null,
+                'gender' => $data['gender'] ?? 'all',
                 'requires_family_status' => $data['requires_family_status'] ?? false,
+                'is_unlimited' => $data['is_unlimited'] ?? false,
             ]);
         });
     }
@@ -53,10 +55,12 @@ class LeaveTypeService
             // 1. Update the leave type attributes with provided data or keep existing values
             $leaveType->update([
                 'name' => $data['name'] ?? $leaveType->name,
+                'description' => $data['description'] ?? $leaveType->description,
                 'is_active' => $data['is_active'] ?? $leaveType->is_active,
-                'default_days' => $data['default_days'] ?? $leaveType->default_days,
+                'default_days' => array_key_exists('default_days', $data) ? $data['default_days'] : $leaveType->default_days,
                 'gender' => $data['gender'] ?? $leaveType->gender,
                 'requires_family_status' => $data['requires_family_status'] ?? $leaveType->requires_family_status,
+                'is_unlimited' => $data['is_unlimited'] ?? $leaveType->is_unlimited,
             ]);
 
             return $leaveType;

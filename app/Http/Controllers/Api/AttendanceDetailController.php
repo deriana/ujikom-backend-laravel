@@ -5,12 +5,13 @@ namespace App\Http\Controllers\Api;
 use App\Exports\AttendancesExport;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\AttendanceResource;
+use App\Http\Resources\AttendanceDetailResource;
 use App\Models\Attendance;
 use App\Services\AttendanceDetailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Validation\ValidationException;
+// use Illuminate\Support\Facades\Log;
+// use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
@@ -49,7 +50,7 @@ class AttendanceDetailController extends Controller
         }
 
         return $this->successResponse(
-            new AttendanceResource($attendance),
+            new AttendanceDetailResource($attendance),
             'Attendance fetched successfully',
             200
         );
