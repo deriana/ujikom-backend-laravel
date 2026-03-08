@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\CreatePayrollRequest;
 use App\Http\Requests\UpdatePayrollRequest;
 use App\Http\Resources\PayrollDetailResource;
 use App\Http\Resources\PayrollResource;
@@ -46,6 +47,21 @@ class PayrollController extends Controller
         );
     }
 
+    public function store(CreatePayrollRequest $request): JsonResponse
+    {
+        $this->authorize('create', Payroll::class);
+
+        $created = $this->payrollService->store(
+            $request->validated(),
+            Auth::id()
+        );
+
+        return $this->successResponse(
+            PayrollResource::collection($created),
+            'Payroll created successfully'
+        );
+    }
+
     public function update(UpdatePayrollRequest $request, Payroll $payroll): JsonResponse
     {
         $this->authorize('update', $payroll);
@@ -76,6 +92,20 @@ class PayrollController extends Controller
         );
     }
 
+    public function bulkFinalize(Request $request): JsonResponse
+    {
+        $this->authorize('viewAny', Payroll::class);
+
+        $request->validate([
+            'payroll_uuids' => 'required|array',
+            'payroll_uuids.*' => 'required|exists:payrolls,uuid',
+        ]);
+
+        $result = $this->payrollService->bulkFinalize($request->payroll_uuids);
+
+        return $this->successResponse($result, 'Bulk payroll finalization processed');
+    }
+
     public function void(Payroll $payroll, Request $request)
     {
         $this->authorize('update', $payroll);
@@ -84,9 +114,9 @@ class PayrollController extends Controller
             'note' => 'required|string|max:1000',
         ]);
 
-        $voidedPayroll = $this->payrollService->void($payroll, $request->note, Auth::id());
+        $this->payrollService->void($payroll, $request->note, Auth::id());
 
-        return $this->successResponse($voidedPayroll, 'Payroll voided successfully');
+        return $this->successResponse(null, 'Payroll voided successfully');
     }
 
     public function generateSlip(Payroll $payroll)

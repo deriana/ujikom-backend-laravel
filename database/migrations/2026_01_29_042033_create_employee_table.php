@@ -28,7 +28,7 @@ return new class extends Migration
                 ->constrained('employees')
                 ->nullOnDelete();
 
-            // Employee status (0=permanent, 1=contract, 2=intern, resigned handled by resign_date)
+            // Employee status (0=permanent, 1=contract, 2=intern, 3=probation, resigned handled by resign_date)
             $table->tinyInteger('employee_status')->default(3);
 
             // Contract details (specifically for contract/intern)

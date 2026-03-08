@@ -1,10 +1,10 @@
-serHello {{ $user->name }},
+Hello {{ $user->name }},
 
-Thanks for signing up. Please verify your email address by clicking the link below. This link will expire in 24 hours.
+Your HRIS account has been successfully created by the system. Please activate your email to start accessing attendance features, payslips, and other employment data through the link below:
 
-Verify Email Address: {{ $url }}
+Activate Account Now: {{ $url }}
 
-If you did not create an account, no further action is required.
+For security reasons, this activation link will expire in 24 hours. If you feel you should not have received this email, please contact the IT or HR department.
 
 Regards,
-{{ config('app.name') }}
+{{ config('app.name') }} Team

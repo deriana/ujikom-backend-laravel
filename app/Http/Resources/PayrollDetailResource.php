@@ -21,8 +21,8 @@ class PayrollDetailResource extends JsonResource
             'uuid' => $this->uuid,
             'status' => [
                 'code' => $this->status,
-                'label' => $this->isDraft() ? 'Draft' : 'Finalized',
-                'is_editable' => $this->isDraft(),
+                'label' => $this->getStatusLabel(),
+                'is_editable' => $this->isEditable(),
             ],
             'finalized_at' => $this->finalized_at,
 
