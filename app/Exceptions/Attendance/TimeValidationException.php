@@ -2,6 +2,7 @@
 
 namespace App\Exceptions\Attendance;
 
+use App\Models\Leave;
 use Carbon\Carbon;
 
 class TimeValidationException extends AttendanceException
@@ -29,6 +30,17 @@ class TimeValidationException extends AttendanceException
             'reason' => 'clock_out_too_early',
             'time' => $now->toTimeString(),
             'limit' => $minTime->toTimeString()
+        ]);
+    }
+
+    public static function onFullLeave(Leave $leave): self
+    {
+        return new self('You cannot record attendance. You have an approved Full Leave for today.', [
+            'reason' => 'on_full_leave',
+            'leave_type' => $leave->leaveType?->name,
+            'date_start' => $leave->date_start->toDateString(),
+            'date_end' => $leave->date_end->toDateString(),
+            'is_half_day' => $leave->is_half_day ? 'half_day' : 'full_day'
         ]);
     }
 }
