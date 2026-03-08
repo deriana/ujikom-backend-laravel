@@ -26,7 +26,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        if (Schema::hasTable('settings')) {
+        if (! app()->runningInConsole() && Schema::hasTable('settings')) {
             $generalSetting = Setting::where('key', 'general')->first();
 
             if ($generalSetting && isset($generalSetting->values['site_name'])) {

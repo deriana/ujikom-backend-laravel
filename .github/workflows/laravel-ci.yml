@@ -27,13 +27,18 @@ jobs:
       uses: shivammathur/setup-php@v2
       with:
         php-version: '8.3'
-        extensions: mbstring, bcmath, gd, mysql
+        extensions: mbstring, bcmath, gd, mysql, dom, curl, libxml, mbstring, zip
 
     - name: Install Dependencies
       run: composer install --prefer-dist --no-ansi --no-interaction --no-progress --no-scripts
 
     - name: Copy .env
       run: php -r "file_exists('.env') || copy('.env.example', '.env');"
+
+    - name: Update .env for CI
+      run: |
+        sed -i 's/DB_DATABASE=laravel/DB_DATABASE=testing/g' .env
+        sed -i 's/DB_PASSWORD=/DB_PASSWORD=/g' .env
 
     - name: Generate key
       run: php artisan key:generate
@@ -45,4 +50,7 @@ jobs:
         DB_PORT: 3306
         DB_DATABASE: testing
         DB_USERNAME: root
-      run: php artisan migrate && php artisan test
+        DB_PASSWORD: ""
+      run: |
+        php artisan migrate --force
+        php artisan test
