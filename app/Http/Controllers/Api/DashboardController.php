@@ -11,12 +11,24 @@ use App\Models\Leave;
 use App\Models\Overtime;
 use App\Models\Payroll;
 use App\Models\Setting;
+use App\Services\Attendance\Validators\TimeValidator;
+use App\Services\WorkdayService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 class DashboardController extends Controller
 {
+    protected TimeValidator $timeValidator;
+
+    protected WorkdayService $workdayService;
+
+    public function __construct(TimeValidator $timeValidator, WorkdayService $workdayService)
+    {
+        $this->timeValidator = $timeValidator;
+        $this->workdayService = $workdayService;
+    }
+
     public function getAdminDashboard(Request $request)
     {
         // Filter Tanggal (Default hari ini)
@@ -280,6 +292,14 @@ class DashboardController extends Controller
             ->take(5)
             ->values();
 
+        // 4. Ambil jadwal Kerja
+
+        $today = Carbon::today();
+
+        $workSchedule = $this->timeValidator->getEmployeeScheduleTimes($employee, $today);
+
+        $isWorkday = $this->workdayService->isWorkday($today);
+
         return $this->successResponse([
             'profile' => $profile,
             'personal_stats' => [
@@ -305,6 +325,15 @@ class DashboardController extends Controller
                 'overtime' => $overtimeLogs,
                 'leave' => $leaveLogs,
                 'salary' => $salaryLogs,
+            ],
+            'today_schedule' => [
+                'date' => $today->toDateString(),
+                'is_workday' => $isWorkday,
+                'label' => $workSchedule['label'] ?? 'Standard Office Hours',
+                'work_start' => $workSchedule['work_start_time']->format('H:i'),
+                'work_end' => $workSchedule['work_end_time']->format('H:i'),
+                'tolerance' => $workSchedule['late_tolerance_minutes'] . ' min',
+                'must_at_office' => (bool) $workSchedule['requires_office_location'],
             ],
         ], 'Employee dashboard data fetched successfully');
     }

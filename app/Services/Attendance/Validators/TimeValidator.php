@@ -146,11 +146,13 @@ class TimeValidator
      */
     public function getEmployeeScheduleTimes(Employee $employee, Carbon $date): array
     {
+        $dateStr = $date->toDateString();
+
         // -----------------------------
         // Layer 1: Shift override
         // -----------------------------
         $activeShift = $employee->shifts()
-            ->where('shift_date', $date->toDateString())
+            ->where('shift_date', $dateStr)
             ->with('shiftTemplate')
             ->first();
 
@@ -158,25 +160,27 @@ class TimeValidator
             $shift = $activeShift->shiftTemplate;
 
             return [
-                'work_start_time' => Carbon::parse($shift->start_time),
-                'work_end_time' => Carbon::parse($shift->end_time),
-                'late_tolerance_minutes' => $shift->late_tolerance_minutes ?? 10,
-                'requires_office_location' => $shift->requires_office_location ?? false,
+                'label' => $shift->name,
+                'work_start_time' => Carbon::parse($dateStr.' '.$shift->start_time->format('H:i:s')),
+                'work_end_time' => Carbon::parse($dateStr.' '.$shift->end_time->format('H:i:s')),
+                'late_tolerance_minutes' => (int) ($shift->late_tolerance_minutes ?? 10),
+                'requires_office_location' => (bool) ($shift->requires_office_location ?? true),
             ];
         }
 
         // -----------------------------
         // Layer 2: WorkSchedule default
         // -----------------------------
-        $activeSchedule = $employee->activeWorkSchedule($date->toDateString())->first();
+        $activeSchedule = $employee->activeWorkSchedule($dateStr)->first();
         if ($activeSchedule) {
             $ws = $activeSchedule->workSchedule;
 
             return [
-                'work_start_time' => Carbon::parse($ws->work_start_time),
-                'work_end_time' => Carbon::parse($ws->work_end_time),
-                'requires_office_location' => $ws->requires_office_location,
-                'late_tolerance_minutes' => $ws->late_tolerance_minutes ?? $this->getDefaultLateTolerance(),
+                'label' => $ws->name,
+                'work_start_time' => Carbon::parse($dateStr.' '.$ws->work_start_time),
+                'work_end_time' => Carbon::parse($dateStr.' '.$ws->work_end_time),
+                'requires_office_location' => (bool) ($ws->requires_office_location ?? true),
+                'late_tolerance_minutes' => (int) ($ws->late_tolerance_minutes ?? $this->getDefaultLateTolerance()),
             ];
         }
 
@@ -186,10 +190,11 @@ class TimeValidator
         $setting = Setting::where('key', 'attendance')->first()?->values ?? [];
 
         return [
-            'work_start_time' => Carbon::createFromFormat('H:i', $setting['work_start_time'] ?? '09:00'),
-            'work_end_time' => Carbon::createFromFormat('H:i', $setting['work_end_time'] ?? '17:00'),
+            'label' => 'Standard Work Schedule',
+            'work_start_time' => Carbon::parse($dateStr.' '.($setting['work_start_time'] ?? '09:00')),
+            'work_end_time' => Carbon::parse($dateStr.' '.($setting['work_end_time'] ?? '17:00')),
             'requires_office_location' => true,
-            'late_tolerance_minutes' => $setting['late_tolerance_minutes'] ?? 10,
+            'late_tolerance_minutes' => (int) ($setting['late_tolerance_minutes'] ?? 10),
         ];
     }
 
