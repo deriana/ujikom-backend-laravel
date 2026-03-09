@@ -70,7 +70,7 @@ class TimeValidator
 
         $maxEarlyMinutes = 120;
         if ($now->lt($workStart->copy()->subMinutes($maxEarlyMinutes))) {
-            throw new AttendanceException('Belum waktunya absen.');
+            throw new AttendanceException('It is not time to clock in yet. Work starts at ' . $workStart->format('H:i'));
         }
 
         $lateTolerance = (int) ($times['late_tolerance_minutes'] ?? 10);

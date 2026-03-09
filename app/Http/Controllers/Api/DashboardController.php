@@ -11,10 +11,12 @@ use App\Models\Leave;
 use App\Models\Overtime;
 use App\Models\Payroll;
 use App\Models\Setting;
+use App\Enums\UserRole;
 use App\Services\Attendance\Validators\TimeValidator;
 use App\Services\WorkdayService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class DashboardController extends Controller
@@ -53,6 +55,16 @@ class DashboardController extends Controller
                     ->whereDate('date_end', '>=', $date);
             })
             ->count();
+
+        // Not Done
+
+        // $directureIsLeave = Leave::approved()
+        //     ->whereHas('employee.user', function ($query) {
+        //         $query->where('role', UserRole::DIRECTOR);
+        //     })
+        //     ->whereDate('date_start', '<=', $date)
+        //     ->whereDate('date_end', '>=', $date)
+        //     ->exists();
 
         $rekapKehadiran = [
             'hadir' => $attendanceToday->where('status', 'present')->count(),
@@ -112,9 +124,18 @@ class DashboardController extends Controller
             $chartData['absent'][] = $monthlyAttendance->get($m)->absent ?? 0;
         }
 
+        // Lokasi Office
+        $geoSetting = Setting::where('key', 'geo_fencing')->first();
+        $officeLocation = [
+            'lat' => $geoSetting->values['office_latitude'] ?? -6.200000,
+            'lng' => $geoSetting->values['office_longitude'] ?? 106.816666,
+            'radius_meters' => $geoSetting->values['office_radius_meters'] ?? 100,
+        ];
+
         return $this->successResponse([
             'employee_stats' => $statsKaryawan,
             'attendance_today' => $rekapKehadiran,
+            'office_location' => $officeLocation,
             'leave_summary' => $ringkasanCuti,
             'pending_tasks' => $pendingApprovals,
             'map_locations' => $mapLocations,
@@ -332,7 +353,7 @@ class DashboardController extends Controller
                 'label' => $workSchedule['label'] ?? 'Standard Office Hours',
                 'work_start' => $workSchedule['work_start_time']->format('H:i'),
                 'work_end' => $workSchedule['work_end_time']->format('H:i'),
-                'tolerance' => $workSchedule['late_tolerance_minutes'] . ' min',
+                'tolerance' => $workSchedule['late_tolerance_minutes'].' min',
                 'must_at_office' => (bool) $workSchedule['requires_office_location'],
             ],
         ], 'Employee dashboard data fetched successfully');
