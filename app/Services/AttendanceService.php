@@ -15,6 +15,7 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class AttendanceService
 {
@@ -180,9 +181,16 @@ class AttendanceService
             }
 
             // 2. Validate geographical location and workday status
-            $this->geoValidator->validate((float) ($data['latitude'] ?? 0), (float) ($data['longitude'] ?? 0));
             $today = Carbon::today();
-            $this->timeValidator->validateWorkday($today);
+            $this->timeValidator->validateWorkday($today, $employee);
+            $scheduleTimes = $this->timeValidator->getEmployeeScheduleTimes($employee, $today);
+            $isRequired = $scheduleTimes['requires_office_location'];
+
+            $this->geoValidator->validate(
+                (float) ($data['latitude'] ?? 0),
+                (float) ($data['longitude'] ?? 0),
+                (bool) $isRequired
+            );
 
             // 3. Retrieve or create the attendance record for today
             $attendance = Attendance::firstOrCreate(['employee_id' => $employee->id, 'date' => $today], ['status' => 'present']);
@@ -234,7 +242,6 @@ class AttendanceService
 
         } catch (Exception $e) {
             DB::rollBack();
-            // Log generic system errors
             $this->logger->logFailure('System Error: '.$e->getMessage(), ['user_agent' => $userAgent]);
 
             return [

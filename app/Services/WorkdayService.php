@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Holiday;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Service class to determine if a specific date is a valid working day.

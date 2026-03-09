@@ -7,6 +7,7 @@ use App\Exceptions\Attendance\AttendanceException;
 use App\Exceptions\Attendance\TimeValidationException;
 use App\Models\EarlyLeave;
 use App\Models\Employee;
+use App\Models\Leave;
 use App\Models\Setting;
 use App\Services\WorkdayService;
 use Carbon\Carbon;
@@ -29,32 +30,37 @@ class TimeValidator
     /**
      * Validate if the given date is a valid workday for the employee.
      *
-     * @param Carbon $date
-     * @param Employee|null $employee
      * @throws TimeValidationException
      */
     public function validateWorkday(Carbon $date, ?Employee $employee = null): void
     {
-        if ($employee) {
-            $activeSchedule = $employee->activeWorkSchedule($date->toDateString())->first();
-            $activeShift = $employee->employeeShifts()->where('shift_date', $date->toDateString())->first();
+        if (! $this->workdayService->isWorkday($date)) {
+            throw TimeValidationException::notWorkday($date);
+        }
 
-            if (! $activeShift && ! $activeSchedule) {
-                throw TimeValidationException::notWorkday($date);
-            }
-        } else {
-            if (! $this->workdayService->isWorkday($date)) {
-                throw TimeValidationException::notWorkday($date);
+        if ($employee) {
+            $approvedLeave = $this->getApprovedLeave($employee, $date);
+            if ($approvedLeave && ! $approvedLeave->is_half_day) {
+                throw TimeValidationException::onFullLeave($approvedLeave);
             }
         }
     }
 
     /**
+     * Get approved leave for the employee on a specific date.
+     */
+    private function getApprovedLeave(Employee $employee, Carbon $date): ?Leave
+    {
+        return Leave::where('employee_id', $employee->id)
+            ->where('approval_status', ApprovalStatus::APPROVED->value)
+            ->whereDate('date_start', '<=', $date->toDateString())
+            ->whereDate('date_end', '>=', $date->toDateString())
+            ->first();
+    }
+
+    /**
      * Validate the clock-in window and determine attendance status.
      *
-     * @param Employee $employee
-     * @param Carbon $now
-     * @return array
      * @throws AttendanceException
      */
     public function validateClockInWindow(Employee $employee, Carbon $now): array
@@ -62,25 +68,21 @@ class TimeValidator
         $times = $this->getEmployeeScheduleTimes($employee, $now);
         $workStart = $times['work_start_time'];
 
-        // 1. Check if it's too early (e.g., cannot clock in more than 2 hours before shift)
-        $maxEarlyMinutes = 120; // 2 hours
+        $maxEarlyMinutes = 120;
         if ($now->lt($workStart->copy()->subMinutes($maxEarlyMinutes))) {
-            throw new AttendanceException(
-                'It is not time to clock in yet. Your shift starts at '.$workStart->format('H:i'),
-                ['reason' => 'too_early_for_clockin']
-            );
+            throw new AttendanceException('Belum waktunya absen.');
         }
 
-        // 2. Tolerance Configuration
         $lateTolerance = (int) ($times['late_tolerance_minutes'] ?? 10);
         $absentThreshold = (int) ($times['absent_threshold_minutes'] ?? 60);
 
-        // 3. Calculate difference
-        $diffMinutes = $workStart->diffInMinutes($now, false);
-        $lateMinutes = max(0, $diffMinutes);
+        $actualDiff = $workStart->diffInMinutes($now, false);
+        $actualDiff = max(0, $actualDiff);
 
-        $isLate = $lateMinutes > $lateTolerance;
-        $isAbsent = $lateMinutes >= $absentThreshold;
+        $lateMinutes = ($actualDiff > $lateTolerance) ? $actualDiff : 0;
+
+        $isLate = $lateMinutes > 0;
+        $isAbsent = $actualDiff >= $absentThreshold;
 
         return [
             'status' => $isAbsent ? 'absent' : ($isLate ? 'late' : 'on_time'),
@@ -92,10 +94,6 @@ class TimeValidator
 
     /**
      * Validate the clock-out window and calculate early leave or overtime.
-     *
-     * @param Employee $employee
-     * @param Carbon $now
-     * @return array
      */
     public function validateClockOutWindow(Employee $employee, Carbon $now): array
     {
@@ -190,7 +188,7 @@ class TimeValidator
         return [
             'work_start_time' => Carbon::createFromFormat('H:i', $setting['work_start_time'] ?? '09:00'),
             'work_end_time' => Carbon::createFromFormat('H:i', $setting['work_end_time'] ?? '17:00'),
-            'requires_office_location' => $setting['requires_office_location'] ?? false,
+            'requires_office_location' => true,
             'late_tolerance_minutes' => $setting['late_tolerance_minutes'] ?? 10,
         ];
     }
