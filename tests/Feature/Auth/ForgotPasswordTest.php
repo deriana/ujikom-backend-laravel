@@ -26,7 +26,7 @@ class ForgotPasswordTest extends TestCase
         $response->assertStatus(200);
         $response->assertJson(['message' => 'If this email is registered, a password reset link has been sent.']);
 
-        Mail::assertSent(PasswordResetMail::class, function ($mail) use ($user) {
+        Mail::assertQueued(PasswordResetMail::class, function ($mail) use ($user) {
             return $mail->hasTo($user->email);
         });
 
