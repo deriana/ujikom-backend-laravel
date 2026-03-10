@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ApprovalStatus;
 use App\Traits\Notificationable;
+use Carbon\CarbonPeriod;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
@@ -13,6 +14,7 @@ class Leave extends Model
     use Notifiable, Notificationable;
 
     public $customNotification = [];
+
     public $skipDefaultNotification = true;
 
     protected $fillable = [
@@ -32,6 +34,8 @@ class Leave extends Model
         'is_half_day' => 'boolean',
         'approval_status' => 'integer',
     ];
+
+    protected $appends = ['duration', 'duration_text'];
 
     protected static function boot()
     {
@@ -104,5 +108,47 @@ class Leave extends Model
     public function scopeRejected($query)
     {
         return $query->where('approval_status', ApprovalStatus::REJECTED->value);
+    }
+
+    public function getDurationAttribute()
+    {
+        if ($this->is_half_day) {
+            return 0.5;
+        }
+        if (! $this->date_start || ! $this->date_end) {
+            return 0;
+        }
+
+        $holidayDates = Holiday::where(function ($q) {
+            $q->whereBetween('start_date', [$this->date_start, $this->date_end])
+                ->orWhereBetween('end_date', [$this->date_start, $this->date_end]);
+        })
+            ->get()
+            ->flatMap(function ($holiday) {
+                if (! $holiday->end_date || $holiday->start_date->equalTo($holiday->end_date)) {
+                    return [$holiday->start_date->format('Y-m-d')];
+                }
+
+                return CarbonPeriod::create($holiday->start_date, $holiday->end_date)
+                    ->toArray();
+            })
+            ->map(function ($date) {
+                return is_string($date) ? $date : $date->format('Y-m-d');
+            })
+            ->unique()
+            ->toArray();
+
+        $duration = $this->date_start->diffInDaysFiltered(function ($date) use ($holidayDates) {
+            return ! $date->isWeekend() && ! in_array($date->format('Y-m-d'), $holidayDates);
+        }, $this->date_end) + 1;
+
+        return $duration > 0 ? $duration : 0;
+    }
+
+    public function getDurationTextAttribute()
+    {
+        $duration = $this->getDurationAttribute();
+
+        return $duration.($duration > 1 ? ' Days' : ' Day');
     }
 }

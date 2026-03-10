@@ -52,8 +52,18 @@ class LeaveResource extends JsonResource
                 'delete' => $user->can('delete', $this->resource),
                 'approve' => $canApprove,
             ],
+            'approval_levels' => $this->approvals->map(function ($approval) {
+                return [
+                    'level' => $approval->level,
+                    'status' => $approval->status,
+                    'nama_approver' => $approval->approver->user->name,
+                ];
+            }),
+            'current_level' => $this->approvals->max('level'),
             'approval_status' => $this->approval_status,
             'is_half_day' => $this->is_half_day,
+            'duration' => $this->duration,
+            'duration_label' => $this->duration_text,
             'next_approver' => optional($this->nextApprover())->name,
         ];
     }
