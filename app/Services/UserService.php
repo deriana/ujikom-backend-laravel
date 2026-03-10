@@ -16,7 +16,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Str;
 
 class UserService
 {
@@ -581,7 +580,6 @@ class UserService
     /**
      * Get all employee leave balances for a given year.
      *
-     * @param int|null $year
      * @return \Illuminate\Database\Eloquent\Collection
      */
     public function getEmployeeLeaveBalances(?int $year = null)
@@ -598,10 +596,32 @@ class UserService
             'leaveBalances.leaveType:id,name,is_unlimited',
             'media',
         ])
-        ->active() // Only active employees
-        ->whereHas('user', function ($query) {
-            $query->where('system_reserve', false);
-        })
-        ->get();
+            ->active() // Only active employees
+            ->whereHas('user', function ($query) {
+                $query->where('system_reserve', false);
+            })
+            ->get();
+    }
+
+    /**
+     * Get self employee leave balances
+     *
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getMyLeaveBalances()
+    {
+        $year = Carbon::now()->year;
+
+        return Employee::with([
+            'user:id,name,email',
+            'position:id,name',
+            'media',
+            'leaveBalances' => function ($query) use ($year) {
+                $query->where('year', $year);
+            },
+            'leaveBalances.leaveType:id,name,is_unlimited',
+        ])
+            ->where('user_id', Auth::id())
+            ->first();
     }
 }

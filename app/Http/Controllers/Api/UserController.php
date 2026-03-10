@@ -11,8 +11,6 @@ use App\Http\Resources\EmployeeLiteResources;
 use App\Http\Resources\ManagerResource;
 use App\Http\Resources\UserDetailResource;
 use App\Http\Resources\UserResource;
-use App\Models\Employee;
-use App\Models\EmployeeLeaveBalance;
 use App\Models\User;
 use App\Services\UserService;
 use Illuminate\Http\JsonResponse;
@@ -279,13 +277,23 @@ class UserController extends Controller
         );
     }
 
-        public function getEmployeeLeaveBalances(): JsonResponse
+    public function getEmployeeLeaveBalances(): JsonResponse
     {
         $leave_balances = $this->userService->getEmployeeLeaveBalances();
 
         return $this->successResponse(
             EmployeeLeaveBalanceResource::collection($leave_balances),
             'LeaveBalances fetched successfully'
+        );
+    }
+
+    public function getMyLeaveBalances(): JsonResponse
+    {
+        $leave_balances = $this->userService->getMyLeaveBalances();
+
+        return $this->successResponse(
+            new EmployeeLeaveBalanceResource($leave_balances),
+            'My leave balances fetched successfully'
         );
     }
 }

@@ -104,6 +104,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::put('/change-password', [UserController::class, 'changePassword']);
         Route::put('/update-biometric', [UserController::class, 'updateBiometricDescriptors']);
         Route::get('/employee-leave-balances', [UserController::class, 'getEmployeeLeaveBalances']);
+        Route::get('/my-leave-balances', [UserController::class, 'getMyLeaveBalances']);
     });
     Route::apiResource('users', UserController::class);
     Route::prefix('divisions')->group(function () {
@@ -207,4 +208,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
 
     Route::get('/dashboard/admin', [DashboardController::class, 'getAdminDashboard']);
     Route::get('/dashboard/employee', [DashboardController::class, 'getEmployeeDashboard']);
+    Route::get('/mobile-home-data', [DashboardController::class, 'mobileHomePage']);
+    Route::get('/mobile-stats-data', [DashboardController::class, 'mobileStatsPage']);
+    Route::get('/mobile-daily-tracker-data', [DashboardController::class, 'mobileDailyTrackerPage']);
 });

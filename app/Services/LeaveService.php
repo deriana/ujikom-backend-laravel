@@ -592,8 +592,18 @@ class LeaveService
             'year' => \Carbon\Carbon::parse($leave->date_start)->year,
         ])->first();
 
-        if ($balance) {
-            $balance->useDays($days);
+        $isUnlimited = $leave->leaveType->is_unlimited ?? false;
+
+        if (!$isUnlimited) {
+            $balance = EmployeeLeaveBalance::where([
+                'employee_id' => $leave->employee_id,
+                'leave_type_id' => $leave->leave_type_id,
+                'year' => \Carbon\Carbon::parse($leave->date_start)->year,
+            ])->first();
+
+            if ($balance) {
+                $balance->useDays($days);
+            }
         }
     }
 
