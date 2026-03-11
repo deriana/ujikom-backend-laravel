@@ -29,7 +29,7 @@ class OvertimeResource extends JsonResource
             'uuid' => $this->uuid,
             'employee_name' => $this->employee->user->name ?? null,
             'employee_nik' => $this->employee->nik ?? null,
-            'date' => optional($this->attendance)->date,
+            'date' => $this->attendance?->date?->format('Y-m-d'),
             'duration_minutes' => $this->duration_minutes,
             'reason' => $this->reason,
             'status' => $this->status,
