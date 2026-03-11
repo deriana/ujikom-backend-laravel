@@ -19,7 +19,7 @@ return new class extends Migration
             $table->date('start_date');
             $table->date('end_date');
             $table->integer('days_taken');
-            $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
+            $table->tinyInteger('status')->default(0); // 0=PENDING, 1=APPROVED, 2=REJECTED
             $table->foreignId('created_by_id')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('updated_by_id')->nullable()->constrained('users')->nullOnDelete();
 

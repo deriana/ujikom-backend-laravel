@@ -80,7 +80,7 @@ class EmployeeWorkScheduleController extends Controller
     {
         $this->authorize('view', $employee_work_schedule);
 
-        $employee_work_schedule->load('allowances', 'creator');
+        $employee_work_schedule->load('creator');
 
         return $this->successResponse(
             new EmployeeWorkScheduleResource($employee_work_schedule),

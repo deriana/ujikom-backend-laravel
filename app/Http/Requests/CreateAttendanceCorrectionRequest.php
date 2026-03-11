@@ -31,8 +31,8 @@ class CreateAttendanceCorrectionRequest extends FormRequest
     {
         $rules = [
             'attendance_id' => ['required', 'exists:attendances,id'],
-            'clock_in_requested' => ['required', 'date'],
-            'clock_out_requested' => ['required', 'date', 'after:clock_in_requested'],
+            'clock_in_requested' => ['required', 'date_format:H:i'],
+            'clock_out_requested' => ['required', 'date_format:H:i'],
             'reason' => ['required', 'string', 'max:500'],
             'attachment' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
         ];

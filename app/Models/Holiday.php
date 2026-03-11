@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\Blameable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
@@ -14,7 +15,7 @@ use Illuminate\Support\Str;
  */
 class Holiday extends Model
 {
-    use Blameable;
+    use Blameable, HasFactory;
 
     /** @var array<int, string> Atribut yang dapat diisi secara massal */
     protected $fillable = [

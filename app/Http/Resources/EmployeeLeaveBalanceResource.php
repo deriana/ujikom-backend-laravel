@@ -50,7 +50,7 @@ class EmployeeLeaveBalanceResource extends JsonResource
                 'year'           => (int) $balance->year,
                 'total_days'     => (int) $balance->total_days,
                 'used_days'      => (int) $balance->used_days,
-                'remaining_days' => (int) $balance->remaining_days,
+                // 'remaining_days' => (int) $balance->remaining_days,
                 'is_unlimited'   => (bool) ($balance->leaveType?->is_unlimited ?? false),
             ];
         });
@@ -69,7 +69,7 @@ class EmployeeLeaveBalanceResource extends JsonResource
                     'year'           => $year,
                     'total_days'     => 0,
                     'used_days'      => 0,
-                    'remaining_days' => 0,
+                    // 'remaining_days' => 0,
                     'is_unlimited'   => true,
                 ]);
             }

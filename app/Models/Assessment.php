@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\Notificationable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
@@ -15,7 +16,7 @@ use Illuminate\Support\Str;
  */
 class Assessment extends Model
 {
-    use Notifiable, Notificationable;
+    use Notifiable, Notificationable, HasFactory;
 
     /** @var array Konfigurasi notifikasi kustom */
     public $customNotification = []; /**< Pengaturan notifikasi khusus untuk model ini */
@@ -29,8 +30,6 @@ class Assessment extends Model
         'evaluatee_id', /**< ID karyawan yang dinilai */
         'period', /**< Periode penilaian (format: YYYY-MM) */
         'note', /**< Catatan atau feedback tambahan */
-        'created_by_id', /**< ID user pembuat record */
-        'updated_by_id', /**< ID user pengubah terakhir */
     ];
 
     /** @var array<int, string> Atribut yang disembunyikan dari serialisasi JSON */

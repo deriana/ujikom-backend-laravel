@@ -24,6 +24,8 @@ class EmployeeLeaveBalance extends Model
         'used_days', /**< Jumlah hari cuti yang telah digunakan */
     ];
 
+    protected $appends = ['remaining_days'];
+
     /**
      * Relasi ke model Employee.
      *
@@ -51,7 +53,8 @@ class EmployeeLeaveBalance extends Model
      */
     public function getRemainingDaysAttribute()
     {
-        return $this->total_days - $this->used_days;
+        // Pastikan total_days dan used_days punya nilai default 0 jika null
+        return ($this->total_days ?? 0) - ($this->used_days ?? 0);
     }
 
     /**

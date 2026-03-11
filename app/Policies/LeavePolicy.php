@@ -91,9 +91,10 @@ class LeavePolicy
     public function delete(User $user, Leave $leave): bool
     {
         return $user->can('leave.destroy') &&
-               !$leave->system_reserve &&
-               $leave->status === ApprovalStatus::PENDING->value &&
-               $this->isOwnerOrStaff($user, $leave);
+            !$leave->system_reserve &&
+            // Ganti dari $leave->status menjadi $leave->approval_status
+            $leave->approval_status === ApprovalStatus::PENDING->value &&
+            $this->isOwnerOrStaff($user, $leave);
     }
 
     /**

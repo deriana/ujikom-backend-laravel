@@ -99,6 +99,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::delete('/force-delete/{uuid}', [UserController::class, 'forceDelete']);
         Route::put('terminate-employment/{uuid}', [UserController::class, 'terminateEmployment']);
         Route::put('change-password/{uuid}', [UserController::class, 'changePassword']);
+        Route::put('admin-change-password/{uuid}', [UserController::class, 'adminChangePassword']);
         Route::put('status/{uuid}', [UserController::class, 'status']);
         Route::get('/trashed', [UserController::class, 'getTrashed']);
         Route::post('/upload-profile-photo/{uuid}', [UserController::class, 'uploadProfilePhoto']);

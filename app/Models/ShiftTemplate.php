@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\Blameable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
@@ -15,7 +16,7 @@ use Illuminate\Support\Str;
  */
 class ShiftTemplate extends Model
 {
-    use Blameable, SoftDeletes;
+    use Blameable, SoftDeletes, HasFactory;
 
     /** @var array<int, string> Atribut yang dapat diisi secara massal */
     protected $fillable = [

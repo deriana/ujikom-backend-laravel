@@ -2,7 +2,10 @@
 
 namespace App\Models;
 
+use App\Traits\Notificationable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 
 /**
@@ -13,6 +16,16 @@ use Illuminate\Support\Str;
  */
 class AttendanceCorrection extends Model
 {
+    use HasFactory, Notifiable, Notificationable;
+
+    /** @var array Konfigurasi notifikasi kustom */
+    public $customNotification = []; /**< Pengaturan notifikasi khusus untuk model ini */
+
+    /** @var bool Status apakah melewati notifikasi default */
+    public $skipDefaultNotification = true; /**< Flag untuk menonaktifkan notifikasi standar Laravel */
+
+    /** @var array<int, string> Atribut yang dapat diisi secara massal */
+
     /** @var array<int, string> Atribut yang dapat diisi secara massal */
     protected $fillable = [
         'uuid', /**< Identifier unik (UUID) */
@@ -32,6 +45,8 @@ class AttendanceCorrection extends Model
     protected $casts = [
         'status' => 'integer', /**< Konversi status ke integer */
         'approved_at' => 'datetime', /**< Konversi waktu persetujuan ke objek Carbon */
+        'clock_in_requested' => 'datetime', /**< Konversi waktu jam masuk ke objek Carbon */
+        'clock_out_requested' => 'datetime', /**< Konversi waktu jam keluar ke objek Carbon */
     ];
 
     /** @var array<int, string> Atribut yang disembunyikan dari serialisasi JSON */
@@ -42,7 +57,7 @@ class AttendanceCorrection extends Model
     /**
      * Scope untuk memfilter pengajuan yang masih menunggu persetujuan.
      *
-     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
      * @return \Illuminate\Database\Eloquent\Builder
      */
     public function scopePending($query)
@@ -53,7 +68,7 @@ class AttendanceCorrection extends Model
     /**
      * Scope untuk memfilter pengajuan yang telah disetujui.
      *
-     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
      * @return \Illuminate\Database\Eloquent\Builder
      */
     public function scopeApproved($query)
@@ -64,7 +79,7 @@ class AttendanceCorrection extends Model
     /**
      * Scope untuk memfilter pengajuan yang ditolak.
      *
-     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
      * @return \Illuminate\Database\Eloquent\Builder
      */
     public function scopeRejected($query)

@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Traits\Blameable;
 use App\Traits\Notificationable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
@@ -17,7 +18,7 @@ use Illuminate\Support\Str;
  */
 class Payroll extends Model
 {
-    use Blameable, Notifiable, Notificationable;
+    use Blameable, Notifiable, Notificationable, HasFactory;
 
     /** @var array Konfigurasi notifikasi kustom */
     public $customNotification = []; /**< Pengaturan notifikasi khusus untuk model ini */

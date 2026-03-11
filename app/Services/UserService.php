@@ -364,24 +364,30 @@ use Illuminate\Support\Facades\Mail;
      * @param string $uuid UUID pengguna.
      * @return bool True jika berhasil dihapus permanen.
      */
+// app/Services/UserService.php
+
     public function forceDelete(string $uuid): bool
     {
         return DB::transaction(function () use ($uuid) {
 
-            // 1. Find the user including trashed ones
-            $user = User::withTrashed()->whereUuid($uuid)->firstOrFail();
+            // 1. Ambil user (termasuk yang sudah di-soft delete)
+            // Tambahkan with('employee') agar relasinya ikut terbawa
+            $user = User::withTrashed()->with('employee')->whereUuid($uuid)->firstOrFail();
 
             // 2. Set custom notification data
-            $user->employee->customNotification = [
-                'title' => 'Permanently Deleted Employee',
-                'message' => "Employee {$user->employee->user->name} (NIK: {$user->employee->nik}) has been permanently deleted.",
-            ];
+            if ($user->employee) {
+                $user->employee->customNotification = [
+                    'title' => 'Permanently Deleted Employee',
+                    // PERBAIKAN: Langsung ambil $user->name, jangan muter lewat relasi lagi
+                    'message' => "Employee {$user->name} (NIK: {$user->employee->nik}) has been permanently deleted.",
+                ];
 
-            // 3. Force delete both records
-            $user->employee()->withTrashed()->forceDelete();
-            $user->forceDelete();
+                // 3. Force delete employee dulu
+                $user->employee()->withTrashed()->forceDelete();
+            }
 
-            return true;
+            // 4. Baru force delete user-nya
+            return $user->forceDelete();
         });
     }
 

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use App\Enums\ApprovalStatus;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 /**
  * Class LeaveApproval
@@ -14,6 +15,8 @@ use App\Enums\ApprovalStatus;
  */
 class LeaveApproval extends Model
 {
+    use HasFactory;
+
     /** @var array<int, string> Atribut yang dapat diisi secara massal */
     protected $fillable = [
         'leave_id', /**< ID pengajuan cuti yang terkait */

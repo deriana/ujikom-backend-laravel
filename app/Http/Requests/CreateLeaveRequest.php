@@ -13,14 +13,14 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * Class CreateLeaveRequest
- * 
+ *
  * Request class untuk menangani validasi pengajuan cuti (Leave) karyawan.
  */
  class CreateLeaveRequest extends FormRequest
 {
     /**
      * Menentukan apakah pengguna memiliki izin untuk membuat request ini.
-     * 
+     *
      * @return bool
      */
     public function authorize()
@@ -30,7 +30,7 @@ use Illuminate\Support\Facades\Log;
 
     /**
      * Mendapatkan aturan validasi yang berlaku untuk request ini.
-     * 
+     *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
     public function rules(): array
@@ -56,7 +56,7 @@ use Illuminate\Support\Facades\Log;
 
     /**
      * Mengonfigurasi instance validator untuk logika validasi tambahan setelah aturan utama.
-     * 
+     *
      * @param \Illuminate\Validation\Validator $validator
      */
     public function withValidator($validator)
@@ -97,7 +97,7 @@ use Illuminate\Support\Facades\Log;
             $daysRequested = $this->calculateWorkDays(
                 $this->date_start,
                 $this->date_end,
-                $this->is_half_day,
+                (bool) $this->is_half_day,
                 $workdayService
             );
 
@@ -154,7 +154,7 @@ use Illuminate\Support\Facades\Log;
 
     /**
      * Menghitung jumlah hari kerja dalam rentang tanggal yang diajukan.
-     * 
+     *
      * @param string $start Tanggal mulai
      * @param string $end Tanggal selesai
      * @param bool $isHalfDay Status apakah cuti setengah hari

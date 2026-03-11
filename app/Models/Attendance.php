@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\Notificationable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 
@@ -14,7 +15,7 @@ use Illuminate\Notifications\Notifiable;
  */
 class Attendance extends Model
 {
-    use Notifiable, Notificationable;
+    use Notifiable, Notificationable, HasFactory;
 
     /** @var array Konfigurasi notifikasi kustom */
     public $customNotification = []; /**< Pengaturan notifikasi khusus untuk model ini */

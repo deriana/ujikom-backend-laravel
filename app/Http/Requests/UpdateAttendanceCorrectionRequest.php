@@ -29,8 +29,8 @@ class UpdateAttendanceCorrectionRequest extends FormRequest
         return [
             'reason' => 'required|string',
             'attachment' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
-            'clock_in_requested' => 'nullable|date',
-            'clock_out_requested' => 'nullable|date|after:clock_in_requested',
+            'clock_in_requested' => 'nullable|date_format:H:i',
+            'clock_out_requested' => 'nullable|date_format:H:i',
         ];
     }
 }

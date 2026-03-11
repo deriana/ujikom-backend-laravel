@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\ApprovalStatus;
 use App\Traits\Notificationable;
 use Carbon\CarbonPeriod;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
@@ -17,7 +18,7 @@ use Illuminate\Support\Str;
  */
 class Leave extends Model
 {
-    use Notifiable, Notificationable;
+    use Notifiable, Notificationable, HasFactory;
 
     /** @var array Konfigurasi notifikasi kustom */
     public $customNotification = []; /**< Pengaturan notifikasi khusus untuk model ini */

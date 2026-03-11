@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\EmployeeStatus;
 use App\Traits\Blameable;
 use App\Traits\Notificationable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Notifications\Notifiable;
@@ -19,7 +20,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
  */
 class Employee extends Model implements HasMedia
 {
-    use Blameable, InteractsWithMedia, Notifiable, Notificationable, SoftDeletes;
+    use Blameable, InteractsWithMedia, Notifiable, Notificationable, SoftDeletes, HasFactory;
 
     /** @var array<int, string> Atribut yang dapat diisi secara massal */
     protected $fillable = [
@@ -92,7 +93,7 @@ class Employee extends Model implements HasMedia
                     [
                         'total_days' => $type->default_days,
                         'used_days' => 0,
-                        'remaining_days' => $type->default_days,
+                        // 'remaining_days' => $type->default_days,
                     ]
                 );
             }

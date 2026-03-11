@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Traits\Blameable;
 use App\Traits\Notificationable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
@@ -16,7 +17,7 @@ use Illuminate\Support\Str;
  */
 class EmployeeShift extends Model
 {
-    use Blameable, Notifiable, Notificationable;
+    use Blameable, Notifiable, Notificationable, HasFactory;
 
     /** @var array Konfigurasi notifikasi kustom */
     public $customNotification = []; /**< Pengaturan notifikasi khusus untuk model ini */
@@ -24,7 +25,6 @@ class EmployeeShift extends Model
     /** @var array<int, string> Atribut yang dapat diisi secara massal */
     protected $fillable = [
         'uuid', /**< Identifier unik (UUID) */
-        'name', /**< Nama atau label penugasan shift */
         'employee_id', /**< ID karyawan yang ditugaskan */
         'shift_template_id', /**< ID template shift yang digunakan */
         'shift_date', /**< Tanggal pelaksanaan shift */

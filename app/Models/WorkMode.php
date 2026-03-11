@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -13,6 +14,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class WorkMode extends Model
 {
+    use HasFactory;
+
     /** @var array<int, string> Atribut yang dapat diisi secara massal */
     protected $fillable = [
         'name', /**< Nama mode kerja */

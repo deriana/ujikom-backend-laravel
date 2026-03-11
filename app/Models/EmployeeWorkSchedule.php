@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\PriorityEnum;
 use App\Traits\Blameable;
 use App\Traits\Notificationable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Notifications\Notifiable;
@@ -18,7 +19,7 @@ use Illuminate\Support\Str;
  */
 class EmployeeWorkSchedule extends Model
 {
-    use Blameable, Notifiable, Notificationable;
+    use Blameable, Notifiable, Notificationable, HasFactory;
 
     /** @var array Konfigurasi notifikasi kustom */
     public $customNotification = []; /**< Pengaturan notifikasi khusus untuk model ini */

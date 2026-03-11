@@ -209,7 +209,7 @@ class UserController extends Controller
         );
 
         return $this->successResponse(
-            new UserResource($user),
+            null,
             'Password Changed successfully'
         );
     }
