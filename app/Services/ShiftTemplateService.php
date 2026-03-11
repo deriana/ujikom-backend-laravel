@@ -6,10 +6,16 @@ use App\Models\ShiftTemplate;
 use Exception;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Class ShiftTemplateService
+ *
+ * Menangani logika bisnis untuk manajemen template shift kerja,
+ * termasuk perhitungan shift lintas hari (cross-day) dan validasi penggunaan.
+ */
 class ShiftTemplateService
 {
     /**
-     * Get all shift templates with creator and usage count.
+     * Mengambil semua template shift beserta pembuat dan jumlah penggunaannya.
      *
      * @return \Illuminate\Database\Eloquent\Collection
      */
@@ -23,9 +29,9 @@ class ShiftTemplateService
     }
 
     /**
-     * Store a new shift template.
+     * Menyimpan template shift baru ke dalam database.
      *
-     * @param array $data
+     * @param array $data Data template (name, start_time, end_time, dll).
      * @return ShiftTemplate
      */
     public function store(array $data): ShiftTemplate
@@ -49,10 +55,10 @@ class ShiftTemplateService
     }
 
     /**
-     * Update an existing shift template.
+     * Memperbarui data template shift yang sudah ada.
      *
-     * @param ShiftTemplate $shift
-     * @param array $data
+     * @param ShiftTemplate $shift Objek template shift yang akan diperbarui.
+     * @param array $data Data pembaruan.
      * @return ShiftTemplate
      * @throws Exception
      */
@@ -84,9 +90,9 @@ class ShiftTemplateService
     }
 
     /**
-     * Soft delete a shift template.
+     * Menghapus template shift secara lunak (soft delete).
      *
-     * @param ShiftTemplate $shift
+     * @param ShiftTemplate $shift Objek template shift yang akan dihapus.
      * @return bool
      * @throws Exception
      */
@@ -110,9 +116,9 @@ class ShiftTemplateService
     }
 
     /**
-     * Restore a soft-deleted shift template.
+     * Memulihkan template shift yang telah dihapus lunak.
      *
-     * @param string $uuid
+     * @param string $uuid UUID template shift.
      * @return ShiftTemplate
      * @throws Exception
      */
@@ -136,9 +142,9 @@ class ShiftTemplateService
     }
 
     /**
-     * Permanently delete a shift template.
+     * Menghapus template shift secara permanen dari database.
      *
-     * @param string $uuid
+     * @param string $uuid UUID template shift.
      * @return bool
      * @throws Exception
      */
@@ -162,7 +168,7 @@ class ShiftTemplateService
     }
 
     /**
-     * Get all soft-deleted shift templates.
+     * Mengambil semua daftar template shift yang telah dihapus lunak.
      *
      * @return \Illuminate\Database\Eloquent\Collection
      */
@@ -176,10 +182,10 @@ class ShiftTemplateService
     }
 
     /**
-     * Logic to determine if a shift ends on the next day.
+     * Logika untuk menentukan apakah shift berakhir pada hari berikutnya (melewati tengah malam).
      *
-     * @param string $start
-     * @param string $end
+     * @param string $start Waktu mulai.
+     * @param string $end Waktu selesai.
      * @return bool
      */
     private function calculateCrossDay(string $start, string $end): bool

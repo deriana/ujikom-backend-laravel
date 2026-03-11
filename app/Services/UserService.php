@@ -17,12 +17,18 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
-class UserService
+/**
+ * Class UserService
+ *
+ * Service class untuk menangani logika bisnis terkait manajemen pengguna (User) dan profil karyawan (Employee),
+ * termasuk pendaftaran, pembaruan data, terminasi, biometrik, dan saldo cuti.
+ */
+ class UserService
 {
     /**
-     * Get a list of users with role-based filtering.
+     * Mengambil daftar pengguna dengan pemfilteran berdasarkan peran.
      *
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @return \Illuminate\Support\Collection|\Illuminate\Database\Eloquent\Collection Koleksi data pengguna.
      */
     public function index()
     {
@@ -68,7 +74,11 @@ class UserService
     }
 
     /**
-     * Store a new user and their employee profile.
+     * Menyimpan pengguna baru beserta profil karyawannya.
+     *
+     * @param array $data Data input pengguna dan karyawan.
+     * @param int $creatorId ID pengguna yang membuat data.
+     * @return User Objek pengguna yang berhasil dibuat.
      */
     public function store(array $data, int $creatorId): User
     {
@@ -145,7 +155,10 @@ class UserService
     }
 
     /**
-     * Show details of a specific user.
+     * Menampilkan detail lengkap dari satu pengguna tertentu.
+     *
+     * @param User $user Objek pengguna.
+     * @return User Objek pengguna dengan relasi yang dimuat.
      */
     public function show(User $user)
     {
@@ -180,7 +193,13 @@ class UserService
     }
 
     /**
-     * Update an existing user and their employee profile.
+     * Memperbarui data pengguna dan profil karyawan yang sudah ada.
+     *
+     * @param User $user Objek pengguna yang akan diperbarui.
+     * @param array $data Data pembaruan.
+     * @param int $updaterId ID pengguna yang melakukan pembaruan.
+     * @return User Objek pengguna setelah diperbarui.
+     * @throws Exception Jika pengguna adalah cadangan sistem atau profil karyawan tidak ditemukan.
      */
     public function update(User $user, array $data, int $updaterId): User
     {
@@ -269,7 +288,11 @@ class UserService
     }
 
     /**
-     * Soft delete a user and their employee profile.
+     * Menghapus pengguna dan profil karyawannya secara lunak (soft delete).
+     *
+     * @param User $user Objek pengguna yang akan dihapus.
+     * @return bool True jika berhasil dihapus.
+     * @throws Exception Jika pengguna adalah cadangan sistem atau sudah dihapus.
      */
     public function delete(User $user): bool
     {
@@ -299,7 +322,11 @@ class UserService
     }
 
     /**
-     * Restore a soft-deleted user and their employee profile.
+     * Memulihkan pengguna dan profil karyawan yang telah dihapus lunak.
+     *
+     * @param string $uuid UUID pengguna.
+     * @return User Objek pengguna yang dipulihkan.
+     * @throws Exception Jika pengguna tidak dalam status terhapus.
      */
     public function restore(string $uuid): User
     {
@@ -332,7 +359,10 @@ class UserService
     }
 
     /**
-     * Permanently delete a user and their employee profile.
+     * Menghapus pengguna dan profil karyawannya secara permanen dari database.
+     *
+     * @param string $uuid UUID pengguna.
+     * @return bool True jika berhasil dihapus permanen.
      */
     public function forceDelete(string $uuid): bool
     {
@@ -356,7 +386,14 @@ class UserService
     }
 
     /**
-     * Terminate an employee's employment.
+     * Mengakhiri hubungan kerja (terminasi) seorang karyawan.
+     *
+     * @param string $uuid UUID pengguna.
+     * @param string $state Status terminasi (resigned/terminated).
+     * @param string|null $date Tanggal berhenti.
+     * @param int $adminId ID admin yang memproses aksi.
+     * @return User Objek pengguna yang telah dinonaktifkan.
+     * @throws Exception Jika profil karyawan tidak ditemukan atau sudah tidak aktif.
      */
     public function terminateEmployment(string $uuid, string $state, ?string $date, int $adminId): User
     {
@@ -396,7 +433,13 @@ class UserService
     }
 
     /**
-     * Change the authenticated user's password.
+     * Mengubah kata sandi pengguna yang sedang terautentikasi.
+     *
+     * @param User $user Objek pengguna.
+     * @param string $currentPassword Kata sandi saat ini.
+     * @param string $newPassword Kata sandi baru.
+     * @return void
+     * @throws Exception Jika kata sandi saat ini salah.
      */
     public function changePassword(User $user, string $currentPassword, string $newPassword): void
     {
@@ -417,7 +460,11 @@ class UserService
     }
 
     /**
-     * Change a user's password by an administrator.
+     * Mengubah kata sandi pengguna oleh administrator.
+     *
+     * @param string $uuid UUID pengguna.
+     * @param string $newPassword Kata sandi baru.
+     * @return void
      */
     public function adminChangePassword(string $uuid, string $newPassword): void
     {
@@ -437,7 +484,13 @@ class UserService
     }
 
     /**
-     * Toggle a user's active status.
+     * Mengubah status aktif/nonaktif akun pengguna.
+     *
+     * @param string $uuid UUID pengguna.
+     * @param bool $isActive Status aktif baru.
+     * @param int $adminId ID admin yang melakukan aksi.
+     * @return User Objek pengguna dengan status terbaru.
+     * @throws Exception Jika mencoba mengaktifkan kembali karyawan yang sudah diterminasi.
      */
     public function status(string $uuid, bool $isActive, int $adminId): User
     {
@@ -473,9 +526,9 @@ class UserService
     }
 
     /**
-     * Get all soft-deleted users.
+     * Mengambil semua daftar pengguna yang telah dihapus lunak.
      *
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @return \Illuminate\Database\Eloquent\Collection Koleksi pengguna yang terhapus.
      */
     public function getTrashed()
     {
@@ -492,10 +545,13 @@ class UserService
     }
 
     /**
-     * Upload and set a profile photo for a user.
+     * Mengunggah dan mengatur foto profil untuk pengguna.
      *
-     * @param  mixed  $photoFile
-     * @param  string  $uuid
+     * @param User $user Objek pengguna.
+     * @param mixed $photoFile File gambar yang diunggah.
+     * @param string $uuid UUID pengguna.
+     * @return User Objek pengguna dengan foto profil baru.
+     * @throws Exception Jika profil karyawan tidak ditemukan.
      */
     public function uploadProfilePhoto(User $user, $photoFile, $uuid): User
     {
@@ -523,9 +579,9 @@ class UserService
     }
 
     /**
-     * Get a list of users with management roles.
+     * Mengambil daftar pengguna yang memiliki peran manajerial (Director/Manager).
      *
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @return \Illuminate\Database\Eloquent\Collection Koleksi data manajer.
      */
     public function getManagers()
     {
@@ -541,9 +597,9 @@ class UserService
     }
 
     /**
-     * Get a simplified list of employees.
+     * Mengambil daftar karyawan dalam format ringkas dengan filter peran.
      *
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @return \Illuminate\Database\Eloquent\Collection Koleksi data karyawan ringkas.
      */
     public function getEmployeesLite()
     {
@@ -574,6 +630,11 @@ class UserService
         return $query->get();
     }
 
+    /**
+     * Mengambil daftar semua karyawan non-sistem (tanpa filter manajer).
+     *
+     * @return \Illuminate\Database\Eloquent\Collection Koleksi data karyawan.
+     */
     public function getEmployeeLiteWithoutDirectur()
     {
         // 1. Retrieve non-system employees with basic user info
@@ -583,7 +644,12 @@ class UserService
     }
 
     /**
-     * Update biometric descriptors for a user.
+     * Memperbarui deskriptor biometrik wajah untuk seorang pengguna.
+     *
+     * @param User $user Objek pengguna.
+     * @param array $descriptors Array berisi data vektor fitur wajah.
+     * @return void
+     * @throws Exception Jika profil karyawan tidak ditemukan.
      */
     public function updateBiometricDescriptors(User $user, array $descriptors): void
     {
@@ -607,9 +673,10 @@ class UserService
     }
 
     /**
-     * Get all employee leave balances for a given year.
+     * Mengambil semua saldo cuti karyawan untuk tahun tertentu.
      *
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @param int|null $year Tahun saldo (default tahun berjalan).
+     * @return \Illuminate\Database\Eloquent\Collection Koleksi data saldo cuti karyawan.
      */
     public function getEmployeeLeaveBalances(?int $year = null)
     {
@@ -633,9 +700,9 @@ class UserService
     }
 
     /**
-     * Get self employee leave balances
+     * Mengambil saldo cuti milik pengguna yang sedang login.
      *
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @return Employee|null Objek karyawan beserta saldo cutinya.
      */
     public function getMyLeaveBalances()
     {

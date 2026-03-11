@@ -6,10 +6,16 @@ use App\Models\AssessmentCategory;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
+/**
+ * Class AssessmentCategoryService
+ *
+ * Menangani logika bisnis untuk kategori penilaian (assessment category),
+ * termasuk operasi CRUD dan pengelolaan status aktif.
+ */
 class AssessmentCategoryService
 {
     /**
-     * Get all assessment categories with their creator information.
+     * Mengambil semua kategori penilaian beserta informasi pembuatnya.
      *
      * @return \Illuminate\Database\Eloquent\Collection
      */
@@ -22,10 +28,10 @@ class AssessmentCategoryService
     }
 
     /**
-     * Store a new assessment category record.
+     * Menyimpan data kategori penilaian baru ke dalam database.
      *
-     * @param array $data
-     * @return AssessmentCategory
+     * @param array $data Data kategori (name, description, is_active).
+     * @return AssessmentCategory Objek kategori yang berhasil dibuat.
      */
     public function store(array $data): AssessmentCategory
     {
@@ -40,11 +46,11 @@ class AssessmentCategoryService
     }
 
     /**
-     * Update an existing assessment category record.
+     * Memperbarui data kategori penilaian yang sudah ada.
      *
-     * @param AssessmentCategory $assessmentCategory
-     * @param array $data
-     * @return AssessmentCategory
+     * @param AssessmentCategory $assessmentCategory Objek kategori yang akan diperbarui.
+     * @param array $data Data pembaruan.
+     * @return AssessmentCategory Objek kategori setelah diperbarui.
      */
     public function update(AssessmentCategory $assessmentCategory, array $data): AssessmentCategory
     {
@@ -61,10 +67,11 @@ class AssessmentCategoryService
     }
 
     /**
-     * Delete an assessment category record.
+     * Menghapus data kategori penilaian dari database.
      *
-     * @param AssessmentCategory $assessmentCategory
-     * @return bool
+     * @param AssessmentCategory $assessmentCategory Objek kategori yang akan dihapus.
+     * @return bool True jika berhasil dihapus.
+     * @throws Exception Jika kategori sudah digunakan dalam detail penilaian.
      */
     public function delete(AssessmentCategory $assessmentCategory): bool
     {
@@ -80,11 +87,11 @@ class AssessmentCategoryService
     }
 
     /**
-     * Toggle the active status of an assessment category.
+     * Mengubah status aktif/nonaktif dari kategori penilaian.
      *
-     * @param AssessmentCategory $assessmentCategory
-     * @param bool|null $status
-     * @return AssessmentCategory
+     * @param AssessmentCategory $assessmentCategory Objek kategori.
+     * @param bool|null $status Status baru (opsional, jika null maka akan di-toggle).
+     * @return AssessmentCategory Objek kategori dengan status terbaru.
      */
     public function toggleStatus(AssessmentCategory $assessmentCategory, ?bool $status = null): AssessmentCategory
     {

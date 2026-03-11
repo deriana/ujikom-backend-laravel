@@ -11,10 +11,18 @@ use Exception;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
-class AssessmentService
+/**
+ * Class AssessmentService
+ *
+ * Menangani logika bisnis untuk penilaian kinerja (performance assessment) karyawan,
+ * termasuk perhitungan skor per kategori, manajemen periode, dan integrasi notifikasi.
+ */
+ class AssessmentService
 {
     /**
-     * Get all assessments with related details.
+     * Mengambil daftar semua penilaian dengan filter berdasarkan peran pengguna.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection
      */
     public function index()
     {
@@ -35,7 +43,10 @@ class AssessmentService
     }
 
     /**
-     * Show details of a specific assessment.
+     * Menampilkan detail lengkap dari satu penilaian tertentu.
+     *
+     * @param Assessment $assessment Objek penilaian.
+     * @return Assessment
      */
     public function show(Assessment $assessment)
     {
@@ -48,9 +59,11 @@ class AssessmentService
     }
 
     /**
-     * Store a new assessment.
+     * Menyimpan data penilaian kinerja baru ke dalam database.
      *
-     * * @param array $data ['evaluatee_id', 'period', 'note', 'details' => [...]]
+     * @param array $data Data penilaian (evaluatee_nik, period, note, assessment_details).
+     * @return Assessment
+     * @throws Exception Jika penilaian untuk karyawan pada periode tersebut sudah ada atau NIK tidak valid.
      */
     public function store(array $data)
     {
@@ -97,33 +110,40 @@ class AssessmentService
     }
 
     /**
-     * Update existing assessment.
+     * Memperbarui data penilaian yang sudah ada.
+     *
+     * @param Assessment $assessment Objek penilaian yang akan diperbarui.
+     * @param array $data Data pembaruan.
+     * @return Assessment
      */
-   public function update(Assessment $assessment, array $data)
-{
-    return DB::transaction(function () use ($assessment, $data) {
-        // 1. Update data utama (Note)
-        $assessment->update([
-            'note' => $data['note'] ?? $assessment->note,
-        ]);
+    public function update(Assessment $assessment, array $data)
+    {
+        return DB::transaction(function () use ($assessment, $data) {
+            // 1. Update data utama (Note)
+            $assessment->update([
+                'note' => $data['note'] ?? $assessment->note,
+            ]);
 
-        // 2. Sync ulang details (Hapus yang lama, buat yang baru)
-        // Kita gunakan key 'assessment_details' sesuai yang dikirim frontend
-        if (!empty($data['assessment_details'])) {
-            $this->syncDetails($assessment, $data['assessment_details']);
-        }
+            // 2. Sync ulang details (Hapus yang lama, buat yang baru)
+            if (!empty($data['assessment_details'])) {
+                $this->syncDetails($assessment, $data['assessment_details']);
+            }
 
-        // 3. Send notification
-        $assessment->notifyCustom(
-            title: 'Assessment Updated',
-            message: 'The performance assessment for period '.Carbon::parse($assessment->period)->format('M Y').' has been updated.'
-        );
+            // 3. Send notification
+            $assessment->notifyCustom(
+                title: 'Assessment Updated',
+                message: 'The performance assessment for period '.Carbon::parse($assessment->period)->format('M Y').' has been updated.'
+            );
 
-        return $assessment;
-    });
-}
+            return $assessment;
+        });
+    }
+
     /**
-     * Sync Assessment Details (Skor)
+     * Menyinkronkan detail skor penilaian per kategori.
+     *
+     * @param Assessment $assessment Objek penilaian.
+     * @param array $details Array berisi category_uuid, score, dan bonus_salary.
      */
     protected function syncDetails(Assessment $assessment, array $details)
     {
@@ -145,7 +165,10 @@ class AssessmentService
     }
 
     /**
-     * Delete assessment.
+     * Menghapus data penilaian beserta detail skornya.
+     *
+     * @param Assessment $assessment Objek penilaian yang akan dihapus.
+     * @return bool
      */
     public function delete(Assessment $assessment): bool
     {

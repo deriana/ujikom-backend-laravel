@@ -18,19 +18,19 @@ class GenerateMonthlyPayroll extends Command
         {--payday=26 : Tanggal gajian}
         {--month= : Bulan payroll (1-12)}
         {--year= : Tahun payroll}
-    ';
+    '; /**< Nama dan signature command di terminal dengan opsi payday, month, dan year */
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Generate monthly payroll draft for active employees';
+    protected $description = 'Generate monthly payroll draft for active employees'; /**< Deskripsi singkat fungsi command */
 
     /**
-     * Execute the console command.
+     * Menjalankan logika command untuk membuat draf payroll bulanan bagi karyawan aktif.
      *
-     * @return int
+     * @return int Status keluar (0 untuk sukses, 1 untuk gagal)
      */
     public function handle(): int
     {

@@ -5,42 +5,49 @@ namespace App\Services;
 use App\Models\Setting;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Class SettingService
+ *
+ * Menangani logika bisnis untuk pengelolaan pengaturan sistem (settings),
+ * termasuk pengambilan data tunggal, banyak data, dan pembaruan konfigurasi.
+ */
 class SettingService
 {
     /**
-     * Get a specific setting by its key or create a default one if it doesn't exist.
+     * Mengambil pengaturan spesifik berdasarkan kuncinya atau membuat default jika tidak ada.
      *
-     * @param string $key
-     * @return Setting
+     * @param string $key Kunci pengaturan.
+     * @return Setting Objek model Setting.
      */
     public function get(string $key): Setting
     {
-        // 1. Retrieve the setting record by key or initialize a new one with empty values
+        // 1. Ambil catatan pengaturan berdasarkan kunci atau inisialisasi baru dengan nilai kosong
         return Setting::firstOrCreate(['key' => $key], ['values' => []]);
     }
 
     /**
-     * Get multiple settings by an array of keys.
+     * Mengambil banyak pengaturan berdasarkan array kunci.
      *
-     * @param array $keys
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @param array $keys Daftar kunci pengaturan.
+     * @return \Illuminate\Database\Eloquent\Collection Koleksi data pengaturan yang diindeks berdasarkan kunci.
      */
     public function getMany(array $keys)
     {
-        // 1. Fetch settings matching the provided keys and index them by key for easier access
+        // 1. Ambil pengaturan yang cocok dengan kunci yang diberikan dan indeks berdasarkan kunci untuk akses mudah
         return Setting::whereIn('key', $keys)->get()->keyBy('key');
     }
 
     /**
-     * Update or create a setting record with the provided values.
+     * Memperbarui atau membuat catatan pengaturan dengan nilai yang diberikan.
      *
-     * @param string $key
-     * @param array $values
+     * @param string $key Kunci pengaturan.
+     * @param array $values Data nilai pengaturan dalam bentuk array.
+     * @return Setting Objek pengaturan yang diperbarui atau dibuat.
      */
     public function update(string $key, array $values): Setting
     {
         return DB::transaction(function () use ($key, $values) {
-            // 1. Perform an update or create operation within a database transaction
+            // 1. Lakukan operasi update atau create di dalam transaksi database
             return Setting::updateOrCreate(
                 ['key' => $key],
                 ['values' => $values]

@@ -13,17 +13,30 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
+/**
+ * Class EarlyLeaveController
+ *
+ * Controller untuk mengelola pengajuan izin pulang cepat (Early Leave) oleh karyawan,
+ * mencakup proses pengajuan, pembaruan, pembatalan, persetujuan, dan pengunduhan lampiran.
+ */
 class EarlyLeaveController extends Controller
 {
-    protected EarlyLeaveService $earlyLeaveService;
+    protected EarlyLeaveService $earlyLeaveService; /**< Instance dari EarlyLeaveService untuk logika bisnis izin pulang cepat */
 
+    /**
+     * Membuat instance EarlyLeaveController baru.
+     *
+     * @param EarlyLeaveService $earlyLeaveService
+     */
     public function __construct(EarlyLeaveService $earlyLeaveService)
     {
         $this->earlyLeaveService = $earlyLeaveService;
     }
 
     /**
-     * Index / list leaves
+     * Menampilkan daftar pengajuan izin pulang cepat berdasarkan role pengguna.
+     *
+     * @return \Illuminate\Http\JsonResponse
      */
     public function index(): JsonResponse
     {
@@ -35,6 +48,11 @@ class EarlyLeaveController extends Controller
         );
     }
 
+    /**
+     * Menampilkan daftar pengajuan izin pulang cepat yang memerlukan persetujuan (approval).
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function indexApproval(): JsonResponse
     {
         $approvals = $this->earlyLeaveService->indexApproval(Auth::user());
@@ -46,7 +64,10 @@ class EarlyLeaveController extends Controller
     }
 
     /**
-     * Show detail leave
+     * Menampilkan detail data pengajuan izin pulang cepat tertentu.
+     *
+     * @param EarlyLeave $early_leave
+     * @return \Illuminate\Http\JsonResponse
      */
     public function show(EarlyLeave $early_leave): JsonResponse
     {
@@ -61,7 +82,10 @@ class EarlyLeaveController extends Controller
     }
 
     /**
-     * Create earlyLeave
+     * Menyimpan pengajuan izin pulang cepat baru ke database.
+     *
+     * @param CreateEarlyLeaveRequest $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function store(CreateEarlyLeaveRequest $request): JsonResponse
     {
@@ -78,7 +102,11 @@ class EarlyLeaveController extends Controller
     }
 
     /**
-     * Update earlyLeave
+     * Memperbarui data pengajuan izin pulang cepat yang sudah ada.
+     *
+     * @param UpdateEarlyLeaveRequest $request
+     * @param EarlyLeave $early_leave
+     * @return \Illuminate\Http\JsonResponse
      */
     public function update(UpdateEarlyLeaveRequest $request, EarlyLeave $early_leave): JsonResponse
     {
@@ -93,7 +121,10 @@ class EarlyLeaveController extends Controller
     }
 
     /**
-     * Delete / cancel earlyLeave (soft delete)
+     * Menghapus atau membatalkan pengajuan izin pulang cepat (soft delete).
+     *
+     * @param EarlyLeave $early_leave
+     * @return \Illuminate\Http\JsonResponse
      */
     public function destroy(EarlyLeave $early_leave): JsonResponse
     {
@@ -108,7 +139,11 @@ class EarlyLeaveController extends Controller
     }
 
     /**
-     * Approval
+     * Menangani proses persetujuan (approve) atau penolakan (reject) pengajuan izin pulang cepat.
+     *
+     * @param Request $request
+     * @param EarlyLeave $early_leave
+     * @return \Illuminate\Http\JsonResponse
      */
     public function approve(Request $request, EarlyLeave $early_leave): JsonResponse
     {
@@ -136,7 +171,10 @@ class EarlyLeaveController extends Controller
     }
 
     /**
-     * Download attachment (private storage)
+     * Mengunduh file lampiran pengajuan izin pulang cepat dari penyimpanan privat.
+     *
+     * @param string $filename
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
      */
     public function downloadAttachment(string $filename)
     {

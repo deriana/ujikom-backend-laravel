@@ -12,15 +12,31 @@ use App\Services\DivisionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * Class DivisionController
+ *
+ * Controller untuk mengelola data divisi dalam organisasi, mencakup operasi CRUD,
+ * pemulihan data yang dihapus, serta pengambilan struktur divisi beserta tim dan karyawan.
+ */
 class DivisionController extends Controller
 {
-    protected DivisionService $divisionService;
+    protected DivisionService $divisionService; /**< Instance dari DivisionService untuk logika bisnis divisi */
 
+    /**
+     * Membuat instance DivisionController baru.
+     *
+     * @param DivisionService $divisionService
+     */
     public function __construct(DivisionService $divisionService)
     {
         $this->divisionService = $divisionService;
     }
 
+    /**
+     * Menampilkan daftar semua divisi.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function index(): JsonResponse
     {
         $this->authorize('viewAny', Division::class);
@@ -33,6 +49,11 @@ class DivisionController extends Controller
         );
     }
 
+    /**
+     * Mengambil data divisi lengkap dengan relasi tim dan karyawannya.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getDivisionsWithTeamsAndEmployees(): JsonResponse
     {
         $divisions = $this->divisionService->getDivisionsWithTeamsAndEmployees();
@@ -43,6 +64,12 @@ class DivisionController extends Controller
         );
     }
 
+    /**
+     * Menyimpan data divisi baru ke database.
+     *
+     * @param CreateDivisionRequest $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function store(CreateDivisionRequest $request): JsonResponse
     {
         $this->authorize('create', Division::class);
@@ -56,6 +83,12 @@ class DivisionController extends Controller
         );
     }
 
+    /**
+     * Menampilkan detail data divisi tertentu.
+     *
+     * @param Division $division
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function show(Division $division): JsonResponse
     {
         $this->authorize('view', $division);
@@ -66,6 +99,13 @@ class DivisionController extends Controller
         );
     }
 
+    /**
+     * Memperbarui data divisi yang sudah ada.
+     *
+     * @param UpdateDivisionRequest $request
+     * @param Division $division
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function update(UpdateDivisionRequest $request, Division $division): JsonResponse
     {
         $this->authorize('edit', $division);
@@ -78,6 +118,12 @@ class DivisionController extends Controller
         );
     }
 
+    /**
+     * Menghapus data divisi (Soft Delete).
+     *
+     * @param Division $division
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function destroy(Division $division): JsonResponse
     {
         $this->authorize('destroy', $division);
@@ -87,6 +133,12 @@ class DivisionController extends Controller
         return $this->successResponse(null, 'Division deleted successfully');
     }
 
+    /**
+     * Memulihkan data divisi yang telah dihapus (Restore).
+     *
+     * @param string $uuid
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function restore(string $uuid): JsonResponse
     {
         $this->authorize('restore', Division::class);
@@ -99,6 +151,12 @@ class DivisionController extends Controller
         );
     }
 
+    /**
+     * Menghapus data divisi secara permanen dari database.
+     *
+     * @param string $uuid
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function forceDelete(string $uuid): JsonResponse
     {
         $this->authorize('forceDelete', Division::class);
@@ -108,6 +166,11 @@ class DivisionController extends Controller
         return $this->successResponse(null, 'Division permanently deleted');
     }
 
+    /**
+     * Mengambil daftar divisi yang berada di dalam trash (terhapus sementara).
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getTrashed(): JsonResponse
     {
         $this->authorize('restore', Division::class);

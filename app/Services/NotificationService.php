@@ -7,16 +7,21 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Notification;
 use App\Notifications\CrudActivityNotification;
-
+/**
+ * Class NotificationService
+ *
+ * Layanan untuk menangani pengiriman notifikasi kepada pengguna, baik secara individu,
+ * berdasarkan peran, maupun notifikasi otomatis untuk aktivitas CRUD.
+ */
 class NotificationService
 {
     /**
-     * Send a notification to a single user.
+     * Mengirim notifikasi ke satu pengguna spesifik.
      *
-     * @param User $user
-     * @param string $title
-     * @param string $message
-     * @param string|null $url
+     * @param User $user Objek pengguna penerima.
+     * @param string $title Judul notifikasi.
+     * @param string $message Isi pesan notifikasi.
+     * @param string|null $url URL tautan opsional.
      * @return void
      */
     public function sendToUser(User $user, string $title, string $message, ?string $url = null)
@@ -26,12 +31,12 @@ class NotificationService
     }
 
     /**
-     * Send a notification to multiple users.
+     * Mengirim notifikasi ke banyak pengguna sekaligus.
      *
-     * @param mixed $users
-     * @param string $title
-     * @param string $message
-     * @param string|null $url
+     * @param mixed $users Koleksi atau array objek pengguna.
+     * @param string $title Judul notifikasi.
+     * @param string $message Isi pesan notifikasi.
+     * @param string|null $url URL tautan opsional.
      * @return void
      */
     public function sendToUsers($users, string $title, string $message, ?string $url = null)
@@ -41,7 +46,14 @@ class NotificationService
     }
 
     /**
-     * Send a generic CRUD activity notification.
+     * Mengirim notifikasi aktivitas CRUD generik.
+     *
+     * @param CrudAction $action Jenis aksi CRUD (Created, Updated, Deleted).
+     * @param Model $model Objek model yang terlibat.
+     * @param mixed $users Daftar pengguna penerima.
+     * @param string|null $customTitle Judul kustom (opsional).
+     * @param string|null $customMessage Pesan kustom (opsional).
+     * @return void
      */
     public function notifyCrud(
         CrudAction $action,
@@ -63,6 +75,15 @@ class NotificationService
         $this->sendToUsers($users, $title, $message, $url);
     }
 
+    /**
+     * Mengirim notifikasi kepada pengguna berdasarkan peran (role) tertentu.
+     *
+     * @param array $roles Daftar nama peran.
+     * @param CrudAction $action Jenis aksi CRUD.
+     * @param Model $model Objek model terkait.
+     * @param bool $includeManager Apakah harus menyertakan manajer langsung dari karyawan terkait.
+     * @return void
+     */
     public function notifyToRoles(array $roles, CrudAction $action, Model $model, $includeManager = true)
     {
         // 1. Fetch all users associated with the specified roles
@@ -84,7 +105,11 @@ class NotificationService
     }
 
     /**
-     * Generate a default title based on the CRUD action and model name.
+     * Menghasilkan judul default berdasarkan aksi CRUD dan nama model.
+     *
+     * @param CrudAction $action Jenis aksi.
+     * @param Model $model Objek model.
+     * @return string Judul yang dihasilkan.
      */
     protected function generateTitle(CrudAction $action, Model $model): string
     {
@@ -93,7 +118,11 @@ class NotificationService
     }
 
     /**
-     * Generate a default message based on the CRUD action and model context.
+     * Menghasilkan pesan default berdasarkan aksi CRUD dan konteks model.
+     *
+     * @param CrudAction $action Jenis aksi.
+     * @param Model $model Objek model.
+     * @return string Pesan yang dihasilkan.
      */
     protected function generateMessage(CrudAction $action, Model $model): string
     {

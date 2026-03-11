@@ -10,17 +10,30 @@ use App\Services\RoleService;
 use Illuminate\Http\JsonResponse;
 use Spatie\Permission\Models\Role;
 
+/**
+ * Class RoleController
+ *
+ * Controller untuk mengelola peran (Role) dan izin (Permission) dalam sistem,
+ * menggunakan paket Spatie Permission untuk manajemen RBAC (Role-Based Access Control).
+ */
 class RoleController extends Controller
 {
-    protected RoleService $roleService;
+    protected RoleService $roleService; /**< Instance dari RoleService untuk logika bisnis manajemen peran */
 
+    /**
+     * Membuat instance RoleController baru.
+     *
+     * @param RoleService $roleService
+     */
     public function __construct(RoleService $roleService)
     {
         $this->roleService = $roleService;
     }
 
     /**
-     * List all roles
+     * Menampilkan daftar semua peran yang tersedia.
+     *
+     * @return \Illuminate\Http\JsonResponse
      */
     public function index(): JsonResponse
     {
@@ -34,6 +47,12 @@ class RoleController extends Controller
         );
     }
 
+    /**
+     * Menampilkan detail data peran tertentu beserta izin yang terkait.
+     *
+     * @param Role $role
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function show(Role $role)
     {
        $this->authorize('view', $role);
@@ -45,7 +64,10 @@ class RoleController extends Controller
     }
 
     /**
-     * Store a new role
+     * Menyimpan peran baru ke database.
+     *
+     * @param CreateRoleRequest $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function store(CreateRoleRequest $request): JsonResponse
     {
@@ -57,7 +79,11 @@ class RoleController extends Controller
     }
 
     /**
-     * Update a role
+     * Memperbarui data peran yang sudah ada.
+     *
+     * @param UpdateRoleRequest $request
+     * @param Role $role
+     * @return \Illuminate\Http\JsonResponse
      */
     public function update(UpdateRoleRequest $request, Role $role): JsonResponse
     {
@@ -69,7 +95,10 @@ class RoleController extends Controller
     }
 
     /**
-     * Delete a role
+     * Menghapus data peran dari database.
+     *
+     * @param Role $role
+     * @return \Illuminate\Http\JsonResponse
      */
     public function destroy(Role $role): JsonResponse
     {
@@ -80,6 +109,11 @@ class RoleController extends Controller
         return $this->successResponse(null, 'Role deleted successfully');
     }
 
+    /**
+     * Mengambil daftar semua izin (permissions) yang tersedia dalam sistem.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function permission(): JsonResponse
     {
         // $this->authorize('viewAny', Role::class);

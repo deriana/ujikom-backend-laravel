@@ -15,17 +15,30 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
+/**
+ * Class LeaveController
+ *
+ * Controller untuk mengelola pengajuan cuti (Leave) karyawan, mencakup proses pengajuan,
+ * pembaruan, pembatalan, persetujuan berjenjang, dan pengunduhan lampiran medis/pendukung.
+ */
 class LeaveController extends Controller
 {
-    protected LeaveService $leaveService;
+    protected LeaveService $leaveService; /**< Instance dari LeaveService untuk logika bisnis cuti */
 
+    /**
+     * Membuat instance LeaveController baru.
+     *
+     * @param LeaveService $leaveService
+     */
     public function __construct(LeaveService $leaveService)
     {
         $this->leaveService = $leaveService;
     }
 
     /**
-     * Index / list leaves
+     * Menampilkan daftar semua pengajuan cuti berdasarkan role pengguna.
+     *
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
      */
     public function index(): JsonResponse
     {
@@ -37,6 +50,11 @@ class LeaveController extends Controller
         );
     }
 
+    /**
+     * Menampilkan daftar pengajuan cuti milik karyawan yang sedang login.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function myLeaves()
     {
         $leaves = $this->leaveService->myLeaves(Auth::user());
@@ -48,7 +66,10 @@ class LeaveController extends Controller
     }
 
     /**
-     * Show detail leave
+     * Menampilkan detail data pengajuan cuti tertentu.
+     *
+     * @param Leave $leave
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
      */
     public function show(Leave $leave): JsonResponse
     {
@@ -65,7 +86,10 @@ class LeaveController extends Controller
     }
 
     /**
-     * Create leave
+     * Menyimpan pengajuan cuti baru ke database.
+     *
+     * @param CreateLeaveRequest $request
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
      */
     public function store(CreateLeaveRequest $request): JsonResponse
     {
@@ -82,7 +106,11 @@ class LeaveController extends Controller
     }
 
     /**
-     * Update leave
+     * Memperbarui data pengajuan cuti yang sudah ada.
+     *
+     * @param UpdateLeaveRequest $request
+     * @param Leave $leave
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
      */
     public function update(UpdateLeaveRequest $request, Leave $leave): JsonResponse
     {
@@ -97,7 +125,10 @@ class LeaveController extends Controller
     }
 
     /**
-     * Delete / cancel leave (soft delete)
+     * Menghapus atau membatalkan pengajuan cuti (soft delete).
+     *
+     * @param Leave $leave
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
      */
     public function destroy(Leave $leave): JsonResponse
     {
@@ -111,6 +142,11 @@ class LeaveController extends Controller
         );
     }
 
+    /**
+     * Menampilkan daftar pengajuan cuti yang memerlukan persetujuan (approval) dari atasan.
+     *
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
+     */
     public function indexApproval(): JsonResponse
     {
         $approvals = $this->leaveService->indexApprovals(Auth::user());
@@ -122,7 +158,11 @@ class LeaveController extends Controller
     }
 
     /**
-     * Approval
+     * Menangani proses persetujuan (approve) atau penolakan (reject) pada tahapan approval tertentu.
+     *
+     * @param Request $request
+     * @param LeaveApproval $approval
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
      */
     public function approve(Request $request, LeaveApproval $approval): JsonResponse
     {
@@ -151,7 +191,10 @@ class LeaveController extends Controller
     }
 
     /**
-     * Download attachment (private storage)
+     * Mengunduh file lampiran pengajuan cuti dari penyimpanan privat.
+     *
+     * @param string $filename
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
      */
     public function downloadAttachment(string $filename)
     {

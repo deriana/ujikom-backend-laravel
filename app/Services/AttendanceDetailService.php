@@ -7,11 +7,17 @@ use App\Models\Attendance;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * Class AttendanceDetailService
+ *
+ * Menangani pengambilan data detail kehadiran karyawan dengan filter berdasarkan peran pengguna.
+ */
 class AttendanceDetailService
 {
     /**
-     * Get a list of attendance records based on user roles and filters.
+     * Mengambil daftar catatan kehadiran berdasarkan peran pengguna dan filter.
      *
+     * @param array $filters Filter rentang tanggal (start_date, end_date).
      * @return \Illuminate\Database\Eloquent\Collection
      */
     public function index(array $filters = [])
@@ -45,7 +51,7 @@ class AttendanceDetailService
             return collect([]);
         }
 
-        // --- FILTER DATE RANGE (Logika kamu sebelumnya) ---
+        // --- FILTER RENTANG TANGGAL ---
         if (! empty($filters['start_date']) && ! empty($filters['end_date'])) {
             $query->whereBetween('date', [
                 Carbon::parse($filters['start_date'])->startOfDay(),
@@ -59,8 +65,9 @@ class AttendanceDetailService
     }
 
     /**
-     * Get the details of a specific attendance record.
+     * Mengambil detail lengkap dari satu catatan kehadiran tertentu.
      *
+     * @param Attendance $attendance Objek kehadiran.
      * @return Attendance
      */
     public function show(Attendance $attendance)

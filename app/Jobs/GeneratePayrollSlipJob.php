@@ -22,16 +22,14 @@ class GeneratePayrollSlipJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    /** @var int Number of times the job may be attempted. */
-    public $tries = 3;
+    public $tries = 3; /**< Jumlah maksimal percobaan ulang jika job gagal */
 
-    /** @var int The number of seconds the job can run before timing out. */
-    public $timeout = 120;
+    public $timeout = 120; /**< Batas waktu eksekusi job dalam detik sebelum dianggap timeout */
 
     /**
-     * Create a new job instance.
+     * Membuat instance job baru.
      *
-     * @param Payroll $payroll The payroll model instance to process.
+     * @param Payroll $payroll Instance model payroll yang akan diproses.
      */
     public function __construct(
         protected Payroll $payroll

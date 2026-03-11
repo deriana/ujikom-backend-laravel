@@ -4,44 +4,55 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * Class AttendanceCorrectionDetailResource
+ * 
+ * Resource class untuk mentransformasi detail model AttendanceCorrection menjadi format JSON yang mendalam.
+ */
 class AttendanceCorrectionDetailResource extends JsonResource
 {
+    /**
+     * Transform resource ke dalam array.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return array<string, mixed> Representasi detail koreksi absensi termasuk data karyawan, waktu yang diminta, dan status persetujuan.
+     */
     public function toArray($request)
     {
         return [
-            'uuid' => $this->uuid,
+            'uuid' => $this->uuid, /**< Identifier unik koreksi absensi */
             'attendance' => [
-                'date' => $this->attendance?->date?->format('Y-m-d'),
-                'actual_clock_in' => $this->attendance?->clock_in?->format('H:i:s'),
-                'actual_clock_out' => $this->attendance?->clock_out?->format('H:i:s'),
-                'current_status' => $this->attendance?->status,
+                'date' => $this->attendance?->date?->format('Y-m-d'), /**< Tanggal absensi yang dikoreksi */
+                'actual_clock_in' => $this->attendance?->clock_in?->format('H:i:s'), /**< Waktu masuk aktual di sistem */
+                'actual_clock_out' => $this->attendance?->clock_out?->format('H:i:s'), /**< Waktu keluar aktual di sistem */
+                'current_status' => $this->attendance?->status, /**< Status absensi saat ini */
             ],
             'employee' => [
-                'name' => $this->employee?->user?->name,
-                'nik' => $this->employee?->nik,
-                'division' => $this->employee?->team?->divison?->name,
-                'team' => $this->employee?->team?->name,
-                'position' => $this->employee?->position?->name,
-                'profile_photo' => $this->employee->getFirstMediaUrl('profile_photo') ?: null,
+                'name' => $this->employee?->user?->name, /**< Nama karyawan */
+                'nik' => $this->employee?->nik, /**< NIK karyawan */
+                'division' => $this->employee?->team?->divison?->name, /**< Nama divisi */
+                'team' => $this->employee?->team?->name, /**< Nama tim */
+                'position' => $this->employee?->position?->name, /**< Nama jabatan */
+                'profile_photo' => $this->employee->getFirstMediaUrl('profile_photo') ?: null, /**< URL foto profil */
             ],
             'requested_times' => [
-                'clock_in' => $this->clock_in_requested?->format('H:i:s'),
-                'clock_out' => $this->clock_out_requested?->format('H:i:s'),
+                'clock_in' => $this->clock_in_requested?->format('H:i:s'), /**< Waktu masuk yang diajukan */
+                'clock_out' => $this->clock_out_requested?->format('H:i:s'), /**< Waktu keluar yang diajukan */
             ],
-            'reason' => $this->reason,
+            'reason' => $this->reason, /**< Alasan pengajuan koreksi */
             'attachment' => $this->attachment ? [
-                'exists' => true,
-                'filename' => basename($this->attachment),
-                'path' => $this->attachment,
+                'exists' => true, /**< Status keberadaan lampiran */
+                'filename' => basename($this->attachment), /**< Nama file lampiran */
+                'path' => $this->attachment, /**< Path file lampiran */
             ] : null,
-            'status' => $this->status,
+            'status' => $this->status, /**< Status persetujuan (pending/approved/rejected) */
             'approval' => [
-                'approved_by_name' => $this->approver?->user?->name,
-                'approved_at' => $this->approved_at?->format('Y-m-d H:i:s'),
-                'note' => $this->note,
+                'approved_by_name' => $this->approver?->user?->name, /**< Nama pemberi persetujuan */
+                'approved_at' => $this->approved_at?->format('Y-m-d H:i:s'), /**< Waktu persetujuan diberikan */
+                'note' => $this->note, /**< Catatan dari pemberi persetujuan */
             ],
-            'created_at' => $this->created_at?->format('Y-m-d H:i:s'),
-            'updated_at' => $this->updated_at?->format('Y-m-d H:i:s'),
+            'created_at' => $this->created_at?->format('Y-m-d H:i:s'), /**< Waktu pembuatan pengajuan */
+            'updated_at' => $this->updated_at?->format('Y-m-d H:i:s'), /**< Waktu pembaruan terakhir */
         ];
     }
 }

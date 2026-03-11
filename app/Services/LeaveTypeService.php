@@ -5,10 +5,16 @@ namespace App\Services;
 use App\Models\LeaveType;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Class LeaveTypeService
+ *
+ * Menangani logika bisnis untuk manajemen jenis cuti (leave type),
+ * termasuk operasi CRUD dan pengaturan kebijakan cuti.
+ */
 class LeaveTypeService
 {
     /**
-     * Get all leave types with their creator information.
+     * Mengambil semua jenis cuti beserta informasi pembuatnya.
      *
      * @return \Illuminate\Database\Eloquent\Collection
      */
@@ -21,10 +27,10 @@ class LeaveTypeService
     }
 
     /**
-     * Store a new leave type record.
+     * Menyimpan data jenis cuti baru ke dalam database.
      *
-     * @param array $data
-     * @return LeaveType
+     * @param array $data Data jenis cuti (name, description, default_days, dll).
+     * @return LeaveType Objek jenis cuti yang berhasil dibuat.
      */
     public function store(array $data): LeaveType
     {
@@ -43,11 +49,11 @@ class LeaveTypeService
     }
 
     /**
-     * Update an existing leave type record.
+     * Memperbarui data jenis cuti yang sudah ada.
      *
-     * @param LeaveType $leaveType
-     * @param array $data
-     * @return LeaveType
+     * @param LeaveType $leaveType Objek jenis cuti yang akan diperbarui.
+     * @param array $data Data pembaruan.
+     * @return LeaveType Objek jenis cuti setelah diperbarui.
      */
     public function update(LeaveType $leaveType, array $data): LeaveType
     {
@@ -68,10 +74,10 @@ class LeaveTypeService
     }
 
     /**
-     * Delete a leave type record.
+     * Menghapus data jenis cuti dari database.
      *
-     * @param LeaveType $leaveType
-     * @return bool
+     * @param LeaveType $leaveType Objek jenis cuti yang akan dihapus.
+     * @return bool True jika berhasil dihapus.
      */
     public function delete(LeaveType $leaveType): bool
     {

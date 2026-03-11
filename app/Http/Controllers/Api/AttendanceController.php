@@ -8,15 +8,32 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Class AttendanceController
+ *
+ * Controller untuk menangani proses absensi karyawan menggunakan pengenalan wajah (biometrik),
+ * mendukung absensi tunggal, absensi massal (bulk), dan pengecekan status harian.
+ */
 class AttendanceController extends Controller
 {
-    protected $attendanceService;
+    protected $attendanceService; /**< Instance dari AttendanceService untuk logika pemrosesan absensi */
 
+    /**
+     * Membuat instance AttendanceController baru.
+     *
+     * @param AttendanceService $attendanceService
+     */
     public function __construct(AttendanceService $attendanceService)
     {
         $this->attendanceService = $attendanceService;
     }
 
+    /**
+     * Menangani permintaan absensi untuk satu orang (Single Attendance).
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function singleAttendance(Request $request)
     {
         $request->validate([
@@ -50,6 +67,12 @@ class AttendanceController extends Controller
         );
     }
 
+    /**
+     * Menangani permintaan absensi untuk banyak orang sekaligus (Bulk Attendance).
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function bulkAttendance(Request $request)
     {
         $request->validate([
@@ -105,6 +128,12 @@ class AttendanceController extends Controller
         return $this->successResponse($result['summary'], 'Bulk Attendance Processed');
     }
 
+    /**
+     * Mengambil status kehadiran karyawan yang sedang login untuk hari ini.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function attendanceStatusToday(Request $request)
     {
         $user = Auth::user();

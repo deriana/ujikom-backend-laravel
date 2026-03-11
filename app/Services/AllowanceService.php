@@ -6,10 +6,18 @@ use App\Models\Allowance;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
+/**
+ * Class AllowanceService
+ *
+ * Menangani logika bisnis untuk manajemen tunjangan (allowance),
+ * termasuk operasi CRUD, soft delete, dan pemulihan data.
+ */
 class AllowanceService
 {
     /**
-     * Get all allowances with their creator and associated positions.
+     * Mengambil semua data tunjangan beserta pembuat dan jabatan terkait.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection
      */
     public function index()
     {
@@ -19,7 +27,11 @@ class AllowanceService
     }
 
     /**
-     * Store a new allowance in the database.
+     * Menyimpan data tunjangan baru ke dalam database.
+     *
+     * @param array $data Data tunjangan (name, amount, type).
+     * @param int $userId ID pengguna yang melakukan aksi.
+     * @return Allowance
      */
     public function store(array $data, int $userId): Allowance
     {
@@ -33,9 +45,13 @@ class AllowanceService
     }
 
     /**
-     * Update an existing allowance.
+     * Memperbarui data tunjangan yang sudah ada.
      *
-     * @throws Exception if the allowance is already soft-deleted.
+     * @param Allowance $allowance Objek tunjangan yang akan diperbarui.
+     * @param array $data Data pembaruan.
+     * @param int $userId ID pengguna yang melakukan aksi.
+     * @return Allowance
+     * @throws Exception Jika tunjangan sudah dihapus (soft-deleted).
      */
     public function update(Allowance $allowance, array $data, int $userId): Allowance
     {
@@ -55,9 +71,11 @@ class AllowanceService
     }
 
     /**
-     * Soft delete an allowance.
+     * Menghapus tunjangan secara lunak (soft delete).
      *
-     * @throws Exception if the allowance is already soft-deleted.
+     * @param Allowance $allowance Objek tunjangan yang akan dihapus.
+     * @return bool
+     * @throws Exception Jika tunjangan sudah dalam status terhapus.
      */
     public function delete(Allowance $allowance): bool
     {
@@ -69,9 +87,11 @@ class AllowanceService
     }
 
     /**
-     * Restore a soft-deleted allowance by its UUID.
+     * Memulihkan data tunjangan yang telah dihapus lunak berdasarkan UUID.
      *
-     * @throws Exception if the allowance is not in trashed state.
+     * @param string $uuid UUID tunjangan.
+     * @return Allowance
+     * @throws Exception Jika tunjangan tidak dalam status terhapus.
      */
     public function restore(string $uuid): Allowance
     {
@@ -89,7 +109,10 @@ class AllowanceService
     }
 
     /**
-     * Permanently delete an allowance from the database.
+     * Menghapus data tunjangan secara permanen dari database.
+     *
+     * @param string $uuid UUID tunjangan.
+     * @return bool
      */
     public function forceDelete(string $uuid): bool
     {
@@ -100,7 +123,9 @@ class AllowanceService
     }
 
     /**
-     * Get all soft-deleted allowances.
+     * Mengambil semua daftar tunjangan yang telah dihapus lunak.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection
      */
     public function getTrashed()
     {

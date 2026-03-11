@@ -11,15 +11,31 @@ use App\Services\WorkScheduleService;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
+/**
+ * Class WorkScheduleController
+ *
+ * Controller untuk mengelola data jadwal kerja rutin (Work Schedule) dalam organisasi,
+ * mencakup operasi CRUD, pemulihan data terhapus, dan manajemen jam kerja standar.
+ */
 class WorkScheduleController extends Controller
 {
-    protected WorkScheduleService $workScheduleService;
+    protected WorkScheduleService $workScheduleService; /**< Instance dari WorkScheduleService untuk logika bisnis jadwal kerja */
 
+    /**
+     * Membuat instance WorkScheduleController baru.
+     *
+     * @param WorkScheduleService $workScheduleService
+     */
     public function __construct(WorkScheduleService $workScheduleService)
     {
         $this->workScheduleService = $workScheduleService;
     }
 
+    /**
+     * Menampilkan daftar semua jadwal kerja yang tersedia.
+     *
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
+     */
     public function index(): JsonResponse
     {
         // $this->authorize('viewAny', WorkSchedule::class);
@@ -32,6 +48,12 @@ class WorkScheduleController extends Controller
         );
     }
 
+    /**
+     * Menyimpan data jadwal kerja baru ke database.
+     *
+     * @param CreateWorkScheduleRequest $request
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
+     */
     public function store(CreateWorkScheduleRequest $request): JsonResponse
     {
         $this->authorize('create', WorkSchedule::class);
@@ -48,6 +70,12 @@ class WorkScheduleController extends Controller
         );
     }
 
+    /**
+     * Menampilkan detail data jadwal kerja tertentu beserta relasi tunjangannya.
+     *
+     * @param WorkSchedule $workSchedule
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
+     */
     public function show(WorkSchedule $workSchedule): JsonResponse
     {
         $this->authorize('view', $workSchedule);
@@ -60,6 +88,13 @@ class WorkScheduleController extends Controller
         );
     }
 
+    /**
+     * Memperbarui data jadwal kerja yang sudah ada.
+     *
+     * @param UpdateWorkScheduleRequest $request
+     * @param WorkSchedule $workSchedule
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
+     */
     public function update(UpdateWorkScheduleRequest $request, WorkSchedule $workSchedule): JsonResponse
     {
         $this->authorize('edit', $workSchedule);
@@ -72,6 +107,12 @@ class WorkScheduleController extends Controller
         );
     }
 
+    /**
+     * Menghapus data jadwal kerja (Soft Delete).
+     *
+     * @param WorkSchedule $workSchedule
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
+     */
     public function destroy(WorkSchedule $workSchedule): JsonResponse
     {
         $this->authorize('destroy', $workSchedule);
@@ -84,6 +125,12 @@ class WorkScheduleController extends Controller
         );
     }
 
+    /**
+     * Memulihkan data jadwal kerja yang telah dihapus (Restore).
+     *
+     * @param string $uuid
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
+     */
     public function restore(string $uuid): JsonResponse
     {
         $this->authorize('restore', WorkSchedule::class);
@@ -96,6 +143,12 @@ class WorkScheduleController extends Controller
         );
     }
 
+    /**
+     * Menghapus data jadwal kerja secara permanen dari database.
+     *
+     * @param string $uuid
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
+     */
     public function forceDelete(string $uuid): JsonResponse
     {
         $this->authorize('forceDelete', WorkSchedule::class);
@@ -108,6 +161,11 @@ class WorkScheduleController extends Controller
         );
     }
 
+    /**
+     * Mengambil daftar jadwal kerja yang berada di dalam trash (terhapus sementara).
+     *
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
+     */
     public function getTrashed()
     {
         $this->authorize('restore', WorkSchedule::class);

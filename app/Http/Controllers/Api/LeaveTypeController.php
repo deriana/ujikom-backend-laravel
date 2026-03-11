@@ -11,15 +11,31 @@ use App\Services\LeaveTypeService;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
+/**
+ * Class LeaveTypeController
+ *
+ * Controller untuk mengelola jenis-jenis cuti (Leave Type) yang tersedia dalam sistem,
+ * mencakup operasi CRUD untuk kategori cuti seperti cuti tahunan, sakit, atau alasan lainnya.
+ */
 class LeaveTypeController extends Controller
 {
-    protected LeaveTypeService $leaveTypeService;
+    protected LeaveTypeService $leaveTypeService; /**< Instance dari LeaveTypeService untuk logika bisnis jenis cuti */
 
+    /**
+     * Membuat instance LeaveTypeController baru.
+     *
+     * @param LeaveTypeService $leaveTypeService
+     */
     public function __construct(LeaveTypeService $leaveTypeService)
     {
         $this->leaveTypeService = $leaveTypeService;
     }
 
+    /**
+     * Menampilkan daftar semua jenis cuti yang tersedia.
+     *
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
+     */
     public function index(): JsonResponse
     {
         // $this->authorize('viewAny', LeaveType::class);
@@ -32,6 +48,12 @@ class LeaveTypeController extends Controller
         );
     }
 
+    /**
+     * Menyimpan jenis cuti baru ke database.
+     *
+     * @param CreateLeaveTypeRequest $request
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
+     */
     public function store(CreateLeaveTypeRequest $request): JsonResponse
     {
         $this->authorize('create', LeaveType::class);
@@ -47,6 +69,13 @@ class LeaveTypeController extends Controller
         );
     }
 
+    /**
+     * Memperbarui data jenis cuti yang sudah ada.
+     *
+     * @param UpdateLeaveTypeRequest $request
+     * @param LeaveType $leave_type
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
+     */
     public function update(UpdateLeaveTypeRequest $request, LeaveType $leave_type): JsonResponse
     {
         $this->authorize('edit', $leave_type);
@@ -61,6 +90,12 @@ class LeaveTypeController extends Controller
         );
     }
 
+    /**
+     * Menghapus data jenis cuti dari database.
+     *
+     * @param LeaveType $leave_type
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
+     */
     public function destroy(LeaveType $leave_type): JsonResponse
     {
         $this->authorize('destroy', $leave_type);

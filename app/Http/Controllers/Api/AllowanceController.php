@@ -11,15 +11,29 @@ use App\Services\AllowanceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * Class AllowanceController
+ *
+ * Controller untuk mengelola data tunjangan (Allowance), termasuk pembuatan,
+ * pembaruan, penghapusan, dan pemulihan data tunjangan.
+ */
 class AllowanceController extends Controller
 {
-    protected AllowanceService $allowanceService;
+    protected AllowanceService $allowanceService; /**< Instance dari AllowanceService untuk logika bisnis tunjangan */
 
+    /**
+     * Membuat instance AllowanceController baru.
+     *
+     * @param AllowanceService $allowanceService
+     */
     public function __construct(AllowanceService $allowanceService)
     {
         $this->allowanceService = $allowanceService;
     }
 
+    /**
+     * Menampilkan daftar semua tunjangan yang tersedia.
+     */
     public function index(): JsonResponse
     {
         $this->authorize('viewAny', Allowance::class);
@@ -32,6 +46,12 @@ class AllowanceController extends Controller
         );
     }
 
+    /**
+     * Menyimpan data tunjangan baru ke database.
+     *
+     * @param CreateAllowanceRequest $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function store(CreateAllowanceRequest $request): JsonResponse
     {
         $this->authorize('create', Allowance::class);
@@ -48,6 +68,12 @@ class AllowanceController extends Controller
         );
     }
 
+    /**
+     * Menampilkan detail data tunjangan tertentu.
+     *
+     * @param Allowance $allowance
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function show(Allowance $allowance): JsonResponse
     {
         $this->authorize('view', $allowance);
@@ -60,6 +86,13 @@ class AllowanceController extends Controller
         );
     }
 
+    /**
+     * Memperbarui data tunjangan yang sudah ada.
+     *
+     * @param UpdateAllowanceRequest $request
+     * @param Allowance $allowance
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function update(UpdateAllowanceRequest $request, Allowance $allowance): JsonResponse
     {
         $this->authorize('edit', $allowance);
@@ -72,6 +105,12 @@ class AllowanceController extends Controller
         );
     }
 
+    /**
+     * Menghapus data tunjangan (Soft Delete).
+     *
+     * @param Allowance $allowance
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function destroy(Allowance $allowance): JsonResponse
     {
         $this->authorize('destroy', $allowance);
@@ -84,6 +123,12 @@ class AllowanceController extends Controller
         );
     }
 
+    /**
+     * Memulihkan data tunjangan yang telah dihapus (Restore).
+     *
+     * @param string $uuid
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function restore(string $uuid): JsonResponse
     {
         $this->authorize('restore', Allowance::class);
@@ -96,6 +141,12 @@ class AllowanceController extends Controller
         );
     }
 
+    /**
+     * Menghapus data tunjangan secara permanen dari database.
+     *
+     * @param string $uuid
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function forceDelete(string $uuid): JsonResponse
     {
         $this->authorize('forceDelete', Allowance::class);
@@ -108,6 +159,11 @@ class AllowanceController extends Controller
         );
     }
 
+    /**
+     * Mengambil daftar tunjangan yang berada di dalam trash (terhapus sementara).
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getTrashed()
     {
         $this->authorize('restore', Allowance::class);

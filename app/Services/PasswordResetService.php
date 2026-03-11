@@ -9,15 +9,17 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 /**
- * Service class to handle password reset logic including token generation and validation.
+ * Class PasswordResetService
+ *
+ * Menangani logika pengaturan ulang kata sandi termasuk pembuatan dan validasi token.
  */
 class PasswordResetService
 {
     /**
-     * Generate a new password reset token for the user.
+     * Membuat token pengaturan ulang kata sandi baru untuk pengguna.
      *
-     * @param User $user
-     * @return string The plain-text token
+     * @param User $user Objek pengguna.
+     * @return string Token dalam format teks biasa (plain-text).
      */
     public function generateToken(User $user): string
     {
@@ -37,10 +39,10 @@ class PasswordResetService
     }
 
     /**
-     * Check if the token is valid and return the associated user.
+     * Memeriksa apakah token valid dan mengembalikan pengguna yang terkait.
      *
-     * @param string $plainToken
-     * @return User|null
+     * @param string $plainToken Token teks biasa.
+     * @return User|null Objek pengguna jika token valid, atau null.
      */
     public function checkToken(string $plainToken): ?User
     {
@@ -59,11 +61,11 @@ class PasswordResetService
     }
 
     /**
-     * Reset the user's password and delete the token in a transaction.
+     * Mengatur ulang kata sandi pengguna dan menghapus token dalam satu transaksi.
      *
-     * @param string $plainToken
-     * @param string $newPassword
-     * @return bool
+     * @param string $plainToken Token teks biasa.
+     * @param string $newPassword Kata sandi baru yang akan disimpan.
+     * @return bool True jika berhasil, false jika token tidak valid atau kedaluwarsa.
      */
     public function resetPassword(string $plainToken, string $newPassword): bool
     {
@@ -91,10 +93,10 @@ class PasswordResetService
     }
 
     /**
-     * Get user by email for account enumeration protection.
+     * Mengambil data pengguna berdasarkan alamat email.
      *
-     * @param string $email
-     * @return User|null
+     * @param string $email Alamat email pengguna.
+     * @return User|null Objek pengguna jika ditemukan, atau null.
      */
     public function getUserByEmail(string $email): ?User
     {

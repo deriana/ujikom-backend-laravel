@@ -29,13 +29,25 @@ Accept: application/json
 - [Attendance](#attendance)
 - [Leaves](#leaves)
 - [Early Leave](#early-leave)
+- [Attendance Corrections](#attendance-corrections)
 - [Attendance Requests](#attendance-requests)
 - [Overtime](#overtime)
+- [Assessments](#assessments)
 - [Payroll](#payroll)
 - [Approvals](#approvals)
 - [Notifications](#notifications)
 - [Settings](#settings)
 - [Dashboard](#dashboard)
+
+---
+
+## General
+
+| Endpoint | Method | URL | Description | Auth Required |
+|---|---|---|---|---|
+| Ping | GET | `/ping` | Health check endpoint | No |
+| Welcome | GET | `/` | API Welcome message | No |
+| Quote | GET | `/quote` | Get an inspiring quote | No |
 
 ---
 
@@ -53,6 +65,7 @@ Accept: application/json
 | Check Reset Token | GET | `/auth/reset-password/check` | Validate a password reset token | No |
 | Send Reset Link | POST | `/auth/forgot-password` | Send password reset email | No |
 | Reset Password | POST | `/auth/reset-password` | Submit new password | No |
+| Get User Object | GET | `/user` | Get authenticated user object | Yes |
 
 ### Login — Request Example
 
@@ -96,9 +109,13 @@ POST /api/auth/login
 | Force Delete | DELETE | `/users/force-delete/{uuid}` | Permanently delete a user | Yes |
 | Terminate Employment | PUT | `/users/terminate-employment/{uuid}` | Mark employee as terminated | Yes |
 | Change Password | PUT | `/users/change-password/{uuid}` | Change a user's password | Yes |
+| Update Status | PUT | `/users/status/{uuid}` | Update user active status | Yes |
+| Change Own Password | PUT | `/users/change-password` | Change authenticated user's password | Yes |
 | Upload Profile Photo | POST | `/users/upload-profile-photo/{uuid}` | Upload profile picture | Yes |
 | Get Managers | GET | `/users/managers` | List users who are managers | Yes |
 | Get Employees Lite | GET | `/users/employees-lite` | Lightweight list of employees | Yes |
+| Get Employee Leave Balances | GET | `/users/employee-leave-balances` | Get leave balances for employees | Yes |
+| Get My Leave Balances | GET | `/users/my-leave-balances` | Get authenticated user's leave balances | Yes |
 | Get My Profile | GET | `/users/profile` | Get own profile | Yes |
 | Update Biometric | PUT | `/users/update-biometric` | Update biometric descriptor data | Yes |
 
@@ -125,6 +142,7 @@ POST /api/auth/login
 | List Divisions | GET | `/divisions` | List all divisions | Yes |
 | Get Division | GET | `/divisions/{uuid}` | Get a specific division | Yes |
 | Create Division | POST | `/divisions` | Create a division | Yes |
+| Get With Hierarchy | GET | `/divisions/with-teams-and-employees` | Get divisions with teams and employees | Yes |
 | Update Division | PUT | `/divisions/{uuid}` | Update a division | Yes |
 | Delete Division | DELETE | `/divisions/{uuid}` | Soft delete a division | Yes |
 | Restore Division | POST | `/divisions/restore/{uuid}` | Restore a deleted division | Yes |
@@ -273,6 +291,19 @@ POST /api/attendance/bulk-send
 
 ---
 
+## Attendance Corrections
+
+| Endpoint | Method | URL | Description | Auth Required |
+|---|---|---|---|---|
+| List | GET | `/attendance_corrections` | List attendance corrections | Yes |
+| Create | POST | `/attendance_corrections` | Submit a correction | Yes |
+| Get | GET | `/attendance_corrections/{id}` | View a specific correction | Yes |
+| Update | POST | `/attendance_corrections/{id}` | Update correction | Yes |
+| Delete | DELETE | `/attendance_corrections/{id}` | Delete correction | Yes |
+| Approve | PUT | `/attendance_corrections/approvals/{id}/approve` | Approve / reject | Yes |
+
+---
+
 ## Attendance Requests
 
 | Endpoint | Method | URL | Description | Auth Required |
@@ -282,6 +313,7 @@ POST /api/attendance/bulk-send
 | Get | GET | `/attendance_request/{id}` | View a specific request | Yes |
 | Update | PUT | `/attendance_request/{id}` | Update request | Yes |
 | Delete | DELETE | `/attendance_request/{id}` | Delete request | Yes |
+| Download Attachment | GET | `/attendance_corrections/download-attachment/{filename}` | Download file | No |
 | Approve | PUT | `/attendance_request/{attendance_request:uuid}/approve` | Approve / reject | Yes |
 
 ---
@@ -296,6 +328,23 @@ POST /api/attendance/bulk-send
 | Update | PUT | `/overtime/{id}` | Update request | Yes |
 | Delete | DELETE | `/overtime/{id}` | Delete request | Yes |
 | Approve | PUT | `/overtime/{overtime:uuid}/approve` | Approve / reject | Yes |
+
+---
+
+## Assessments
+
+| Endpoint | Method | URL | Description | Auth Required |
+|---|---|---|---|---|
+| List Categories | GET | `/assessment_category` | List assessment categories | Yes |
+| Create Category | POST | `/assessment_category` | Create assessment category | Yes |
+| Update Category | PUT | `/assessment_category/{id}` | Update assessment category | Yes |
+| Delete Category | DELETE | `/assessment_category/{id}` | Delete assessment category | Yes |
+| Toggle Category Status | PUT | `/assessment_category/{id}/toggle-status` | Toggle category active status | Yes |
+| List Assessments | GET | `/assessments` | List assessments | Yes |
+| Create Assessment | POST | `/assessments` | Create assessment | Yes |
+| Get Assessment | GET | `/assessments/{id}` | Get specific assessment | Yes |
+| Update Assessment | PUT | `/assessments/{id}` | Update assessment | Yes |
+| Delete Assessment | DELETE | `/assessments/{id}` | Delete assessment | Yes |
 
 ---
 
@@ -323,6 +372,7 @@ Aggregated approval queue endpoints.
 | Leave Approvals | GET | `/approvals/leaves` | Pending leave approvals | Yes |
 | Early Leave Approvals | GET | `/approvals/early_leaves` | Pending early leave approvals | Yes |
 | Attendance Req. Approvals | GET | `/approvals/attendance_request` | Pending attendance corrections | Yes |
+| Attendance Corr. Approvals | GET | `/approvals/attendance_corrections` | Pending attendance corrections (New) | Yes |
 | Overtime Approvals | GET | `/approvals/overtime` | Pending overtime approvals | Yes |
 
 ---
@@ -358,6 +408,9 @@ Aggregated approval queue endpoints.
 |---|---|---|---|---|
 | Admin Dashboard | GET | `/dashboard/admin` | Summary stats for admin users | Yes |
 | Employee Dashboard | GET | `/dashboard/employee` | Summary stats for employees | Yes |
+| Mobile Home | GET | `/mobile-home-data` | Data for mobile home screen | Yes |
+| Mobile Stats | GET | `/mobile-stats-data` | Statistics for mobile view | Yes |
+| Mobile Tracker | GET | `/mobile-daily-tracker-data` | Daily tracker data for mobile | Yes |
 
 ---
 

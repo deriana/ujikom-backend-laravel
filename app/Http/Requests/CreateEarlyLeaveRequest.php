@@ -5,13 +5,28 @@ namespace App\Http\Requests;
 use App\Enums\UserRole;
 use Illuminate\Foundation\Http\FormRequest;
 
+/**
+ * Class CreateEarlyLeaveRequest
+ *
+ * Request class untuk menangani validasi pengajuan izin pulang awal (Early Leave) karyawan.
+ */
 class CreateEarlyLeaveRequest extends FormRequest
 {
-    public function authorize()
+    /**
+     * Menentukan apakah pengguna memiliki izin untuk membuat request ini.
+     *
+     * @return bool
+     */
+    public function authorize(): bool
     {
         return true;
     }
 
+    /**
+     * Mendapatkan aturan validasi yang berlaku untuk request ini.
+     *
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     */
     public function rules(): array
     {
         $rules = [
@@ -30,7 +45,12 @@ class CreateEarlyLeaveRequest extends FormRequest
         return $rules;
     }
 
-    public function withValidator($validator)
+    /**
+     * Mengonfigurasi instance validator untuk logika validasi tambahan setelah aturan utama.
+     *
+     * @param \Illuminate\Validation\Validator $validator
+     */
+    public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
             if ($validator->errors()->any()) {

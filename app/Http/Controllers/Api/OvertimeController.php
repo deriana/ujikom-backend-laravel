@@ -13,17 +13,30 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
+/**
+ * Class OvertimeController
+ *
+ * Controller untuk mengelola pengajuan lembur (Overtime) karyawan,
+ * mencakup proses pengajuan, pembaruan, pembatalan, dan persetujuan (approval).
+ */
 class OvertimeController extends Controller
 {
-    protected OvertimeService $overtimeService;
+    protected OvertimeService $overtimeService; /**< Instance dari OvertimeService untuk logika bisnis lembur */
 
+    /**
+     * Membuat instance OvertimeController baru.
+     *
+     * @param OvertimeService $overtimeService
+     */
     public function __construct(OvertimeService $overtimeService)
     {
         $this->overtimeService = $overtimeService;
     }
 
     /**
-     * List semua overtime sesuai role
+     * Menampilkan daftar semua pengajuan lembur berdasarkan role pengguna.
+     *
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
      */
     public function index(): JsonResponse
     {
@@ -36,7 +49,9 @@ class OvertimeController extends Controller
     }
 
     /**
-     * List overtime yang perlu diapprove
+     * Menampilkan daftar pengajuan lembur yang memerlukan persetujuan (approval).
+     *
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
      */
     public function indexApproval(): JsonResponse
     {
@@ -49,7 +64,10 @@ class OvertimeController extends Controller
     }
 
     /**
-     * Detail overtime
+     * Menampilkan detail data pengajuan lembur tertentu.
+     *
+     * @param Overtime $overtime
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
      */
     public function show(Overtime $overtime): JsonResponse
     {
@@ -64,7 +82,10 @@ class OvertimeController extends Controller
     }
 
     /**
-     * Create / ajukan overtime
+     * Menyimpan pengajuan lembur baru ke database.
+     *
+     * @param CreateOvertimeRequest $request
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
      */
     public function store(CreateOvertimeRequest $request): JsonResponse
     {
@@ -80,7 +101,11 @@ class OvertimeController extends Controller
     }
 
     /**
-     * Update overtime
+     * Memperbarui data pengajuan lembur yang sudah ada.
+     *
+     * @param UpdateOvertimeRequest $request
+     * @param Overtime $overtime
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
      */
     public function update(UpdateOvertimeRequest $request, Overtime $overtime): JsonResponse
     {
@@ -95,7 +120,10 @@ class OvertimeController extends Controller
     }
 
     /**
-     * Delete / cancel overtime
+     * Menghapus atau membatalkan pengajuan lembur (soft delete).
+     *
+     * @param Overtime $overtime
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
      */
     public function destroy(Overtime $overtime): JsonResponse
     {
@@ -110,7 +138,11 @@ class OvertimeController extends Controller
     }
 
     /**
-     * Approve / reject overtime
+     * Menangani proses persetujuan (approve) atau penolakan (reject) pengajuan lembur.
+     *
+     * @param Request $request
+     * @param Overtime $overtime
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
      */
     public function approve(Request $request, Overtime $overtime): JsonResponse
     {

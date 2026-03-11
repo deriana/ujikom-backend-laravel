@@ -17,17 +17,30 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * Class UserController
+ *
+ * Controller untuk mengelola data pengguna (User) dan profil karyawan,
+ * termasuk manajemen password, biometrik, dan saldo cuti.
+ */
 class UserController extends Controller
 {
-    protected $userService;
+    protected $userService; /**< Instance dari UserService untuk logika bisnis pengguna */
 
+    /**
+     * Membuat instance UserController baru.
+     *
+     * @param UserService $userService
+     */
     public function __construct(UserService $userService)
     {
         $this->userService = $userService;
     }
 
     /**
-     * Display a listing of the resource.
+     * Menampilkan daftar semua pengguna.
+     *
+     * @return \Illuminate\Http\JsonResponse
      */
     public function index(): JsonResponse
     {
@@ -43,7 +56,10 @@ class UserController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Menyimpan data pengguna baru ke database.
+     *
+     * @param CreateUserRequest $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function store(CreateUserRequest $request): JsonResponse
     {
@@ -59,7 +75,10 @@ class UserController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Menampilkan detail data pengguna tertentu.
+     *
+     * @param User $user
+     * @return \Illuminate\Http\JsonResponse
      */
     public function show(User $user): JsonResponse
     {
@@ -74,7 +93,11 @@ class UserController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Memperbarui data pengguna yang sudah ada.
+     *
+     * @param UpdateUserRequest $request
+     * @param User $user
+     * @return \Illuminate\Http\JsonResponse
      */
     public function update(UpdateUserRequest $request, User $user): JsonResponse
     {
@@ -89,7 +112,10 @@ class UserController extends Controller
     }
 
     /**
-     * Delete the specified resource.
+     * Menghapus data pengguna (Soft Delete).
+     *
+     * @param User $user
+     * @return \Illuminate\Http\JsonResponse
      */
     public function destroy(User $user): JsonResponse
     {
@@ -101,7 +127,10 @@ class UserController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Memulihkan data pengguna yang telah dihapus (Restore).
+     *
+     * @param string $uuid
+     * @return \Illuminate\Http\JsonResponse
      */
     public function restore(string $uuid): JsonResponse
     {
@@ -115,6 +144,12 @@ class UserController extends Controller
         );
     }
 
+    /**
+     * Menghapus data pengguna secara permanen dari database.
+     *
+     * @param string $uuid
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function forceDelete(string $uuid): JsonResponse
     {
         $this->authorize('forceDelete', User::class);
@@ -124,6 +159,13 @@ class UserController extends Controller
         return $this->successResponse(null, 'User permanently deleted');
     }
 
+    /**
+     * Menghentikan masa kerja karyawan (Resign atau PHK).
+     *
+     * @param Request $request
+     * @param string $uuid
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function terminateEmployment(Request $request, string $uuid): JsonResponse
     {
         $this->authorize('edit', User::class);
@@ -146,6 +188,13 @@ class UserController extends Controller
         );
     }
 
+    /**
+     * Mengubah password pengguna oleh Administrator.
+     *
+     * @param Request $request
+     * @param string $uuid
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function adminChangePassword(Request $request, string $uuid): JsonResponse
     {
         $this->authorize('edit', User::class);
@@ -165,6 +214,13 @@ class UserController extends Controller
         );
     }
 
+    /**
+     * Mengubah status aktif/non-aktif akun pengguna.
+     *
+     * @param Request $request
+     * @param string $uuid
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function status(Request $request, string $uuid): JsonResponse
     {
         $this->authorize('edit', User::class);
@@ -181,6 +237,11 @@ class UserController extends Controller
         );
     }
 
+    /**
+     * Mengambil daftar pengguna yang berada di dalam trash (terhapus sementara).
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getTrashed(): JsonResponse
     {
         $this->authorize('restore', User::class);
@@ -193,6 +254,14 @@ class UserController extends Controller
         );
     }
 
+    /**
+     * Mengunggah foto profil untuk pengguna tertentu.
+     *
+     * @param Request $request
+     * @param User $user
+     * @param string $uuid
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function uploadProfilePhoto(Request $request, User $user, string $uuid): JsonResponse
     {
         // $this->authorize('edit', $user);
@@ -206,6 +275,11 @@ class UserController extends Controller
         );
     }
 
+    /**
+     * Mengambil daftar pengguna yang memiliki peran sebagai Manager.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getManagers(): JsonResponse
     {
         $users = $this->userService->getManagers();
@@ -216,6 +290,11 @@ class UserController extends Controller
         );
     }
 
+    /**
+     * Mengambil daftar ringkas (lite) dari semua karyawan.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getEmployeesLite(): JsonResponse
     {
         $users = $this->userService->getEmployeesLite();
@@ -226,6 +305,11 @@ class UserController extends Controller
         );
     }
 
+    /**
+     * Mengambil data profil pengguna yang sedang login.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getProfile()
     {
         $user = Auth::user();
@@ -238,6 +322,12 @@ class UserController extends Controller
         );
     }
 
+    /**
+     * Mengubah password akun milik pengguna yang sedang login.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function changePassword(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -259,6 +349,12 @@ class UserController extends Controller
         );
     }
 
+    /**
+     * Memperbarui data deskriptor wajah (biometrik) untuk absensi.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function updateBiometricDescriptors(Request $request)
     {
         $request->validate([
@@ -277,6 +373,11 @@ class UserController extends Controller
         );
     }
 
+    /**
+     * Mengambil daftar saldo cuti seluruh karyawan.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getEmployeeLeaveBalances(): JsonResponse
     {
         $leave_balances = $this->userService->getEmployeeLeaveBalances();
@@ -287,6 +388,11 @@ class UserController extends Controller
         );
     }
 
+    /**
+     * Mengambil data saldo cuti milik pengguna yang sedang login.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getMyLeaveBalances(): JsonResponse
     {
         $leave_balances = $this->userService->getMyLeaveBalances();

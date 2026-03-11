@@ -11,15 +11,31 @@ use App\Services\HolidayService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * Class HolidayController
+ *
+ * Controller untuk mengelola data hari libur (Holiday) dalam sistem,
+ * mencakup operasi CRUD untuk hari libur nasional maupun kebijakan perusahaan.
+ */
 class HolidayController extends Controller
 {
-    protected HolidayService $holidayService;
+    protected HolidayService $holidayService; /**< Instance dari HolidayService untuk logika bisnis hari libur */
 
+    /**
+     * Membuat instance HolidayController baru.
+     *
+     * @param HolidayService $holidayService
+     */
     public function __construct(HolidayService $holidayService)
     {
         $this->holidayService = $holidayService;
     }
 
+    /**
+     * Menampilkan daftar semua hari libur.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function index(): JsonResponse
     {
         $this->authorize('viewAny', Holiday::class);
@@ -32,6 +48,12 @@ class HolidayController extends Controller
         );
     }
 
+    /**
+     * Menyimpan data hari libur baru ke database.
+     *
+     * @param CreateHolidayRequest $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function store(CreateHolidayRequest $request): JsonResponse
     {
         $this->authorize('create', Holiday::class);
@@ -48,6 +70,13 @@ class HolidayController extends Controller
         );
     }
 
+    /**
+     * Memperbarui data hari libur yang sudah ada.
+     *
+     * @param UpdateHolidayRequest $request
+     * @param Holiday $holiday
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function update(UpdateHolidayRequest $request, Holiday $holiday): JsonResponse
     {
         $this->authorize('edit', $holiday);
@@ -60,6 +89,12 @@ class HolidayController extends Controller
         );
     }
 
+    /**
+     * Menghapus data hari libur dari database.
+     *
+     * @param Holiday $holiday
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function destroy(Holiday $holiday): JsonResponse
     {
         $this->authorize('destroy', $holiday);

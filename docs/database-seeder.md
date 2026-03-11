@@ -37,22 +37,28 @@ The `DatabaseSeeder` runs seeders in the following order:
 | 5 | `DivisionSeeder` | Creates company divisions |
 | 6 | `PositionAllowanceSeeder` | Creates position-linked allowance templates |
 | 7 | `AllowanceSeeder` | Creates allowance definitions |
-| 8 | `EmployeeSeeder` | Creates employee profiles linked to users |
-| 9 | `AttendanceYearSeeder` | Seeds a year's worth of attendance records |
-| 10 | `BiometricUserSeeder` | Links users to biometric device records |
-| 11 | `WorkModeSeeder` | Inserts work mode options |
-| 12 | `WorkScheduleSeeder` | Creates work schedule templates |
-| 13 | `EmployeeWorkScheduleSeeder` | Assigns schedules to employees |
-| 14 | `ShiftTemplateSeeder` | Creates shift templates |
-| 15 | `EmployeeShiftSeeder` | Assigns shifts to employees |
-| 16 | `LeaveTypeSeeder` | Creates available leave types |
-| 17 | `EmployeeLeaveBalanceSeeder` | Associates leave balances per employee |
-| 18 | `LeaveSeeder` | Seeds sample leave requests |
-| 19 | `EmployeeLeaveSeeder` | Seeds employee-leave associations |
-| 20 | `EarlyLeaveSeeder` | Seeds sample early leave requests |
-| 21 | `AttendanceRequestSeeder` | Seeds attendance correction requests |
-| 22 | `OvertimeSeeder` | Seeds overtime request records |
-| 23 | `PayrollSeeder` | Seeds sample payroll records |
+| 8 | `PositionSeeder` | Creates job positions |
+| 9 | `EmployeeSeeder` | Creates employee profiles linked to users |
+| 10 | `AttendanceSeeder` | Seeds general attendance records |
+| 11 | `AttendanceYearSeeder` | Seeds a year's worth of attendance records |
+| 12 | `AttendanceNowSeeder` | Seeds current day attendance records |
+| 13 | `BiometricSeeder` | Seeds biometric device data |
+| 14 | `BiometricUserSeeder` | Links users to biometric device records |
+| 15 | `WorkModeSeeder` | Inserts work mode options |
+| 16 | `WorkScheduleSeeder` | Creates work schedule templates |
+| 17 | `EmployeeWorkScheduleSeeder` | Assigns schedules to employees |
+| 18 | `ShiftTemplateSeeder` | Creates shift templates |
+| 19 | `EmployeeShiftSeeder` | Assigns shifts to employees |
+| 20 | `LeaveTypeSeeder` | Creates available leave types |
+| 21 | `EmployeeLeaveBalanceSeeder` | Associates leave balances per employee |
+| 22 | `LeaveSeeder` | Seeds sample leave requests |
+| 23 | `EmployeeLeaveSeeder` | Seeds employee-leave associations |
+| 24 | `EarlyLeaveSeeder` | Seeds sample early leave requests |
+| 25 | `AttendanceRequestSeeder` | Seeds attendance correction requests |
+| 26 | `OvertimeSeeder` | Seeds overtime request records |
+| 27 | `PayrollSeeder` | Seeds sample payroll records |
+| 28 | `AssessmentCategorySeeder` | Creates categories for employee evaluations |
+| 29 | `AssessmentSeeder` | Seeds employee performance reviews |
 
 ---
 

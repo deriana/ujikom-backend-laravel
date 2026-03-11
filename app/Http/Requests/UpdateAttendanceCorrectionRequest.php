@@ -4,10 +4,15 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
+/**
+ * Class UpdateAttendanceCorrectionRequest
+ *
+ * Request class untuk menangani validasi pembaruan pengajuan koreksi absensi (Attendance Correction).
+ */
 class UpdateAttendanceCorrectionRequest extends FormRequest
 {
     /**
-     * Determine if the user is authorized to make this request.
+     * Menentukan apakah pengguna memiliki izin untuk membuat request ini.
      */
     public function authorize(): bool
     {
@@ -15,9 +20,9 @@ class UpdateAttendanceCorrectionRequest extends FormRequest
     }
 
     /**
-     * Get the validation rules that apply to the request.
+     * Mendapatkan aturan validasi yang berlaku untuk request ini.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string> Aturan validasi untuk alasan, lampiran, dan waktu jam masuk/keluar yang diminta
      */
     public function rules(): array
     {

@@ -15,9 +15,9 @@ class CreateAllowanceRequest extends FormRequest
     }
 
     /**
-     * Get the validation rules that apply to the request.
+     * Mendapatkan aturan validasi yang berlaku untuk request ini.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string> Aturan validasi untuk nama, tipe, dan jumlah tunjangan
      */
     public function rules(): array
     {

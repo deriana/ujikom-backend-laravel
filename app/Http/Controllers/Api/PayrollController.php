@@ -14,15 +14,32 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
+/**
+ * Class PayrollController
+ *
+ * Controller untuk mengelola sistem penggajian (Payroll) karyawan,
+ * mencakup pembuatan data gaji, pembaruan, finalisasi (pembayaran),
+ * pembatalan (void), serta pembuatan dan pengunduhan slip gaji.
+ */
 class PayrollController extends Controller
 {
-    protected PayrollService $payrollService;
+    protected PayrollService $payrollService; /**< Instance dari PayrollService untuk logika bisnis penggajian */
 
+    /**
+     * Membuat instance PayrollController baru.
+     *
+     * @param PayrollService $payrollService
+     */
     public function __construct(PayrollService $payrollService)
     {
         $this->payrollService = $payrollService;
     }
 
+    /**
+     * Menampilkan daftar semua data payroll yang tersedia.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function index(): JsonResponse
     {
         $this->authorize('viewAny', Payroll::class);
@@ -35,6 +52,12 @@ class PayrollController extends Controller
         );
     }
 
+    /**
+     * Menampilkan detail data payroll tertentu.
+     *
+     * @param Payroll $payroll
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function show(Payroll $payroll): JsonResponse
     {
         $this->authorize('view', $payroll);
@@ -47,6 +70,12 @@ class PayrollController extends Controller
         );
     }
 
+    /**
+     * Menyimpan data payroll baru ke database (biasanya berdasarkan periode tertentu).
+     *
+     * @param CreatePayrollRequest $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function store(CreatePayrollRequest $request): JsonResponse
     {
         $this->authorize('create', Payroll::class);
@@ -62,6 +91,13 @@ class PayrollController extends Controller
         );
     }
 
+    /**
+     * Memperbarui data payroll yang sudah ada sebelum difinalisasi.
+     *
+     * @param UpdatePayrollRequest $request
+     * @param Payroll $payroll
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function update(UpdatePayrollRequest $request, Payroll $payroll): JsonResponse
     {
         $this->authorize('update', $payroll);
@@ -78,6 +114,12 @@ class PayrollController extends Controller
         );
     }
 
+    /**
+     * Melakukan proses finalisasi payroll (menandai sebagai sudah dibayar).
+     *
+     * @param Payroll $payroll
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function finalize(Payroll $payroll): JsonResponse
     {
         $this->authorize('pay', $payroll);
@@ -92,6 +134,12 @@ class PayrollController extends Controller
         );
     }
 
+    /**
+     * Melakukan proses finalisasi payroll untuk banyak data sekaligus.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function bulkFinalize(Request $request): JsonResponse
     {
         $this->authorize('viewAny', Payroll::class);
@@ -106,6 +154,13 @@ class PayrollController extends Controller
         return $this->successResponse($result, 'Bulk payroll finalization processed');
     }
 
+    /**
+     * Membatalkan (void) data payroll yang sudah ada dengan memberikan catatan alasan.
+     *
+     * @param Payroll $payroll
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function void(Payroll $payroll, Request $request)
     {
         $this->authorize('update', $payroll);
@@ -119,6 +174,12 @@ class PayrollController extends Controller
         return $this->successResponse(null, 'Payroll voided successfully');
     }
 
+    /**
+     * Membuat file slip gaji (PDF) untuk data payroll tertentu.
+     *
+     * @param Payroll $payroll
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function generateSlip(Payroll $payroll)
     {
         $payroll = $this->payrollService->generateSlip($payroll);
@@ -130,6 +191,12 @@ class PayrollController extends Controller
         ]);
     }
 
+    /**
+     * Mengunduh file slip gaji yang telah dibuat sebelumnya.
+     *
+     * @param Payroll $payroll
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+     */
     public function downloadSlip(Payroll $payroll)
     {
         if (! $payroll->slip_path) {

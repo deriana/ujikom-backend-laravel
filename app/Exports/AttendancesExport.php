@@ -9,23 +9,38 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
 
+/**
+ * Class AttendancesExport
+ *
+ * Menangani proses ekspor data absensi ke format Excel menggunakan library Maatwebsite Excel.
+ */
 class AttendancesExport implements
     FromQuery,
     WithMapping,
     WithHeadings,
     WithChunkReading
 {
-    protected array $filters;
+    protected array $filters; /**< Filter pencarian data absensi (seperti rentang tanggal) */
 
+    /**
+     * Membuat instance export baru dengan filter tertentu.
+     *
+     * @param array $filters Array berisi parameter filter (start_date, end_date)
+     */
     public function __construct(array $filters = [])
     {
         $this->filters = $filters;
     }
 
+    /**
+     * Menyiapkan query database untuk mengambil data yang akan diekspor.
+     *
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
     public function query()
     {
         $query = Attendance::query()
-            ->with(['employee.user']); // penting untuk hindari N+1
+            ->with(['employee.user']);
 
         if (!empty($this->filters['start_date']) && !empty($this->filters['end_date'])) {
             $query->whereBetween('date', [
@@ -37,6 +52,12 @@ class AttendancesExport implements
         return $query->orderBy('date', 'desc');
     }
 
+    /**
+     * Memetakan setiap baris data dari model ke dalam format kolom Excel.
+     *
+     * @param mixed $attendance Objek model Attendance
+     * @return array
+     */
     public function map($attendance): array
     {
         return [
@@ -53,6 +74,11 @@ class AttendancesExport implements
         ];
     }
 
+    /**
+     * Menentukan judul kolom (header) pada file Excel.
+     *
+     * @return array
+     */
     public function headings(): array
     {
         return [
@@ -69,8 +95,13 @@ class AttendancesExport implements
         ];
     }
 
+    /**
+     * Menentukan jumlah baris yang diproses per batch untuk efisiensi memori.
+     *
+     * @return int
+     */
     public function chunkSize(): int
     {
-        return 1000; // proses per 1000 row
+        return 1000;
     }
 }

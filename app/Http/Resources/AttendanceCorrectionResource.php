@@ -6,48 +6,55 @@ use App\Enums\ApprovalStatus;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * Class AttendanceCorrectionResource
+ *
+ * Resource class untuk mentransformasi model AttendanceCorrection menjadi format JSON yang ringkas untuk tampilan tabel/list.
+ */
 class AttendanceCorrectionResource extends JsonResource
 {
     /**
-     * Transform the resource into an array.
+     * Transform resource ke dalam array.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return array<string, mixed>
+     * @return array<string, mixed> Representasi data koreksi absensi termasuk perbandingan waktu aktual dan pengajuan.
      */
     public function toArray($request): array
     {
         $user = Auth::user();
 
         return [
-            'uuid' => $this->uuid,
-            'employee_name' => $this->employee->user->name ?? null,
-            'employee_nik' => $this->employee->nik ?? null,
+            'uuid' => $this->uuid, /**< Identifier unik koreksi absensi */
+            'employee_name' => $this->employee->user->name ?? null, /**< Nama karyawan yang mengajukan */
+            'employee_nik' => $this->employee->nik ?? null, /**< NIK karyawan yang mengajukan */
 
-            'attendance_date' => $this->attendance?->date?->format('Y-m-d'),
-            'actual_clock_in' => $this->attendance?->clock_in?->format('H:i'),
-            'actual_clock_out' => $this->attendance?->clock_out?->format('H:i'),
+            'attendance_date' => $this->attendance?->date?->format('Y-m-d'), /**< Tanggal absensi yang dikoreksi */
+            'actual_clock_in' => $this->attendance?->clock_in?->format('H:i'), /**< Waktu masuk aktual di sistem */
+            'actual_clock_out' => $this->attendance?->clock_out?->format('H:i'), /**< Waktu keluar aktual di sistem */
 
-            'clock_in_requested' => $this->clock_in_requested?->format('H:i'),
-            'clock_out_requested' => $this->clock_out_requested?->format('H:i'),
-            'reason' => $this->reason,
+            'clock_in_requested' => $this->clock_in_requested?->format('H:i'), /**< Waktu masuk yang diajukan */
+            'clock_out_requested' => $this->clock_out_requested?->format('H:i'), /**< Waktu keluar yang diajukan */
+            'reason' => $this->reason, /**< Alasan pengajuan koreksi */
 
-            'status' => $this->status,
-            'status_label' => $this->getStatusLabel(),
-            'note' => $this->note,
-            'approver_name' => $this->approver?->user?->name ?? null,
-            'approved_at' => $this->approved_at?->format('Y-m-d H:i'),
+            'status' => $this->status, /**< Status persetujuan (enum value) */
+            'status_label' => $this->getStatusLabel(), /**< Label status yang mudah dibaca */
+            'note' => $this->note, /**< Catatan dari pemberi persetujuan */
+            'approver_name' => $this->approver?->user?->name ?? null, /**< Nama pemberi persetujuan */
+            'approved_at' => $this->approved_at?->format('Y-m-d H:i'), /**< Waktu persetujuan diberikan */
 
-            'can' => [
+            'can' => [ /**< Izin aksi yang dapat dilakukan oleh pengguna saat ini */
                 'update' => $user->can('update', $this->resource),
                 'delete' => $user->can('delete', $this->resource),
                 'approve' => $user->can('approve', $this->resource) && $this->status === ApprovalStatus::PENDING->value,
             ],
-            'created_at' => $this->created_at?->format('Y-m-d H:i'),
+            'created_at' => $this->created_at?->format('Y-m-d H:i'), /**< Waktu pembuatan pengajuan */
         ];
     }
 
     /**
-     * Helper untuk label status agar konsisten dengan OvertimeResource
+     * Mendapatkan label string untuk status persetujuan.
+     *
+     * @return string Label status (Pending, Approved, Rejected, atau Unknown)
      */
     private function getStatusLabel(): string
     {

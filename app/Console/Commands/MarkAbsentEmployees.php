@@ -17,21 +17,23 @@ class MarkAbsentEmployees extends Command
      *
      * @var string
      */
-    protected $signature = 'attendance:mark-absent';
+    protected $signature = 'attendance:mark-absent'; /**< Nama dan signature command di terminal */
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Insert absent attendance records for employees with no attendance after work end time';
+    protected $description = 'Insert absent attendance records for employees with no attendance after work end time'; /**< Deskripsi singkat fungsi command */
 
     /**
-     * Execute the console command.
+     * Menjalankan logika command untuk menandai karyawan yang tidak hadir (absent).
+     *
+     * @param WorkdayService $workdayService Layanan untuk mengecek hari kerja dan libur.
+     * @return int Status keluar (0 untuk sukses, 1 untuk gagal)
      */
     public function handle(WorkdayService $workdayService): int
     {
-        // Fetch attendance configuration from settings table
         $setting = Setting::where('key', 'attendance')->first()?->values;
 
         if (! $setting) {
@@ -57,20 +59,16 @@ class MarkAbsentEmployees extends Command
             return self::SUCCESS;
         }
 
-        // Fetch employees who haven't clocked in and are not on approved leave
         $employees = Employee::query()
-            // Filter: Exclude Owner and Director roles from mandatory attendance
             ->whereHas('user', function ($q) {
                 $q->withoutRole([
                     \App\Enums\UserRole::OWNER->value,
                     \App\Enums\UserRole::DIRECTOR->value
                 ]);
             })
-            // Check if employee has no attendance record for today
             ->whereDoesntHave('attendances', function ($q) use ($today) {
                 $q->whereDate('date', $today);
             })
-            // Check if employee is not currently on an approved leave
             ->whereDoesntHave('leaves', function ($q) use ($today) {
                 $q->where('approval_status', ApprovalStatus::APPROVED->value)
                     ->whereDate('date_start', '<=', $today)
@@ -78,7 +76,6 @@ class MarkAbsentEmployees extends Command
             })
             ->get();
 
-        // Create 'absent' records for the identified employees
         foreach ($employees as $employee) {
             Attendance::create([
                 'employee_id' => $employee->id,

@@ -4,21 +4,27 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * Class ManagerResource
+ *
+ * Resource class untuk mentransformasi model User yang bertindak sebagai Manager menjadi format JSON yang ringkas,
+ * biasanya digunakan untuk daftar pilihan (dropdown) atasan atau informasi manajer terkait.
+ */
 class ManagerResource extends JsonResource
 {
     /**
-     * Transform the resource into an array.
+     * Transform resource ke dalam array.
      *
-     * @return array<string, mixed>
+     * @param  \Illuminate\Http\Request  $request
+     * @return array<string, mixed> Representasi data manajer mencakup nama, NIK, role, dan jabatan.
      */
     public function toArray($request)
     {
-        // $this di sini merujuk pada model User karena getManagers() mengembalikan User
         return [
-            'name' => $this->name,
-            'nik' => $this->employee?->nik,
-            'role' => $this->roles->first()?->name,
-            'position' => $this->employee?->position?->name, 
+            'name' => $this->name, /**< Nama lengkap manajer */
+            'nik' => $this->employee?->nik, /**< Nomor Induk Karyawan (NIK) manajer */
+            'role' => $this->roles->first()?->name, /**< Nama role utama yang dimiliki */
+            'position' => $this->employee?->position?->name, /**< Nama jabatan manajer */
         ];
     }
 }

@@ -12,17 +12,30 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
+/**
+ * Class AttendanceCorrectionController
+ *
+ * Controller untuk mengelola pengajuan koreksi absensi oleh karyawan,
+ * termasuk proses pengajuan, pembaruan, pembatalan, dan persetujuan (approval).
+ */
 class AttendanceCorrectionController extends Controller
 {
-    protected AttendanceCorrectionService $correctionService;
+    protected AttendanceCorrectionService $correctionService; /**< Instance dari AttendanceCorrectionService untuk logika bisnis koreksi absensi */
 
+    /**
+     * Membuat instance AttendanceCorrectionController baru.
+     *
+     * @param AttendanceCorrectionService $correctionService
+     */
     public function __construct(AttendanceCorrectionService $correctionService)
     {
         $this->correctionService = $correctionService;
     }
 
     /**
-     * Index / list corrections
+     * Menampilkan daftar pengajuan koreksi absensi berdasarkan role pengguna.
+     *
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
      */
     public function index(): JsonResponse
     {
@@ -34,6 +47,11 @@ class AttendanceCorrectionController extends Controller
         );
     }
 
+    /**
+     * Menampilkan daftar pengajuan koreksi absensi yang memerlukan persetujuan (approval).
+     *
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
+     */
     public function indexApproval(): JsonResponse
     {
         $approvals = $this->correctionService->indexApproval(Auth::user());
@@ -45,7 +63,10 @@ class AttendanceCorrectionController extends Controller
     }
 
     /**
-     * Show detail correction
+     * Menampilkan detail data pengajuan koreksi absensi tertentu.
+     *
+     * @param AttendanceCorrection $attendance_correction
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
      */
     public function show(AttendanceCorrection $attendance_correction): JsonResponse
     {
@@ -60,7 +81,10 @@ class AttendanceCorrectionController extends Controller
     }
 
     /**
-     * Create correction
+     * Menyimpan pengajuan koreksi absensi baru ke database.
+     *
+     * @param CreateAttendanceCorrectionRequest $request
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
      */
     public function store(CreateAttendanceCorrectionRequest $request): JsonResponse
     {
@@ -77,7 +101,11 @@ class AttendanceCorrectionController extends Controller
     }
 
     /**
-     * Update correction
+     * Memperbarui data pengajuan koreksi absensi yang sudah ada.
+     *
+     * @param UpdateAttendanceCorrectionRequest $request
+     * @param AttendanceCorrection $attendance_correction
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
      */
     public function update(UpdateAttendanceCorrectionRequest $request, AttendanceCorrection $attendance_correction): JsonResponse
     {
@@ -92,7 +120,10 @@ class AttendanceCorrectionController extends Controller
     }
 
     /**
-     * Delete / cancel correction
+     * Menghapus atau membatalkan pengajuan koreksi absensi.
+     *
+     * @param AttendanceCorrection $attendance_correction
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
      */
     public function destroy(AttendanceCorrection $attendance_correction): JsonResponse
     {
@@ -107,7 +138,11 @@ class AttendanceCorrectionController extends Controller
     }
 
     /**
-     * Approval
+     * Menangani proses persetujuan (approve) atau penolakan (reject) pengajuan koreksi absensi.
+     *
+     * @param Request $request
+     * @param AttendanceCorrection $attendance_correction
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
      */
     public function approve(Request $request, AttendanceCorrection $attendance_correction): JsonResponse
     {

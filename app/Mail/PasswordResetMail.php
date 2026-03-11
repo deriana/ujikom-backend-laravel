@@ -9,27 +9,36 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
+/**
+ * Class PasswordResetMail
+ *
+ * Mailable class untuk mengirimkan email instruksi reset password kepada pengguna.
+ */
 class PasswordResetMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
-    public $user;
-    public $token;
-    public $url;
+    public $user; /**< Instance model User penerima email */
+    public $token; /**< Token unik untuk verifikasi reset password */
+    public $url; /**< URL lengkap menuju halaman reset password di frontend */
 
     /**
-     * Create a new message instance.
+     * Membuat instance pesan baru.
+     *
+     * @param mixed $user Model user yang meminta reset password.
+     * @param string $token Token reset password yang dihasilkan.
      */
     public function __construct($user, $token)
     {
         $this->user = $user;
         $this->token = $token;
-        // Adjusted URL for reset password
         $this->url = config('app.frontend_url') . '/reset-password?token=' . $token;
     }
 
     /**
-     * Get the message envelope.
+     * Mendapatkan amplop pesan (envelope).
+     *
+     * @return Envelope Definisi subjek email.
      */
     public function envelope(): Envelope
     {
@@ -39,7 +48,9 @@ class PasswordResetMail extends Mailable implements ShouldQueue
     }
 
     /**
-     * Get the message content definition.
+     * Mendapatkan definisi konten pesan.
+     *
+     * @return Content Definisi view HTML dan teks untuk isi email.
      */
     public function content(): Content
     {
@@ -50,9 +61,9 @@ class PasswordResetMail extends Mailable implements ShouldQueue
     }
 
     /**
-     * Get the attachments for the message.
+     * Mendapatkan lampiran untuk pesan.
      *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
+     * @return array<int, \Illuminate\Mail\Mailables\Attachment> Daftar file lampiran.
      */
     public function attachments(): array
     {

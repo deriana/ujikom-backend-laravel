@@ -6,15 +6,21 @@ use App\Exceptions\Attendance\GeoLocationException;
 use App\Models\Setting;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Class GeoFenceValidator
+ *
+ * Menangani validasi lokasi geografis (geo-fencing) untuk memastikan kehadiran dilakukan di radius kantor.
+ */
 class GeoFenceValidator
 {
     /**
-     * Validate if the provided coordinates are within the allowed office radius.
+     * Memvalidasi apakah koordinat yang diberikan berada dalam radius kantor yang diizinkan.
      *
-     * @param  float  $lat  Latitude of the user
-     * @param  float  $lon  Longitude of the user
+     * @param float $lat Latitude pengguna.
+     * @param float $lon Longitude pengguna.
+     * @param bool $isRequired Menentukan apakah validasi lokasi wajib dilakukan.
      *
-     * @throws GeoLocationException If user is outside the allowed radius
+     * @throws GeoLocationException Jika pengguna berada di luar radius yang diizinkan.
      */
     public function validate(float $lat, float $lon, bool $isRequired = true): void
     {
@@ -49,7 +55,9 @@ class GeoFenceValidator
     }
 
     /**
-     * Retrieve geo-fencing configuration from settings.
+     * Mengambil konfigurasi geo-fencing dari pengaturan sistem.
+     *
+     * @return array|null Data pengaturan geo-fencing atau null jika tidak ditemukan.
      */
     protected function getGeoSetting(): ?array
     {
@@ -59,13 +67,13 @@ class GeoFenceValidator
     }
 
     /**
-     * Calculate the distance between two points using the Haversine formula.
+     * Menghitung jarak antara dua titik koordinat menggunakan rumus Haversine.
      *
-     * @param  float  $lat1  Latitude of point 1
-     * @param  float  $lon1  Longitude of point 1
-     * @param  float  $lat2  Latitude of point 2
-     * @param  float  $lon2  Longitude of point 2
-     * @return float Distance in meters
+     * @param float $lat1 Latitude titik pertama.
+     * @param float $lon1 Longitude titik pertama.
+     * @param float $lat2 Latitude titik kedua.
+     * @param float $lon2 Longitude titik kedua.
+     * @return float Jarak dalam satuan meter.
      */
     protected function distanceInMeters($lat1, $lon1, $lat2, $lon2): float
     {

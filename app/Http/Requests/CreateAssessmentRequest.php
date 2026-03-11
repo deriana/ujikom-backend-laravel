@@ -4,13 +4,28 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
+/**
+ * Class CreateAssessmentRequest
+ *
+ * Request class untuk menangani validasi pembuatan data penilaian (Assessment) karyawan.
+ */
 class CreateAssessmentRequest extends FormRequest
 {
+    /**
+     * Menentukan apakah pengguna memiliki izin untuk membuat request ini.
+     *
+     * @return bool
+     */
     public function authorize(): bool
     {
         return true;
     }
 
+    /**
+     * Mendapatkan aturan validasi yang berlaku untuk request ini.
+     *
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     */
     public function rules(): array
     {
         return [
@@ -27,7 +42,9 @@ class CreateAssessmentRequest extends FormRequest
     }
 
     /**
-     * Custom attributes agar pesan error lebih enak dibaca
+     * Mendefinisikan atribut kustom untuk pesan kesalahan validasi agar lebih mudah dibaca.
+     *
+     * @return array
      */
     public function attributes(): array
     {

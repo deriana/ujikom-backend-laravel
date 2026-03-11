@@ -8,7 +8,7 @@ use Illuminate\Validation\Rule;
 class UpdateEmployeeShiftRequest extends FormRequest
 {
     /**
-     * Determine if the user is authorized to make this request.
+     * Menentukan apakah pengguna memiliki izin untuk membuat request ini.
      */
     public function authorize(): bool
     {
@@ -16,13 +16,13 @@ class UpdateEmployeeShiftRequest extends FormRequest
     }
 
     /**
-     * Get the validation rules that apply to the request.
+     * Mendapatkan aturan validasi yang berlaku untuk request ini.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string> Aturan validasi untuk template shift dan tanggal shift
      */
     public function rules(): array
     {
-        $shift = $this->route('employee_shift'); // model instance
+        $shift = $this->route('employee_shift'); // instansi model
 
         return [
             'shift_template_uuid' => 'required|exists:shift_templates,uuid',

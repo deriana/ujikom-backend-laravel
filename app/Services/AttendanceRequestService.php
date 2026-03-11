@@ -11,12 +11,24 @@ use App\Models\WorkSchedule;
 use Exception;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Class AttendanceRequestService
+ *
+ * Menangani logika bisnis untuk pengajuan kehadiran (shift atau mode kerja),
+ * termasuk manajemen status persetujuan dan sinkronisasi ke jadwal kerja utama.
+ */
 class AttendanceRequestService
 {
-    protected EmployeeShiftService $shiftService;
+    protected EmployeeShiftService $shiftService; /**< Layanan untuk mengelola shift karyawan */
 
-    protected EmployeeWorkScheduleService $workScheduleService;
+    protected EmployeeWorkScheduleService $workScheduleService; /**< Layanan untuk mengelola jadwal kerja rutin karyawan */
 
+    /**
+     * Membuat instance layanan pengajuan kehadiran baru.
+     *
+     * @param EmployeeShiftService $shiftService
+     * @param EmployeeWorkScheduleService $workScheduleService
+     */
     public function __construct(
         EmployeeShiftService $shiftService,
         EmployeeWorkScheduleService $workScheduleService
@@ -26,10 +38,10 @@ class AttendanceRequestService
     }
 
     /**
-     * Get a list of attendance requests filtered by user roles.
+     * Mengambil daftar pengajuan kehadiran dengan filter berdasarkan peran pengguna.
      *
-     * @param \App\Models\User $user
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @param \App\Models\User $user Objek pengguna yang sedang login.
+     * @return \Illuminate\Database\Eloquent\Collection Koleksi data pengajuan kehadiran.
      */
     public function index($user)
     {
@@ -69,10 +81,10 @@ class AttendanceRequestService
     }
 
     /**
-     * Get a list of pending attendance requests that require approval.
+     * Mengambil daftar pengajuan kehadiran yang sedang menunggu persetujuan.
      *
-     * @param \App\Models\User $user
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @param \App\Models\User $user Objek pengguna yang sedang login.
+     * @return \Illuminate\Database\Eloquent\Collection Koleksi data pengajuan yang tertunda.
      */
     public function indexApproval($user)
     {
@@ -129,10 +141,10 @@ class AttendanceRequestService
     }
 
     /**
-     * Show details of a specific request.
+     * Menampilkan detail lengkap dari satu pengajuan kehadiran tertentu.
      *
-     * @param AttendanceRequest $attendanceRequest
-     * @return AttendanceRequest
+     * @param AttendanceRequest $attendanceRequest Objek pengajuan kehadiran.
+     * @return AttendanceRequest Objek pengajuan dengan relasi yang dimuat.
      */
     public function show(AttendanceRequest $attendanceRequest)
     {
@@ -145,11 +157,11 @@ class AttendanceRequestService
     }
 
     /**
-     * Store a new attendance request in the database.
+     * Menyimpan pengajuan kehadiran baru ke dalam database.
      *
-     * @param array $data
-     * @return AttendanceRequest
-     * @throws Exception
+     * @param array $data Data pengajuan (request_type, start_date, reason, dll).
+     * @return AttendanceRequest Objek pengajuan yang berhasil dibuat.
+     * @throws Exception Jika template shift atau jadwal kerja tidak ditemukan.
      */
     public function store(array $data): AttendanceRequest
     {
@@ -211,12 +223,13 @@ class AttendanceRequestService
     }
 
     /**
-     * Update a pending request.
+     * Memperbarui data pengajuan kehadiran yang masih dalam status tertunda.
      *
-     * @param AttendanceRequest $attendanceRequest
-     * @param array $data
-     * @param \App\Models\User $user
-     * @return AttendanceRequest
+     * @param AttendanceRequest $attendanceRequest Objek pengajuan yang akan diperbarui.
+     * @param array $data Data pembaruan.
+     * @param \App\Models\User $user Objek pengguna yang melakukan aksi.
+     * @return AttendanceRequest Objek pengajuan setelah diperbarui.
+     * @throws Exception Jika pengajuan sudah diproses dan pengguna bukan HR/Admin.
      */
     public function update(AttendanceRequest $attendanceRequest, array $data, $user): AttendanceRequest
     {
@@ -275,13 +288,14 @@ class AttendanceRequestService
     }
 
     /**
-     * Process approval and execute synchronization to main schedule tables.
+     * Memproses persetujuan pengajuan dan melakukan sinkronisasi ke tabel jadwal utama.
      *
-     * @param AttendanceRequest $attendanceRequest
-     * @param \App\Models\User $user
-     * @param bool $approve
-     * @param string|null $note
-     * @return AttendanceRequest
+     * @param AttendanceRequest $attendanceRequest Objek pengajuan.
+     * @param \App\Models\User $user Objek pengguna penyetuju.
+     * @param bool $approve Status persetujuan (true untuk setuju, false untuk tolak).
+     * @param string|null $note Catatan dari penyetuju.
+     * @return AttendanceRequest Objek pengajuan yang telah diperbarui.
+     * @throws Exception Jika pengajuan sudah diproses atau pengguna tidak memiliki izin.
      */
     public function approve(AttendanceRequest $attendanceRequest, $user, bool $approve, ?string $note = null)
     {
@@ -338,10 +352,10 @@ class AttendanceRequestService
     }
 
     /**
-     * Delete a request.
+     * Menghapus data pengajuan kehadiran.
      *
-     * @param AttendanceRequest $attendanceRequest
-     * @return bool
+     * @param AttendanceRequest $attendanceRequest Objek pengajuan yang akan dihapus.
+     * @return bool True jika berhasil dihapus.
      */
     public function delete(AttendanceRequest $attendanceRequest): bool
     {

@@ -15,13 +15,19 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
+/**
+ * Class EarlyLeaveService
+ *
+ * Menangani logika bisnis untuk pengajuan pulang awal karyawan,
+ * termasuk validasi kelayakan, manajemen status persetujuan, dan penanganan lampiran.
+ */
 class EarlyLeaveService
 {
     /**
-     * Get a list of early leave requests with role-based filtering.
+     * Mengambil daftar pengajuan pulang awal dengan filter berdasarkan peran pengguna.
      *
-     * @param \App\Models\User $user
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @param \App\Models\User $user Objek pengguna yang sedang login.
+     * @return \Illuminate\Database\Eloquent\Collection Koleksi data pengajuan pulang awal.
      */
     public function index($user)
     {
@@ -62,10 +68,10 @@ class EarlyLeaveService
     }
 
     /**
-     * Get a list of pending early leave requests that require approval.
+     * Mengambil daftar pengajuan pulang awal yang sedang menunggu persetujuan.
      *
-     * @param \App\Models\User $user
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @param \App\Models\User $user Objek pengguna yang sedang login.
+     * @return \Illuminate\Database\Eloquent\Collection Koleksi data pengajuan yang tertunda.
      */
     public function indexApproval($user)
     {
@@ -115,10 +121,10 @@ class EarlyLeaveService
     }
 
     /**
-     * Show details of a specific early leave request.
+     * Menampilkan detail lengkap dari satu pengajuan pulang awal tertentu.
      *
-     * @param EarlyLeave $earlyLeave
-     * @return EarlyLeaveDetailResource
+     * @param EarlyLeave $earlyLeave Objek pengajuan pulang awal.
+     * @return EarlyLeaveDetailResource Resource detail pengajuan pulang awal.
      */
     public function show(EarlyLeave $earlyLeave)
     {
@@ -133,11 +139,11 @@ class EarlyLeaveService
     }
 
     /**
-     * Store a new early leave request.
+     * Menyimpan pengajuan pulang awal baru ke dalam database.
      *
-     * @param array $data
-     * @return EarlyLeave
-     * @throws Exception
+     * @param array $data Data pengajuan (employee_id, reason, attachment).
+     * @return EarlyLeave Objek pengajuan yang berhasil dibuat.
+     * @throws Exception Jika catatan kehadiran hari ini tidak ditemukan atau tidak layak mengajukan.
      */
     public function store(array $data): EarlyLeave
     {
@@ -187,13 +193,13 @@ class EarlyLeaveService
     }
 
     /**
-     * Update an existing early leave request.
+     * Memperbarui data pengajuan pulang awal yang sudah ada.
      *
-     * @param EarlyLeave $earlyLeave
-     * @param array $data
-     * @param \App\Models\User $user
-     * @return EarlyLeave
-     * @throws Exception
+     * @param EarlyLeave $earlyLeave Objek pengajuan yang akan diperbarui.
+     * @param array $data Data pembaruan.
+     * @param \App\Models\User $user Objek pengguna yang melakukan aksi.
+     * @return EarlyLeave Objek pengajuan setelah diperbarui.
+     * @throws Exception Jika pengajuan sudah diproses atau bukan dilakukan di hari yang sama.
      */
     public function update(EarlyLeave $earlyLeave, array $data, $user): EarlyLeave
     {
@@ -241,14 +247,14 @@ class EarlyLeaveService
     }
 
     /**
-     * Process approval or rejection of an early leave request.
+     * Memproses persetujuan atau penolakan pengajuan pulang awal.
      *
-     * @param EarlyLeave $earlyLeave
-     * @param \App\Models\User $user
-     * @param bool $approve
-     * @param string|null $note
-     * @return EarlyLeave
-     * @throws Exception
+     * @param EarlyLeave $earlyLeave Objek pengajuan.
+     * @param \App\Models\User $user Objek pengguna penyetuju.
+     * @param bool $approve Status persetujuan (true untuk setuju, false untuk tolak).
+     * @param string|null $note Catatan dari penyetuju.
+     * @return EarlyLeave Objek pengajuan yang telah diperbarui.
+     * @throws Exception Jika pengajuan sudah diproses atau pengguna tidak memiliki izin.
      */
     public function approve(EarlyLeave $earlyLeave, $user, bool $approve, ?string $note = null)
     {
@@ -287,11 +293,11 @@ class EarlyLeaveService
     }
 
     /**
-     * Delete an early leave request.
+     * Menghapus data pengajuan pulang awal beserta lampirannya.
      *
-     * @param EarlyLeave $earlyLeave
-     * @param \App\Models\User $user
-     * @return bool
+     * @param EarlyLeave $earlyLeave Objek pengajuan yang akan dihapus.
+     * @param \App\Models\User $user Objek pengguna yang melakukan aksi.
+     * @return bool True jika berhasil dihapus.
      */
     public function delete(EarlyLeave $earlyLeave, $user): bool
     {
@@ -314,10 +320,10 @@ class EarlyLeaveService
     }
 
     /**
-     * Validate if the employee is eligible to submit an early leave request.
+     * Memvalidasi apakah karyawan layak untuk mengajukan pulang awal.
      *
-     * @param Attendance $attendance
-     * @throws Exception
+     * @param Attendance $attendance Objek kehadiran hari ini.
+     * @throws Exception Jika belum clock-in, sudah clock-out, atau sudah pernah mengajukan hari ini.
      */
     private function validateEarlyLeaveEligibility(Attendance $attendance): void
     {

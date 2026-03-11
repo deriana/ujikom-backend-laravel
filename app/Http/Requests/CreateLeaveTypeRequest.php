@@ -7,7 +7,7 @@ use Illuminate\Foundation\Http\FormRequest;
 class CreateLeaveTypeRequest extends FormRequest
 {
     /**
-     * Determine if the user is authorized to make this request.
+     * Menentukan apakah pengguna memiliki izin untuk membuat request ini.
      */
     public function authorize(): bool
     {
@@ -15,9 +15,9 @@ class CreateLeaveTypeRequest extends FormRequest
     }
 
     /**
-     * Get the validation rules that apply to the request.
+     * Mendapatkan aturan validasi yang berlaku untuk request ini.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string> Aturan validasi untuk nama, status aktif, jumlah hari default, gender, dan status keluarga
      */
     public function rules(): array
     {

@@ -5,19 +5,34 @@ namespace App\Http\Requests;
 use App\Enums\UserRole;
 use Illuminate\Foundation\Http\FormRequest;
 
+/**
+ * Class CreateAttendanceCorrectionRequest
+ *
+ * Request class untuk menangani validasi pengajuan koreksi absensi (Attendance Correction) karyawan.
+ */
 class CreateAttendanceCorrectionRequest extends FormRequest
 {
-    public function authorize()
+    /**
+     * Menentukan apakah pengguna memiliki izin untuk membuat request ini.
+     *
+     * @return bool
+     */
+    public function authorize(): bool
     {
         return true;
     }
 
+    /**
+     * Mendapatkan aturan validasi yang berlaku untuk request ini.
+     *
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     */
     public function rules(): array
     {
         $rules = [
             'attendance_id' => ['required', 'exists:attendances,id'],
             'clock_in_requested' => ['required', 'date'],
-            'clock_out_requested' => ['required', 'date', 'after:clock_in_requested'],            
+            'clock_out_requested' => ['required', 'date', 'after:clock_in_requested'],
             'reason' => ['required', 'string', 'max:500'],
             'attachment' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
         ];
@@ -33,7 +48,12 @@ class CreateAttendanceCorrectionRequest extends FormRequest
         return $rules;
     }
 
-    public function withValidator($validator)
+    /**
+     * Mengonfigurasi instance validator untuk logika validasi tambahan setelah aturan utama.
+     *
+     * @param \Illuminate\Validation\Validator $validator
+     */
+    public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
             if ($validator->errors()->any()) {

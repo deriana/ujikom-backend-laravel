@@ -15,9 +15,9 @@ class CreateWorkScheduleRequest extends FormRequest
     }
 
     /**
-     * Get the validation rules that apply to the request.
+     * Mendapatkan aturan validasi yang berlaku untuk request ini.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string> Aturan validasi untuk nama, mode kerja, waktu kerja, waktu istirahat, toleransi keterlambatan, dan lokasi kantor
      */
     public function rules(): array
     {

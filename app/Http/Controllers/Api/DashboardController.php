@@ -21,18 +21,36 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
+/**
+ * Class DashboardController
+ *
+ * Controller untuk mengelola data dashboard baik untuk Administrator maupun Karyawan,
+ * mencakup statistik kehadiran, ringkasan cuti, grafik bulanan, dan pelacak aktivitas harian.
+ */
 class DashboardController extends Controller
 {
-    protected TimeValidator $timeValidator;
+    protected TimeValidator $timeValidator; /**< Instance dari TimeValidator untuk validasi waktu kerja */
 
-    protected WorkdayService $workdayService;
+    protected WorkdayService $workdayService; /**< Instance dari WorkdayService untuk pengecekan hari kerja */
 
+    /**
+     * Membuat instance DashboardController baru.
+     *
+     * @param TimeValidator $timeValidator
+     * @param WorkdayService $workdayService
+     */
     public function __construct(TimeValidator $timeValidator, WorkdayService $workdayService)
     {
         $this->timeValidator = $timeValidator;
         $this->workdayService = $workdayService;
     }
 
+    /**
+     * Mengambil data dashboard untuk level Administrator.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getAdminDashboard(Request $request)
     {
         // Filter Tanggal (Default hari ini)
@@ -145,6 +163,12 @@ class DashboardController extends Controller
         ], 'Admin dashboard data fetched successfully');
     }
 
+    /**
+     * Mengambil data dashboard untuk level Karyawan (Web/Desktop).
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getEmployeeDashboard(Request $request)
     {
         $user = $request->user();
@@ -334,6 +358,11 @@ class DashboardController extends Controller
         ], 'Employee dashboard data fetched successfully');
     }
 
+    /**
+     * Mengambil data ringkasan untuk halaman beranda aplikasi mobile.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function mobileHomePage()
     {
         $user = Auth::user();
@@ -451,6 +480,12 @@ class DashboardController extends Controller
         ], 'Mobile home data fetched');
     }
 
+    /**
+     * Mengambil data statistik dan tren untuk halaman statistik di aplikasi mobile.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function mobileStatsPage(Request $request)
     {
         $user = $request->user();
@@ -519,6 +554,12 @@ class DashboardController extends Controller
         ], 'Mobile statistics fetched successfully');
     }
 
+    /**
+     * Mengambil data pelacak aktivitas harian mendetail untuk aplikasi mobile.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function mobileDailyTrackerPage(Request $request)
     {
         $user = Auth::user();
@@ -708,6 +749,13 @@ class DashboardController extends Controller
         ], 'Daily tracker fetched successfully');
     }
 
+    /**
+     * Mengambil data saldo cuti karyawan untuk tahun tertentu.
+     *
+     * @param int $employeeId
+     * @param int $year
+     * @return \App\Models\EmployeeLeaveBalance|null
+     */
     private function getLeaveBalance($employeeId, $year)
     {
         return EmployeeLeaveBalance::where('employee_id', $employeeId)
@@ -715,6 +763,12 @@ class DashboardController extends Controller
             ->first();
     }
 
+    /**
+     * Memformat total menit menjadi string durasi (jam dan menit).
+     *
+     * @param int $totalMinutes
+     * @return string
+     */
     private function formatWorkDuration($totalMinutes)
     {
         $hours = floor($totalMinutes / 60);
@@ -723,6 +777,12 @@ class DashboardController extends Controller
         return "{$hours}j {$minutes}m";
     }
 
+    /**
+     * Mengambil log riwayat gaji terbaru untuk karyawan tertentu.
+     *
+     * @param int $employeeId
+     * @return \Illuminate\Support\Collection
+     */
     private function getSalaryLogs($employeeId)
     {
         return Payroll::where('employee_id', $employeeId)

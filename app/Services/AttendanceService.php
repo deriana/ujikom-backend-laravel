@@ -17,20 +17,39 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Class AttendanceService
+ *
+ * Menangani logika utama kehadiran karyawan, termasuk verifikasi wajah,
+ * validasi lokasi (geo-fencing), validasi waktu, dan integrasi dengan lembur.
+ */
 class AttendanceService
 {
+    /**
+     * Membuat instance layanan kehadiran baru dengan dependensi yang diperlukan.
+     *
+     * @param FaceValidator $faceValidator Validator pengenalan wajah.
+     * @param GeoFenceValidator $geoValidator Validator radius lokasi kantor.
+     * @param TimeValidator $timeValidator Validator jendela waktu kerja.
+     * @param AttendanceUploader $uploader Pengunggah foto kehadiran.
+     * @param AttendanceLogger $logger Pencatat log aktivitas kehadiran.
+     * @param OvertimeService $overtimeService Layanan manajemen lembur.
+     */
     public function __construct(
-        protected FaceValidator $faceValidator,
-        protected GeoFenceValidator $geoValidator,
-        protected TimeValidator $timeValidator,
-        protected AttendanceUploader $uploader,
-        protected AttendanceLogger $logger,
-        protected OvertimeService $overtimeService
-
+        protected FaceValidator $faceValidator, /**< Validator untuk verifikasi biometrik wajah */
+        protected GeoFenceValidator $geoValidator, /**< Validator untuk pengecekan lokasi geografis */
+        protected TimeValidator $timeValidator, /**< Validator untuk pengecekan jadwal dan waktu */
+        protected AttendanceUploader $uploader, /**< Layanan untuk mengunggah foto bukti kehadiran */
+        protected AttendanceLogger $logger, /**< Layanan untuk mencatat log aktivitas */
+        protected OvertimeService $overtimeService /**< Layanan untuk sinkronisasi data lembur */
     ) {}
 
     /**
-     * Handle a single attendance request for the authenticated user.
+     * Menangani permintaan kehadiran tunggal untuk pengguna yang terautentikasi.
+     *
+     * @param array $data Data input (descriptor wajah, koordinat, foto).
+     * @param string $userAgent Informasi browser/perangkat pengguna.
+     * @return array Status keberhasilan dan pesan respon.
      */
     public function handleAttendance(array $data, string $userAgent): array
     {
@@ -58,7 +77,12 @@ class AttendanceService
     }
 
     /**
-     * Process the clock-in logic for an attendance record.
+     * Memproses logika clock-in (masuk) untuk catatan kehadiran.
+     *
+     * @param Attendance $attendance Objek model kehadiran.
+     * @param Carbon $now Waktu saat ini.
+     * @param array $data Data tambahan (koordinat).
+     * @param string|null $photoPath Path foto yang diunggah.
      */
     protected function processClockIn(Attendance $attendance, Carbon $now, array $data, ?string $photoPath): void
     {
@@ -88,7 +112,12 @@ class AttendanceService
     }
 
     /**
-     * Process the clock-out logic for an attendance record.
+     * Memproses logika clock-out (pulang) untuk catatan kehadiran.
+     *
+     * @param Attendance $attendance Objek model kehadiran.
+     * @param Carbon $now Waktu saat ini.
+     * @param array $data Data tambahan (koordinat).
+     * @param string|null $photoPath Path foto yang diunggah.
      */
     protected function processClockOut(Attendance $attendance, Carbon $now, array $data, ?string $photoPath): void
     {
@@ -134,7 +163,11 @@ class AttendanceService
     }
 
     /**
-     * Handle bulk attendance requests (e.g., from a shared terminal).
+     * Menangani permintaan kehadiran massal (misalnya dari terminal bersama).
+     *
+     * @param array $data Array berisi daftar data kehadiran.
+     * @param string $userAgent Informasi perangkat.
+     * @return array Ringkasan jumlah berhasil dan gagal beserta detailnya.
      */
     public function handleBulkAttendance(array $data, string $userAgent): array
     {
@@ -168,7 +201,13 @@ class AttendanceService
     }
 
     /**
-     * Execute the core attendance processing logic within a transaction.
+     * Menjalankan logika inti pemrosesan kehadiran di dalam transaksi database.
+     *
+     * @param mixed $employee Objek karyawan yang teridentifikasi.
+     * @param float $score Skor kemiripan wajah.
+     * @param array $data Data input kehadiran.
+     * @param string $userAgent Informasi perangkat.
+     * @return array Hasil pemrosesan.
      */
     protected function executeProcess($employee, $score, array $data, string $userAgent): array
     {
@@ -253,7 +292,10 @@ class AttendanceService
     }
 
     /**
-     * Parse the raw face descriptor into an array.
+     * Mengurai deskriptor wajah mentah menjadi array.
+     *
+     * @param mixed $raw Data deskriptor (array atau string JSON).
+     * @return array Deskriptor dalam format array.
      */
     protected function parseDescriptor($raw): array
     {
@@ -261,7 +303,10 @@ class AttendanceService
     }
 
     /**
-     * Get the attendance status string for an employee for the current day.
+     * Mendapatkan string status kehadiran karyawan untuk hari ini.
+     *
+     * @param mixed $employee Objek karyawan.
+     * @return string Status (absent, clocked_in, completed).
      */
     public function getTodayAttendanceStatus($employee): string
     {

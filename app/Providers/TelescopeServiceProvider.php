@@ -8,10 +8,15 @@ use Laravel\Telescope\IncomingEntry;
 use Laravel\Telescope\Telescope;
 use Laravel\Telescope\TelescopeApplicationServiceProvider;
 
+/**
+ * Class TelescopeServiceProvider
+ *
+ * Mengatur konfigurasi dan otorisasi untuk Laravel Telescope.
+ */
 class TelescopeServiceProvider extends TelescopeApplicationServiceProvider
 {
     /**
-     * Register any application services.
+     * Mendaftarkan layanan aplikasi Telescope.
      */
     public function register(): void
     {
@@ -32,7 +37,7 @@ class TelescopeServiceProvider extends TelescopeApplicationServiceProvider
     }
 
     /**
-     * Prevent sensitive request details from being logged by Telescope.
+     * Menyembunyikan detail permintaan yang sensitif agar tidak dicatat oleh Telescope.
      */
     protected function hideSensitiveRequestDetails(): void
     {
@@ -50,9 +55,9 @@ class TelescopeServiceProvider extends TelescopeApplicationServiceProvider
     }
 
     /**
-     * Register the Telescope gate.
+     * Mendaftarkan gate Telescope.
      *
-     * This gate determines who can access Telescope in non-local environments.
+     * Gate ini menentukan siapa yang dapat mengakses Telescope di lingkungan non-lokal.
      */
     protected function gate(): void
     {

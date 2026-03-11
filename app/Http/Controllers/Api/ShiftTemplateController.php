@@ -10,16 +10,31 @@ use App\Models\ShiftTemplate;
 use App\Services\ShiftTemplateService;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\JsonResponse;
-
+/**
+ * Class ShiftTemplateController
+ *
+ * Controller untuk mengelola template shift kerja (Shift Template),
+ * mencakup operasi CRUD, pemulihan data terhapus, dan manajemen jam kerja shift.
+ */
 class ShiftTemplateController extends Controller
 {
-    protected ShiftTemplateService $shiftTemplateService;
+    protected ShiftTemplateService $shiftTemplateService; /**< Instance dari ShiftTemplateService untuk logika bisnis template shift */
 
+    /**
+     * Membuat instance ShiftTemplateController baru.
+     *
+     * @param ShiftTemplateService $shiftTemplateService
+     */
     public function __construct(ShiftTemplateService $shiftTemplateService)
     {
         $this->shiftTemplateService = $shiftTemplateService;
     }
 
+    /**
+     * Menampilkan daftar semua template shift yang tersedia.
+     *
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
+     */
     public function index(): JsonResponse
     {
         // $this->authorize('viewAny', ShiftTemplate::class);
@@ -32,6 +47,12 @@ class ShiftTemplateController extends Controller
         );
     }
 
+    /**
+     * Menyimpan template shift baru ke database.
+     *
+     * @param CreateShiftTemplateRequest $request
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
+     */
     public function store(CreateShiftTemplateRequest $request): JsonResponse
     {
         $this->authorize('create', ShiftTemplate::class);
@@ -48,6 +69,12 @@ class ShiftTemplateController extends Controller
         );
     }
 
+    /**
+     * Menampilkan detail data template shift tertentu.
+     *
+     * @param ShiftTemplate $shift_template
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
+     */
     public function show(ShiftTemplate $shift_template): JsonResponse
     {
         $this->authorize('view', $shift_template);
@@ -60,6 +87,13 @@ class ShiftTemplateController extends Controller
         );
     }
 
+    /**
+     * Memperbarui data template shift yang sudah ada.
+     *
+     * @param UpdateShiftTemplateRequest $request
+     * @param ShiftTemplate $shift_template
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
+     */
     public function update(UpdateShiftTemplateRequest $request, ShiftTemplate $shift_template): JsonResponse
     {
         $this->authorize('edit', $shift_template);
@@ -72,6 +106,12 @@ class ShiftTemplateController extends Controller
         );
     }
 
+    /**
+     * Menghapus data template shift (Soft Delete).
+     *
+     * @param ShiftTemplate $shift_template
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
+     */
     public function destroy(ShiftTemplate $shift_template): JsonResponse
     {
         $this->authorize('destroy', $shift_template);
@@ -85,7 +125,13 @@ class ShiftTemplateController extends Controller
         return $this->successResponse(null, 'ShiftTemplate deleted successfully');
     }
 
-       public function restore(string $uuid): JsonResponse
+    /**
+     * Memulihkan data template shift yang telah dihapus (Restore).
+     *
+     * @param string $uuid
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
+     */
+    public function restore(string $uuid): JsonResponse
     {
         $this->authorize('restore', ShiftTemplate::class);
 
@@ -97,6 +143,12 @@ class ShiftTemplateController extends Controller
         );
     }
 
+    /**
+     * Menghapus data template shift secara permanen dari database.
+     *
+     * @param string $uuid
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
+     */
     public function forceDelete(string $uuid): JsonResponse
     {
         $this->authorize('forceDelete', ShiftTemplate::class);
@@ -109,6 +161,11 @@ class ShiftTemplateController extends Controller
         );
     }
 
+    /**
+     * Mengambil daftar template shift yang berada di dalam trash (terhapus sementara).
+     *
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
+     */
     public function getTrashed()
     {
         $this->authorize('restore', ShiftTemplate::class);
@@ -117,7 +174,7 @@ class ShiftTemplateController extends Controller
 
         return $this->successResponse(
             ShiftTemplateResource::collection($shiftTemplates),
-            'Trashed Allowances fetched successfully'
+            'Trashed ShiftTemplates fetched successfully'
         );
     }
 }

@@ -5,8 +5,18 @@ namespace App\Services\Attendance\Internal;
 use App\Models\AttendanceLog;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Class AttendanceLogger
+ *
+ * Menangani pencatatan log aktivitas kehadiran ke dalam database.
+ */
 class AttendanceLogger
 {
+    /**
+     * Mencatat entri log kehadiran ke database.
+     *
+     * @param array $context Data konteks log yang akan disimpan.
+     */
     public function log(array $context): void
     {
         // Add request info if missing
@@ -33,6 +43,12 @@ class AttendanceLogger
         // Log::info('ATTENDANCE_EVENT', $data);
     }
 
+    /**
+     * Mencatat kegagalan aktivitas kehadiran.
+     *
+     * @param string $reason Alasan kegagalan.
+     * @param array $context Data tambahan terkait kegagalan.
+     */
     public function logFailure(string $reason, array $context = []): void
     {
         $this->log(array_merge($context, [
@@ -41,6 +57,12 @@ class AttendanceLogger
         ]));
     }
 
+    /**
+     * Mencatat keberhasilan aktivitas kehadiran.
+     *
+     * @param string $action Jenis aksi (misal: clock_in, clock_out).
+     * @param array $context Data tambahan terkait keberhasilan.
+     */
     public function logSuccess(string $action, array $context = []): void
     {
         $this->log(array_merge($context, [

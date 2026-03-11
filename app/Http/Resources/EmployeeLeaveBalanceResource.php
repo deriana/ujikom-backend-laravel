@@ -7,12 +7,19 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use App\Models\LeaveType;
 use Carbon\Carbon;
 
+/**
+ * Class EmployeeLeaveBalanceResource
+ *
+ * Resource class untuk mentransformasi data saldo cuti karyawan menjadi format JSON,
+ * menggabungkan saldo yang tersimpan dengan tipe cuti yang bersifat tidak terbatas (unlimited).
+ */
 class EmployeeLeaveBalanceResource extends JsonResource
 {
     /**
-     * Transform the resource into an array.
+     * Transform resource ke dalam array.
      *
-     * @return array<string, mixed>
+     * @param  Request  $request
+     * @return array<string, mixed> Representasi data profil karyawan beserta rincian saldo cutinya.
      */
     public function toArray(Request $request): array
     {
@@ -28,7 +35,9 @@ class EmployeeLeaveBalanceResource extends JsonResource
     }
 
     /**
-     * Menggabungkan data saldo real dengan master data cuti unlimited
+     * Menyiapkan dan menggabungkan data saldo cuti.
+     *
+     * @return array Daftar saldo cuti termasuk penanganan khusus untuk tipe cuti unlimited.
      */
     protected function prepareBalances(): array
     {

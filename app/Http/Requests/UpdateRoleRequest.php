@@ -7,7 +7,7 @@ use Illuminate\Foundation\Http\FormRequest;
 class UpdateRoleRequest extends FormRequest
 {
     /**
-     * Determine if the user is authorized to make this request.
+     * Menentukan apakah pengguna memiliki izin untuk membuat request ini.
      */
     public function authorize(): bool
     {
@@ -15,18 +15,18 @@ class UpdateRoleRequest extends FormRequest
     }
 
     /**
-     * Get the validation rules that apply to the request.
+     * Mendapatkan aturan validasi yang berlaku untuk request ini.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string> Aturan validasi untuk nama peran dan daftar izin
      */
     public function rules(): array
     {
         $roleId = $this->route('role')->id;
 
         return [
-            'name' => 'required|string|unique:roles,name,'.$roleId,
-            'permissions' => 'array',
-            'permissions.*' => 'integer|exists:permissions,id',
+            'name' => 'required|string|unique:roles,name,'.$roleId, // Nama peran harus unik kecuali untuk peran ini sendiri
+            'permissions' => 'array', // Daftar izin harus berupa array
+            'permissions.*' => 'integer|exists:permissions,id', // Setiap ID izin harus ada di tabel permissions
         ];
     }
 }

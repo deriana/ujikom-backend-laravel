@@ -5,10 +5,16 @@ namespace App\Services;
 use App\Models\Holiday;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Class HolidayService
+ *
+ * Menangani logika bisnis untuk manajemen hari libur (holiday),
+ * termasuk operasi CRUD dan pengaturan hari libur berulang.
+ */
 class HolidayService
 {
     /**
-     * Get all holidays with their creator information.
+     * Mengambil semua data hari libur beserta informasi pembuatnya.
      *
      * @return \Illuminate\Database\Eloquent\Collection
      */
@@ -21,11 +27,11 @@ class HolidayService
     }
 
     /**
-     * Store a new holiday record.
+     * Menyimpan data hari libur baru ke dalam database.
      *
-     * @param array $data
-     * @param int $userId
-     * @return Holiday
+     * @param array $data Data hari libur (name, start_date, end_date, is_recurring).
+     * @param int $userId ID pengguna yang membuat data.
+     * @return Holiday Objek hari libur yang berhasil dibuat.
      */
     public function store(array $data, int $userId): Holiday
     {
@@ -47,12 +53,12 @@ class HolidayService
     }
 
     /**
-     * Update an existing holiday record.
+     * Memperbarui data hari libur yang sudah ada.
      *
-     * @param Holiday $holiday
-     * @param array $data
-     * @param int $userId
-     * @return Holiday
+     * @param Holiday $holiday Objek hari libur yang akan diperbarui.
+     * @param array $data Data pembaruan.
+     * @param int $userId ID pengguna yang melakukan pembaruan.
+     * @return Holiday Objek hari libur setelah diperbarui.
      */
     public function update(Holiday $holiday, array $data, int $userId): Holiday
     {
@@ -73,10 +79,10 @@ class HolidayService
     }
 
     /**
-     * Delete a holiday record.
+     * Menghapus data hari libur dari database.
      *
-     * @param Holiday $holiday
-     * @return bool
+     * @param Holiday $holiday Objek hari libur yang akan dihapus.
+     * @return bool True jika berhasil dihapus.
      */
     public function delete(Holiday $holiday): bool
     {

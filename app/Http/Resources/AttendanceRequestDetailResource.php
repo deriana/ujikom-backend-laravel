@@ -5,39 +5,52 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * Class AttendanceRequestDetailResource
+ *
+ * Resource class untuk mentransformasi detail model AttendanceRequest menjadi format JSON yang mendalam.
+ */
 class AttendanceRequestDetailResource extends JsonResource
 {
     /**
-     * Transform the resource into an array.
+     * Transform resource ke dalam array.
+     *
+     * @param  Request  $request
+     * @return array<string, mixed> Representasi detail pengajuan kehadiran termasuk data karyawan, detail perubahan, dan info persetujuan.
      */
     public function toArray(Request $request): array
     {
         return [
-            'uuid' => $this->uuid,
-            'request_type' => $this->request_type,
-            'reason' => $this->reason,
-            'status' => $this->status,
-            'note' => $this->note,
-            'start_date' => $this->start_date,
-            'end_date' => $this->end_date,
+            'uuid' => $this->uuid, /**< Identifier unik pengajuan */
+            'request_type' => $this->request_type, /**< Tipe pengajuan (misal: shift_change, schedule_change) */
+            'reason' => $this->reason, /**< Alasan pengajuan */
+            'status' => $this->status, /**< Status persetujuan saat ini */
+            'note' => $this->note, /**< Catatan dari pemberi persetujuan */
+            'start_date' => $this->start_date, /**< Tanggal mulai berlakunya perubahan */
+            'end_date' => $this->end_date, /**< Tanggal berakhirnya perubahan */
 
             'employee' => [
-                'name' => $this->employee->user->name ?? null,
-                'nik' => $this->employee->nik ?? null,
-                'position' => $this->employee->position->name ?? null,
+                'name' => $this->employee->user->name ?? null, /**< Nama karyawan yang mengajukan */
+                'nik' => $this->employee->nik ?? null, /**< NIK karyawan */
+                'position' => $this->employee->position->name ?? null, /**< Nama jabatan karyawan */
             ],
 
             'change_details' => $this->getChangeDetails(),
 
             'approval_info' => [
-                'is_processed' => $this->approved_by_id !== null,
-                'approver_name' => $this->approver->name ?? null,
-                'processed_at' => $this->updated_at->format('Y-m-d H:i:s'),
+                'is_processed' => $this->approved_by_id !== null, /**< Status apakah pengajuan sudah diproses */
+                'approver_name' => $this->approver->name ?? null, /**< Nama pemberi persetujuan */
+                'processed_at' => $this->updated_at->format('Y-m-d H:i:s'), /**< Waktu pengajuan diproses */
             ],
-            'created_at' => $this->created_at->format('Y-m-d H:i:s'),
+            'created_at' => $this->created_at->format('Y-m-d H:i:s'), /**< Waktu pembuatan pengajuan */
         ];
     }
 
+    /**
+     * Mendapatkan detail teknis mengenai perubahan yang diajukan (Shift atau Jadwal Kerja).
+     *
+     * @return array|null Detail perubahan berdasarkan template shift atau jadwal kerja
+     */
     private function getChangeDetails(): ?array
     {
         if ($this->shift_template_id) {

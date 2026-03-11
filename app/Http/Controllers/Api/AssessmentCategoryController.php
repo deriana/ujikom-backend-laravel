@@ -10,15 +10,31 @@ use App\Models\AssessmentCategory;
 use App\Services\AssessmentCategoryService;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
+/**
+ * Class AssessmentCategoryController
+ *
+ * Controller untuk mengelola kategori penilaian (Assessment Category),
+ * mencakup operasi CRUD dan pengaturan status aktif/non-aktif.
+ */
 class AssessmentCategoryController extends Controller
 {
-    protected AssessmentCategoryService $assessmentCategoryService;
+    protected AssessmentCategoryService $assessmentCategoryService; /**< Instance dari AssessmentCategoryService untuk logika bisnis kategori penilaian */
 
+    /**
+     * Membuat instance AssessmentCategoryController baru.
+     *
+     * @param AssessmentCategoryService $assessmentCategoryService
+     */
     public function __construct(AssessmentCategoryService $assessmentCategoryService)
     {
         $this->assessmentCategoryService = $assessmentCategoryService;
     }
 
+    /**
+     * Menampilkan daftar semua kategori penilaian.
+     *
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
+     */
     public function index(): JsonResponse
     {
         $this->authorize('viewAny', AssessmentCategory::class);
@@ -31,11 +47,20 @@ class AssessmentCategoryController extends Controller
         );
     }
 
+    /**
+     * Menampilkan detail kategori penilaian tertentu.
+     */
     public function show()
     {
         // show
     }
 
+    /**
+     * Menyimpan kategori penilaian baru ke database.
+     *
+     * @param CreateAssessmentCategoryRequest $request
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
+     */
     public function store(CreateAssessmentCategoryRequest $request): JsonResponse
     {
         $this->authorize('create', AssessmentCategory::class);
@@ -49,6 +74,13 @@ class AssessmentCategoryController extends Controller
         );
     }
 
+    /**
+     * Memperbarui data kategori penilaian yang sudah ada.
+     *
+     * @param UpdateAssessmentCategoryRequest $request
+     * @param AssessmentCategory $assessment_category
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
+     */
     public function update(UpdateAssessmentCategoryRequest $request, AssessmentCategory $assessment_category): JsonResponse
     {
         $this->authorize('update', $assessment_category);
@@ -61,6 +93,12 @@ class AssessmentCategoryController extends Controller
         );
     }
 
+    /**
+     * Menghapus kategori penilaian dari database.
+     *
+     * @param AssessmentCategory $assessment_category
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
+     */
     public function destroy(AssessmentCategory $assessment_category): JsonResponse
     {
         $this->authorize('delete', $assessment_category);
@@ -70,6 +108,12 @@ class AssessmentCategoryController extends Controller
         return $this->successResponse(null, 'Assessment category deleted successfully');
     }
 
+    /**
+     * Mengubah status aktif/non-aktif kategori penilaian.
+     *
+     * @param AssessmentCategory $assessment_category
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
+     */
     public function toggleStatus(AssessmentCategory $assessment_category): JsonResponse
     {
         $this->authorize('update', $assessment_category);

@@ -10,10 +10,16 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Class EmployeeWorkScheduleService
+ *
+ * Menangani logika bisnis untuk penugasan jadwal kerja karyawan,
+ * termasuk manajemen prioritas jadwal (permanen vs sementara) dan validasi konflik tanggal.
+ */
 class EmployeeWorkScheduleService
 {
     /**
-     * Get all employee work schedules with related data.
+     * Mengambil semua data penugasan jadwal kerja karyawan beserta relasi terkait.
      *
      * @return \Illuminate\Database\Eloquent\Collection
      */
@@ -26,7 +32,11 @@ class EmployeeWorkScheduleService
     }
 
     /**
-     * Assign a work schedule to an employee.
+     * Menugaskan jadwal kerja baru kepada karyawan.
+     *
+     * @param array $data Data penugasan (employee_nik, work_schedule_uuid, start_date, end_date).
+     * @return EmployeeWorkSchedule Objek penugasan yang berhasil dibuat.
+     * @throws Exception Jika terjadi konflik jadwal pada tingkat prioritas yang sama.
      */
     public function store(array $data)
     {
@@ -79,7 +89,12 @@ class EmployeeWorkScheduleService
     }
 
     /**
-     * Update an existing employee work schedule assignment.
+     * Memperbarui data penugasan jadwal kerja karyawan yang sudah ada.
+     *
+     * @param EmployeeWorkSchedule $assignment Objek penugasan yang akan diperbarui.
+     * @param array $data Data pembaruan.
+     * @return EmployeeWorkSchedule Objek penugasan setelah diperbarui.
+     * @throws Exception Jika terjadi konflik jadwal pada tingkat prioritas yang sama.
      */
     public function update(EmployeeWorkSchedule $assignment, array $data)
     {
@@ -121,7 +136,10 @@ class EmployeeWorkScheduleService
     }
 
     /**
-     * Remove a work schedule assignment.
+     * Menghapus data penugasan jadwal kerja.
+     *
+     * @param EmployeeWorkSchedule $assignment Objek penugasan yang akan dihapus.
+     * @return bool True jika berhasil dihapus.
      */
     public function delete(EmployeeWorkSchedule $assignment): bool
     {
@@ -141,7 +159,14 @@ class EmployeeWorkScheduleService
     }
 
     /**
-     * Prevent overlapping schedules for the same priority level.
+     * Mencegah tumpang tindih jadwal untuk tingkat prioritas yang sama.
+     *
+     * @param int $employeeId ID karyawan.
+     * @param string $startDate Tanggal mulai jadwal baru.
+     * @param string|null $endDate Tanggal berakhir jadwal baru.
+     * @param int $priority Tingkat prioritas jadwal.
+     * @param int|null $ignoreId ID penugasan yang diabaikan (untuk proses update).
+     * @throws Exception Jika ditemukan konflik jadwal.
      */
     private function validateDateConflict(
         int $employeeId,

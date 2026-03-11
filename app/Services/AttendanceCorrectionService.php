@@ -13,20 +13,31 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
+/**
+ * Class AttendanceCorrectionService
+ *
+ * Menangani logika bisnis untuk pengajuan koreksi kehadiran karyawan,
+ * termasuk validasi waktu, manajemen status persetujuan, dan pembaruan data kehadiran.
+ */
 class AttendanceCorrectionService
 {
-    protected TimeValidator $timeValidator;
+    protected TimeValidator $timeValidator; /**< Validator untuk menghitung jadwal dan keterlambatan */
 
+    /**
+     * Membuat instance layanan koreksi kehadiran baru.
+     *
+     * @param TimeValidator $timeValidator
+     */
     public function __construct(TimeValidator $timeValidator)
     {
         $this->timeValidator = $timeValidator;
     }
 
     /**
-     * Get all attendance correction records with role-based filtering.
+     * Mengambil semua data koreksi kehadiran dengan filter berdasarkan peran pengguna.
      *
      * @param  \App\Models\User  $user
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @return \Illuminate\Database\Eloquent\Collection Koleksi data koreksi kehadiran.
      */
     public function index($user)
     {
@@ -59,10 +70,10 @@ class AttendanceCorrectionService
     }
 
     /**
-     * Get a list of pending attendance correction requests that require approval.
+     * Mengambil daftar pengajuan koreksi kehadiran yang sedang menunggu persetujuan.
      *
      * @param  \App\Models\User  $user
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @return \Illuminate\Database\Eloquent\Collection Koleksi data pengajuan yang tertunda.
      */
     public function indexApproval($user)
     {
@@ -71,12 +82,12 @@ class AttendanceCorrectionService
             ->pending()
             ->whereNull('approved_at');
 
-        // 2. High-level Roles -> Full access to all pending requests
+        // 2. Peran Tingkat Tinggi -> Akses penuh ke semua pengajuan tertunda
         if ($user->hasAnyRole([UserRole::HR, UserRole::ADMIN, UserRole::DIRECTOR, UserRole::OWNER])) {
             // No additional filter
         }
 
-        // 3. Manager Logic -> Can only see approvals for direct subordinates
+        // 3. Logika Manajer -> Hanya bisa melihat persetujuan untuk bawahan langsung
         elseif ($user->hasRole(UserRole::MANAGER->value)) {
             if (! $user->employee) {
                 return collect();
@@ -86,7 +97,7 @@ class AttendanceCorrectionService
             $query->whereHas('employee', fn ($q) => $q->where('manager_id', $employeeId));
         }
 
-        // 4. Fallback for other roles
+        // 4. Fallback untuk peran lainnya
         else {
             return collect();
         }
@@ -95,31 +106,31 @@ class AttendanceCorrectionService
     }
 
     /**
-     * Show details of a specific attendance correction request.
+     * Menampilkan detail dari pengajuan koreksi kehadiran tertentu.
      *
-     * @return AttendanceCorrection
+     * @return AttendanceCorrection Objek koreksi kehadiran dengan relasi yang dimuat.
      */
     public function show(AttendanceCorrection $correction)
     {
-        // 1. Load relationships for detail view
+        // 1. Muat relasi untuk tampilan detail
         return $correction->load(['employee.user', 'attendance', 'approver.user', 'employee.team.division', 'employee.position']);
     }
 
     /**
-     * Store a new attendance correction request.
+     * Menyimpan pengajuan koreksi kehadiran baru.
      *
      * @param  \App\Models\User  $user
-     *
+     * @param array $data Data pengajuan (attendance_id, employee_id, clock_in_requested, dll).
      * @throws Exception
      */
     public function store($user, array $data): AttendanceCorrection
     {
         return DB::transaction(function () use ($data) {
-            // 0. Simple validation: Clock out cannot be before clock in
+            // 0. Validasi sederhana: Jam pulang tidak boleh sebelum jam masuk
             $clockIn = Carbon::parse($data['clock_in_requested']);
             $clockOut = Carbon::parse($data['clock_out_requested']);
             if ($clockOut->lt($clockIn)) {
-                throw new Exception('Requested clock out time cannot be earlier than clock in time.');
+                throw new Exception('Waktu jam pulang yang diminta tidak boleh lebih awal dari jam masuk.');
             }
 
             $attachmentPath = null;
@@ -128,7 +139,7 @@ class AttendanceCorrectionService
                 $attachmentPath = $data['attachment']->storeAs('private/attendance_corrections', $filename);
             }
 
-            // 1. Create the correction record
+            // 1. Buat catatan koreksi
             $correction = AttendanceCorrection::create([
                 'attendance_id' => $data['attendance_id'],
                 'employee_id' => $data['employee_id'],
@@ -139,7 +150,7 @@ class AttendanceCorrectionService
                 'status' => ApprovalStatus::PENDING->value,
             ]);
 
-            // 2. Send notification
+            // 2. Kirim notifikasi
             $correction->notifyCustom(
                 title: 'New Attendance Correction Request',
                 message: 'Your attendance correction request has been submitted.'
@@ -150,26 +161,26 @@ class AttendanceCorrectionService
     }
 
     /**
-     * Update an existing attendance correction request.
+     * Memperbarui pengajuan koreksi kehadiran yang sudah ada.
      *
      * @param  \App\Models\User  $user
-     *
+     * @param array $data Data pembaruan.
      * @throws Exception
      */
     public function update(AttendanceCorrection $correction, array $data, $user): AttendanceCorrection
     {
         return DB::transaction(function () use ($correction, $data, $user) {
-            // 1. Validate if the request can still be modified
+            // 1. Validasi apakah pengajuan masih bisa diubah
             if ($correction->status !== ApprovalStatus::PENDING->value &&
                 ! $user->hasAnyRole([UserRole::HR, UserRole::ADMIN])) {
-                throw new Exception('Processed correction cannot be modified.');
+                throw new Exception('Koreksi yang sudah diproses tidak dapat diubah.');
             }
 
-            // 0. Simple validation: Clock out cannot be before clock in
+            // 0. Validasi sederhana: Jam pulang tidak boleh sebelum jam masuk
             $clockIn = Carbon::parse($data['clock_in_requested'] ?? $correction->clock_in_requested);
             $clockOut = Carbon::parse($data['clock_out_requested'] ?? $correction->clock_out_requested);
             if ($clockOut->lt($clockIn)) {
-                throw new Exception('Requested clock out time cannot be earlier than clock in time.');
+                throw new Exception('Waktu jam pulang yang diminta tidak boleh lebih awal dari jam masuk.');
             }
 
             if (! empty($data['attachment']) && $data['attachment'] instanceof UploadedFile) {
@@ -181,7 +192,7 @@ class AttendanceCorrectionService
                     ->storeAs('private/attendance_corrections', $filename);
             }
 
-            // 2. Update the record
+            // 2. Perbarui catatan
             $correction->update([
                 'clock_in_requested' => $data['clock_in_requested'] ?? $correction->clock_in_requested,
                 'clock_out_requested' => $data['clock_out_requested'] ?? $correction->clock_out_requested,
@@ -189,7 +200,7 @@ class AttendanceCorrectionService
                 'attachment' => $correction->attachment,
             ]);
 
-            // 3. Send notification
+            // 3. Kirim notifikasi
             $correction->notifyCustom(
                 title: 'Correction Request Updated',
                 message: 'Your attendance correction request has been updated.'
@@ -200,28 +211,30 @@ class AttendanceCorrectionService
     }
 
     /**
-     * Process approval or rejection of an attendance correction request.
+     * Memproses persetujuan atau penolakan pengajuan koreksi kehadiran.
      *
      * @param  \App\Models\User  $user
-     * @return AttendanceCorrection
-     *
+     * @param AttendanceCorrection $correction Objek koreksi.
+     * @param bool $approve Status persetujuan (true untuk setuju, false untuk tolak).
+     * @param string|null $note Catatan dari penyetuju.
+     * @return AttendanceCorrection Objek koreksi yang telah diperbarui.
      * @throws Exception
      */
     public function approve(AttendanceCorrection $correction, $user, bool $approve, ?string $note = null)
     {
         return DB::transaction(function () use ($correction, $user, $approve, $note) {
-            // 1. Ensure the request is still pending
+            // 1. Pastikan pengajuan masih dalam status tertunda
             if ($correction->status !== ApprovalStatus::PENDING->value) {
-                throw new Exception('Correction has already been processed.');
+                throw new Exception('Koreksi sudah diproses sebelumnya.');
             }
 
-            // 2. Permission check: Only direct manager or high-level roles can process
+            // 2. Cek Izin: Hanya manajer langsung atau peran tingkat tinggi yang bisa memproses
             $isManager = $correction->employee?->manager_id === optional($user->employee)->id;
             if (! $isManager && ! $user->hasAnyRole([UserRole::HR, UserRole::ADMIN, UserRole::DIRECTOR, UserRole::OWNER])) {
-                throw new Exception('You do not have permission to approve this correction.');
+                throw new Exception('Anda tidak memiliki izin untuk menyetujui koreksi ini.');
             }
 
-            // 3. Update the request status
+            // 3. Perbarui status pengajuan
             $correction->update([
                 'status' => $approve ? ApprovalStatus::APPROVED->value : ApprovalStatus::REJECTED->value,
                 'approver_id' => optional($user->employee)->id,
@@ -229,7 +242,7 @@ class AttendanceCorrectionService
                 'note' => $note,
             ]);
 
-            // 4. If approved, update the actual attendance record
+            // 4. Jika disetujui, perbarui catatan kehadiran yang sebenarnya
             if ($approve) {
                 $attendance = $correction->attendance;
                 $employee = $correction->employee;
@@ -269,7 +282,7 @@ class AttendanceCorrectionService
                     'status' => $newStatus,
                 ]);
             }
-            // 5. Send notification to the employee
+            // 5. Kirim notifikasi ke karyawan
             $correction->notifyCustom(
                 title: $approve ? 'Correction Approved' : 'Correction Rejected',
                 message: $approve
@@ -281,7 +294,13 @@ class AttendanceCorrectionService
         });
     }
 
-      public function delete(AttendanceCorrection $attendanceCorrection): bool
+    /**
+     * Menghapus pengajuan koreksi kehadiran.
+     *
+     * @param AttendanceCorrection $attendanceCorrection Objek koreksi yang akan dihapus.
+     * @return bool True jika berhasil dihapus.
+     */
+    public function delete(AttendanceCorrection $attendanceCorrection): bool
     {
         return DB::transaction(function () use ($attendanceCorrection) {
             $attendanceCorrection->notifyCustom(

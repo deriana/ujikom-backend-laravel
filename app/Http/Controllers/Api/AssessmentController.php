@@ -10,15 +10,32 @@ use App\Services\AssessmentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
+/**
+ * Class AssessmentController
+ *
+ * Controller untuk mengelola penilaian kinerja (Assessment) karyawan,
+ * mencakup pembuatan, pembaruan, penghapusan, dan pengambilan data penilaian.
+ */
 class AssessmentController extends Controller
 {
-    protected AssessmentService $assessmentService;
+    protected AssessmentService $assessmentService; /**< Instance dari AssessmentService untuk logika bisnis penilaian */
 
+    /**
+     * Membuat instance AssessmentController baru.
+     *
+     * @param AssessmentService $assessmentService
+     */
     public function __construct(AssessmentService $assessmentService)
     {
         $this->assessmentService = $assessmentService;
     }
 
+    /**
+     * Menampilkan daftar semua penilaian.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function index(Request $request): JsonResponse
     {
         $this->authorize('viewAny', Assessment::class);
@@ -31,6 +48,12 @@ class AssessmentController extends Controller
         );
     }
 
+    /**
+     * Menyimpan data penilaian baru ke database.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function store(Request $request): JsonResponse
     {
         $this->authorize('create', Assessment::class);
@@ -44,6 +67,12 @@ class AssessmentController extends Controller
         );
     }
 
+    /**
+     * Menampilkan detail data penilaian tertentu.
+     *
+     * @param Assessment $assessment
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function show(Assessment $assessment): JsonResponse
     {
         $this->authorize('view', $assessment);
@@ -56,6 +85,13 @@ class AssessmentController extends Controller
         );
     }
 
+    /**
+     * Memperbarui data penilaian yang sudah ada.
+     *
+     * @param Request $request
+     * @param Assessment $assessment
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function update(Request $request, Assessment $assessment): JsonResponse
     {
         $this->authorize('update', $assessment);
@@ -68,6 +104,12 @@ class AssessmentController extends Controller
         );
     }
 
+    /**
+     * Menghapus data penilaian dari database.
+     *
+     * @param Assessment $assessment
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function destroy(Assessment $assessment): JsonResponse
     {
         $this->authorize('delete', $assessment);

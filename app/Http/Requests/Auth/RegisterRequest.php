@@ -4,10 +4,17 @@ namespace App\Http\Requests\Auth;
 
 use Illuminate\Foundation\Http\FormRequest;
 
+/**
+ * Class RegisterRequest
+ *
+ * Request class untuk menangani validasi proses pendaftaran (registrasi) pengguna baru.
+ */
 class RegisterRequest extends FormRequest
 {
     /**
-     * Determine if the user is authorized to make this request.
+     * Menentukan apakah pengguna memiliki izin untuk membuat request ini.
+     *
+     * @return bool
      */
     public function authorize(): bool
     {
@@ -15,12 +22,10 @@ class RegisterRequest extends FormRequest
     }
 
     /**
-     * Get the validation rules that apply to the request.
+     * Mendapatkan aturan validasi yang berlaku untuk request ini.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string> Aturan validasi untuk nama, email, dan password
      */
-    // app/Http/Requests/Auth/RegisterRequest.php
-
     public function rules(): array
     {
         return [
