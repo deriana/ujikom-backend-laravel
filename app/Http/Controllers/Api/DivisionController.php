@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\CreateDivisionRequest;
 use App\Http\Requests\UpdateDivisionRequest;
 use App\Http\Resources\DivisionResource;
+use App\Http\Resources\DivisionTeamEmployeeResource;
 use App\Models\Division;
 use App\Services\DivisionService;
 use Illuminate\Http\JsonResponse;
@@ -28,6 +29,16 @@ class DivisionController extends Controller
 
         return $this->successResponse(
             DivisionResource::collection($divisions),
+            'Divisions fetched successfully'
+        );
+    }
+
+    public function getDivisionsWithTeamsAndEmployees(): JsonResponse
+    {
+        $divisions = $this->divisionService->getDivisionsWithTeamsAndEmployees();
+
+        return $this->successResponse(
+            DivisionTeamEmployeeResource::collection($divisions),
             'Divisions fetched successfully'
         );
     }

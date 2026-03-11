@@ -21,6 +21,25 @@ class DivisionService
     }
 
     /**
+     * Get all divisions with their teams and assigned employees/users.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getDivisionsWithTeamsAndEmployees()
+    {
+        return Division::with([
+            'teams.employees.user' => function ($query) {
+                $query->where('is_active', true);
+            },
+            'teams.employees.position',
+            'teams.employees.media'
+        ])
+        ->latest()
+        ->get();
+
+    }
+
+    /**
      * Store a new division and sync its teams.
      *
      * @param array $data

@@ -112,6 +112,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     });
     Route::apiResource('users', UserController::class);
     Route::prefix('divisions')->group(function () {
+        Route::get('/with-teams-and-employees', [DivisionController::class, 'getDivisionsWithTeamsAndEmployees']);
         Route::get('/trashed', [DivisionController::class, 'getTrashed']);
         Route::post('/restore/{uuid}', [DivisionController::class, 'restore']);
         Route::delete('/force-delete/{uuid}', [DivisionController::class, 'forceDelete']);
