@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AllowanceController;
 use App\Http\Controllers\Api\AttendanceController;
+use App\Http\Controllers\Api\AttendanceCorrectionController;
 use App\Http\Controllers\Api\AttendanceDetailController;
 use App\Http\Controllers\Api\AttendanceRequestController;
 use App\Http\Controllers\Api\AuthController;
@@ -82,6 +83,7 @@ Route::post('/attendance/single-send', [AttendanceController::class, 'singleAtte
 route::get('/settings/get/general', [SettingController::class, 'getGeneral']);
 Route::get('/leaves/download-attachment/{filename}', [LeaveController::class, 'downloadAttachment']);
 Route::get('/early_leaves/download-attachment/{filename}', [EarlyLeaveController::class, 'downloadAttachment']);
+Route::get('/attendance_corrections/download-attachment/{filename}', [AttendanceCorrectionController::class, 'downloadAttachment']);
 
 Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::get('/user', function (Request $request) {
@@ -155,6 +157,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::prefix('approvals')->group(function () {
         Route::get('/leaves', [LeaveController::class, 'indexApproval']);
         Route::get('/early_leaves', [EarlyLeaveController::class, 'indexApproval']);
+        Route::get('/attendance_corrections', [AttendanceCorrectionController::class, 'indexApproval']);
         Route::get('/attendance_request', [AttendanceRequestController::class, 'indexApproval']);
         Route::get('/overtime', [OvertimeController::class, 'indexApproval']);
     });
@@ -177,6 +180,16 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::post('/{early_leave}', [EarlyLeaveController::class, 'update']);
         Route::delete('/{early_leave}', [EarlyLeaveController::class, 'destroy']);
         Route::put('/approvals/{early_leave:uuid}/approve', [EarlyLeaveController::class, 'approve']);
+        // Route::get('/download-attachment/{filename}', [EarlyLeaveController::class, 'downloadAttachment']);
+    });
+
+    Route::prefix('attendance_corrections')->group(function () {
+        Route::get('/', [AttendanceCorrectionController::class, 'index']);
+        Route::post('/', [AttendanceCorrectionController::class, 'store']);
+        Route::get('/{attendance_correction}', [AttendanceCorrectionController::class, 'show']);
+        Route::post('/{attendance_correction}', [AttendanceCorrectionController::class, 'update']);
+        Route::delete('/{attendance_correction}', [AttendanceCorrectionController::class, 'destroy']);
+        Route::put('/approvals/{attendance_correction:uuid}/approve', [AttendanceCorrectionController::class, 'approve']);
         // Route::get('/download-attachment/{filename}', [EarlyLeaveController::class, 'downloadAttachment']);
     });
 
