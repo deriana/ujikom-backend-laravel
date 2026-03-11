@@ -30,6 +30,7 @@ class Payroll extends Model
         'base_salary',
         'allowance_total',
         'overtime_pay',
+        'assessment_bonus',
         'manual_adjustment',
         'adjustment_note',
         'gross_salary',

@@ -61,8 +61,16 @@ class PayrollService
      */
     public function show(Payroll $payroll): Payroll
     {
-        // 1. Load nested relationships for detailed view
-        return $payroll->load(['employee', 'employee.position.allowances']);
+        $periodString = $payroll->period_start->format('Y-m');
+
+        return $payroll->load([
+            'employee.user',
+            'employee.position.allowances',
+            'employee.assessmentsAsEvaluatee' => function ($query) use ($periodString) {
+                $query->where('period', 'like', $periodString.'%')
+                    ->with('assessments_details');
+            },
+        ]);
     }
 
     /**
@@ -348,7 +356,14 @@ class PayrollService
         $overtimeMinutes = $employee->overtimes->sum('duration_minutes');
         $overtimePay = ($overtimeMinutes / 60) * $hourlyRate;
 
-        $grossSalary = $baseSalary + $allowanceTotal + $overtimePay;
+        // --- 2.1 CALCULATE BONUS FROM ASSESSMENT ---
+        $assessmentBonus = 0;
+        foreach ($employee->assessmentsAsEvaluatee as $assessment) {
+            // Sum bonus_salary from each assessment detail
+            $assessmentBonus += $assessment->assessments_details->sum('bonus_salary');
+        }
+
+        $grossSalary = $baseSalary + $allowanceTotal + $overtimePay + $assessmentBonus;
 
         // --- 3. CALCULATE ATTENDANCE DEDUCTIONS (Late & Early Leave) ---
         $lateMinutes = $employee->attendances->sum('late_minutes');
@@ -374,6 +389,7 @@ class PayrollService
             'base_salary' => $baseSalary,
             'allowance_total' => $allowanceTotal,
             'overtime_pay' => $overtimePay,
+            'assessment_bonus' => $assessmentBonus,
             'late_deduction' => $lateDeduction,
             'early_leave_deduction' => $earlyLeaveDeduction,
             'total_deduction' => $totalDeduction,
@@ -391,6 +407,8 @@ class PayrollService
      */
     private function getEligibleEmployees(array $employeeNiks, Carbon $periodStart, Carbon $periodEnd)
     {
+        $periodString = $periodStart->format('Y-m');
+
         return Employee::whereIn('nik', $employeeNiks)
             ->whereHas('user.roles', function ($query) {
                 $query->where('name', '!=', UserRole::OWNER->value);
@@ -413,6 +431,10 @@ class PayrollService
                         ->whereHas('attendance', function ($query) use ($periodStart, $periodEnd) {
                             $query->whereBetween('date', [$periodStart, $periodEnd]);
                         });
+                },
+                'assessmentsAsEvaluatee' => function ($q) use ($periodString) {
+                    $q->where('period', 'like', $periodString.'%')
+                        ->with('assessments_details');
                 },
             ])
             ->get();

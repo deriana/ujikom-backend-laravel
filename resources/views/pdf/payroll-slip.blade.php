@@ -130,6 +130,12 @@
                     <td>Overtime Pay</td>
                     <td class="text-right">{{ number_format($data['earnings']['overtime_pay'], 0) }}</td>
                 </tr>
+                @if(($data['earnings']['assessment_bonus'] ?? 0) > 0)
+                <tr>
+                    <td>Performance Bonus (Assessment)</td>
+                    <td class="text-right">{{ number_format($data['earnings']['assessment_bonus'], 0) }}</td>
+                </tr>
+                @endif
                 <tr>
                     <td>Adjustments</td>
                     <td class="text-right">{{ number_format($data['earnings']['manual_adjustment'], 0) }}</td>
@@ -156,9 +162,12 @@
                     <td>Income Tax (PPh 21)</td>
                     <td class="text-right">{{ number_format($data['deductions']['tax_amount'], 0) }}</td>
                 </tr>
-                {{-- Spacer untuk menjaga keseimbangan visual --}}
+                {{-- Spacer dikurangi satu baris karena Earnings bertambah satu baris --}}
                 <tr><td>&nbsp;</td><td>&nbsp;</td></tr>
+                {{-- Hanya tampilkan satu baris kosong jika ada bonus, agar layout tidak berantakan --}}
+                @if(!($data['earnings']['assessment_bonus'] ?? 0) > 0)
                 <tr><td>&nbsp;</td><td>&nbsp;</td></tr>
+                @endif
                 <tr class="total-row bold">
                     <td style="padding-top: 10px;">TOTAL DEDUCTIONS</td>
                     <td class="text-right">{{ number_format($data['deductions']['total_deduction'], 0) }}</td>

@@ -11,6 +11,13 @@ class PayrollDetailResource extends JsonResource
     {
         $employee = $this->employee;
         $position = $employee?->position;
+        $periodString = $this->period_start?->format('Y-m');
+
+        // Hitung bonus dari relasi assessmentsAsEvaluatee
+        $calculatedBonus = $employee?->assessmentsAsEvaluatee
+            ->filter(fn($a) => str_starts_with($a->period, $periodString))
+            ->flatMap(fn($a) => $a->assessments_details)
+            ->sum('bonus_salary') ?? 0;
 
         return [
             /*
@@ -75,6 +82,7 @@ class PayrollDetailResource extends JsonResource
 
                 'allowance_total' => $this->allowance_total,
                 'overtime_pay' => $this->overtime_pay,
+                'assessment_bonus' => $this->assessment_bonus ?? $calculatedBonus,
                 'manual_adjustment' => $this->manual_adjustment,
 
                 'gross_salary' => $this->gross_salary,

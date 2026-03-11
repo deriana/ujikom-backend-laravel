@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Api\AllowanceController;
+use App\Http\Controllers\Api\AssessmentCategoryController;
+use App\Http\Controllers\Api\AssessmentController;
 use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\AttendanceCorrectionController;
 use App\Http\Controllers\Api\AttendanceDetailController;
@@ -150,9 +152,13 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::delete('/force-delete/{uuid}', [ShiftTemplateController::class, 'forceDelete']);
         Route::get('/trashed', [ShiftTemplateController::class, 'getTrashed']);
     });
+
     Route::apiResource('shift_templates', ShiftTemplateController::class);
     Route::apiResource('employee_shift', EmployeeShiftController::class);
     Route::apiResource('leave_types', LeaveTypeController::class);
+    Route::put('/assessment_category/{assessment_category:uuid}/toggle-status', [AssessmentCategoryController::class, 'toggleStatus']);
+    Route::apiResource('assessment_category', AssessmentCategoryController::class)->except('show');
+    Route::apiResource('assessments', AssessmentController::class);
 
     Route::prefix('approvals')->group(function () {
         Route::get('/leaves', [LeaveController::class, 'indexApproval']);

@@ -547,6 +547,35 @@ class UserService
      */
     public function getEmployeesLite()
     {
+        $user = Auth::user();
+        $currentUserEmployee = $user->employee;
+
+        $query = Employee::whereHas('user', function ($q) {
+            $q->where('system_reserve', false)
+              ->where('is_active', true)
+              ->whereDoesntHave('roles', function ($rq) {
+                  $rq->where('name', UserRole::DIRECTOR->value);
+              });
+        })->with('user');
+
+        // If Manager, only get their direct subordinates
+        if ($user->hasRole(UserRole::MANAGER->value)) {
+            if ($currentUserEmployee) {
+                $query->where('manager_id', $currentUserEmployee->id);
+            } else {
+                return collect();
+            }
+        }
+        // If regular employee, only get themselves
+        elseif ($user->hasRole(UserRole::EMPLOYEE->value)) {
+            $query->where('user_id', $user->id);
+        }
+
+        return $query->get();
+    }
+
+    public function getEmployeeLiteWithoutDirectur()
+    {
         // 1. Retrieve non-system employees with basic user info
         return Employee::whereHas('user', function ($query) {
             $query->where('system_reserve', false);

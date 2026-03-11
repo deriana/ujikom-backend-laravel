@@ -216,6 +216,21 @@ class Employee extends Model implements HasMedia
         return $this->hasMany(Overtime::class);
     }
 
+    public function assessments()
+    {
+        return $this->hasMany(Assessment::class, 'evaluatee_id');
+    }
+
+    public function assessmentsAsEvaluator()
+    {
+        return $this->hasMany(Assessment::class, 'evaluator_id');
+    }
+
+    public function assessmentsAsEvaluatee()
+    {
+        return $this->hasMany(Assessment::class, 'evaluatee_id');
+    }
+
     public function getRouteKeyName()
     {
         return 'nik';

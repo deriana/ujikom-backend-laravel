@@ -11,20 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('assessment_categories', function (Blueprint $table) {
+        Schema::create('assessments', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
-            $table->string('name');
-            $table->text('description');
-            $table->boolean('is_active')->default(true);
-            $table->foreignId('created_by_id')
+            $table->foreignId('evaluator_id') // Menilai
                 ->nullable()
-                ->constrained('users')
-                ->nullOnDelete();
-            $table->foreignId('updated_by_id')
+                ->constrained('employees')
+                ->onDelete('cascade');
+            $table->foreignId('evaluatee_id') // Dinilai
                 ->nullable()
-                ->constrained('users')
-                ->nullOnDelete();
+                ->constrained('employees')
+                ->onDelete('cascade');
+            $table->date('period');
+            $table->text('note')->nullable();
             $table->timestamps();
         });
     }
@@ -34,6 +33,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('assessment_categories');
+        Schema::dropIfExists('assessments');
     }
 };
