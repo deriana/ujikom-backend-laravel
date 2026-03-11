@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -20,10 +21,10 @@ class WorkScheduleResource extends JsonResource
 
             'total_employees' => $this->whenCounted('employeeWorkSchedules'),
 
-            'work_start_time' => $this->work_start_time,
-            'work_end_time' => $this->work_end_time,
-            'break_start_time' => $this->break_start_time,
-            'break_end_time' => $this->break_end_time,
+            'work_start_time' => $this->work_start_time ? Carbon::parse($this->work_start_time)->format('H:i') : null,
+            'work_end_time' => $this->work_end_time ? Carbon::parse($this->work_end_time)->format('H:i') : null,
+            'break_start_time' => $this->break_start_time ? Carbon::parse($this->break_start_time)->format('H:i') : null,
+            'break_end_time' => $this->break_end_time ? Carbon::parse($this->break_end_time)->format('H:i') : null,
             'late_tolerance_minutes' => $this->late_tolerance_minutes,
             'requires_office_location' => (bool) $this->requires_office_location,
 

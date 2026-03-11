@@ -74,8 +74,9 @@ class AttendanceService
         ]);
 
         // 2. Prepare the notification message based on punctuality
-        $lateMsg = $timeValidation['late_minutes'] > 0
-            ? " (Late by {$timeValidation['late_minutes']} minutes)"
+        $roundedLate = round($timeValidation['late_minutes']);
+        $lateMsg = $roundedLate > 0
+            ? " (Late by {$roundedLate} minutes)"
             : ' (On time)';
 
         // 3. Send a custom notification to the employee

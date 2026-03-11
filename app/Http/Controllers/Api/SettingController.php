@@ -66,24 +66,12 @@ class SettingController extends Controller
 
         if ($request->hasFile('logo')) {
             $setting->clearMediaCollection('logo');
-            $media = $setting->addMediaFromRequest('logo')->toMediaCollection('logo');
-
-            $setting->values = [
-                ...$setting->values,
-                'logo' => $media->getUrl(),
-            ];
-            $setting->save();
+            $setting->addMediaFromRequest('logo')->toMediaCollection('logo');
         }
 
         if ($request->hasFile('favicon')) {
             $setting->clearMediaCollection('favicon');
-            $media = $setting->addMediaFromRequest('favicon')->toMediaCollection('favicon');
-
-            $setting->values = [
-                ...$setting->values,
-                'favicon' => $media->getUrl(),
-            ];
-            $setting->save();
+            $setting->addMediaFromRequest('favicon')->toMediaCollection('favicon');
         }
 
         return $this->successResponse(

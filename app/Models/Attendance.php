@@ -22,7 +22,7 @@ class Attendance extends Model
         'clock_in_photo', 'clock_out_photo',
         'latitude_in', 'longitude_in',
         'latitude_out', 'longitude_out',
-        'is_early_leave_approved'
+        'is_early_leave_approved', 'is_corrected'
     ];
 
     protected $casts = [

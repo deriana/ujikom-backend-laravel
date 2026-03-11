@@ -34,6 +34,8 @@ return new class extends Migration
             $table->decimal('latitude_out', 10, 7)->nullable();
             $table->decimal('longitude_out', 10, 7)->nullable();
 
+            $table->boolean('is_corrected')->default(false); 
+
             $table->timestamps();
 
             $table->unique(['employee_id', 'date']);

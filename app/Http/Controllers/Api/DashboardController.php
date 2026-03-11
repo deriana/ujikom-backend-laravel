@@ -419,13 +419,12 @@ class DashboardController extends Controller
 
         // -- Aktivitas Attendance Request (Koreksi/Manual) Approved Hari Ini --
         AttendanceRequest::where('employee_id', $employee->id)
-            ->whereDate('start_date', '<=', $today)
-            ->whereDate('end_date', '>=', $today)
+            ->whereDate('created_at', $today)
             ->approved()
             ->get()
             ->each(fn ($ar) => $activities->push([
                 'type' => 'attendance_request',
-                'time' => 'Attendance Req',
+                'time' => $ar->created_at->format('H:i'),
                 'label' => str_replace('_', ' ', ucwords($ar->request_type, '_')),
                 'status' => 'Approved',
             ]));
@@ -736,8 +735,8 @@ class DashboardController extends Controller
                     'uuid' => $payroll->uuid,
                     'period' => $payroll->period_start->translatedFormat('F Y'),
                     'payment_date' => $payroll->finalized_at
-                        ? 'Dibayar: '.$payroll->finalized_at->translatedFormat('d M Y')
-                        : 'Proses Pencairan',
+                        ? 'Paid: '.$payroll->finalized_at->translatedFormat('d M Y')
+                        : 'Processing',
                     'net_salary' => (float) $payroll->net_salary,
                     'status' => $payroll->status,
                 ];

@@ -23,7 +23,16 @@ class LoginRequest extends FormRequest
     {
         return [
             'email' => 'required|string|email',
-            'password' => 'required|min:8',
+            'password' => 'required',
         ];
     }
+
+    // public function messages(): array
+    // {
+    //     return [
+    //         'email.email' => 'Format email tidak valid. Pastikan menggunakan tanda @ dan domain yang benar.',
+    //         'email.required' => 'Email wajib diisi.',
+    //         'email.unique' => 'Email sudah terdaftar.',
+    //     ];
+    // }
 }

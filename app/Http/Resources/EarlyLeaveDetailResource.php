@@ -21,6 +21,7 @@ class EarlyLeaveDetailResource extends JsonResource
                 'exists' => true,
                 'filename' => basename($this->attachment),
                 'path' => $this->attachment,
+                'download_url' => url('/api/early_leaves/download-attachment/'.basename($this->attachment)),
             ] : null,
             'status' => $this->status,
             'approval' => [

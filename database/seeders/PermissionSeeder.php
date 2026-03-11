@@ -332,6 +332,27 @@ class PermissionSeeder extends Seeder
                 ],
             ],
 
+            'attendance_corrections' => [
+                'actions' => [
+                    'index' => 'attendance-correction.index',
+                    'show' => 'attendance-correction.show',
+                    'create' => 'attendance-correction.create',
+                    'edit' => 'attendance-correction.edit',
+                    'destroy' => 'attendance-correction.destroy',
+                    'approve' => 'attendance-correction.approve',
+                    'export' => 'attendance-correction.export',
+                ],
+                'roles' => [
+                    UserRole::ADMIN->value => ['index', 'show', 'edit', 'destroy', 'approve', 'export'],
+                    UserRole::HR->value => ['index', 'show', 'create', 'edit', 'destroy', 'approve', 'export'],
+                    UserRole::MANAGER->value => ['index', 'show', 'create', 'edit', 'destroy', 'approve'],
+                    UserRole::EMPLOYEE->value => ['index', 'show', 'create', 'edit', 'destroy'],
+                    UserRole::DIRECTOR->value => ['index', 'show', 'approve', 'export'],
+                    UserRole::OWNER->value => ['index', 'show', 'export'],
+                    UserRole::FINANCE->value => ['index', 'show', 'create', 'edit', 'destroy', 'export'],
+                ],
+            ],
+
             'overtimes' => [
                 'actions' => [
                     'index' => 'overtime.index',
