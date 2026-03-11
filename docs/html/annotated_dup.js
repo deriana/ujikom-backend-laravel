@@ -1,0 +1,255 @@
+var annotated_dup =
+[
+    [ "App", null, [
+      [ "Console", null, [
+        [ "Commands", "namespace_app_1_1_console_1_1_commands.html", [
+          [ "AutoDeactivateEmployee", "class_app_1_1_console_1_1_commands_1_1_auto_deactivate_employee.html", "class_app_1_1_console_1_1_commands_1_1_auto_deactivate_employee" ],
+          [ "GenerateMonthlyPayroll", "class_app_1_1_console_1_1_commands_1_1_generate_monthly_payroll.html", "class_app_1_1_console_1_1_commands_1_1_generate_monthly_payroll" ],
+          [ "MarkAbsentEmployees", "class_app_1_1_console_1_1_commands_1_1_mark_absent_employees.html", "class_app_1_1_console_1_1_commands_1_1_mark_absent_employees" ],
+          [ "RefreshHolidays", "class_app_1_1_console_1_1_commands_1_1_refresh_holidays.html", "class_app_1_1_console_1_1_commands_1_1_refresh_holidays" ],
+          [ "ResetLeaveBalances", "class_app_1_1_console_1_1_commands_1_1_reset_leave_balances.html", "class_app_1_1_console_1_1_commands_1_1_reset_leave_balances" ]
+        ] ]
+      ] ],
+      [ "Exceptions", "namespace_app_1_1_exceptions.html", [
+        [ "Attendance", "namespace_app_1_1_exceptions_1_1_attendance.html", [
+          [ "AttendanceException", "class_app_1_1_exceptions_1_1_attendance_1_1_attendance_exception.html", "class_app_1_1_exceptions_1_1_attendance_1_1_attendance_exception" ],
+          [ "FaceValidationException", "class_app_1_1_exceptions_1_1_attendance_1_1_face_validation_exception.html", null ],
+          [ "GeoLocationException", "class_app_1_1_exceptions_1_1_attendance_1_1_geo_location_exception.html", null ],
+          [ "TimeValidationException", "class_app_1_1_exceptions_1_1_attendance_1_1_time_validation_exception.html", null ]
+        ] ],
+        [ "UserNotVerifiedException", "class_app_1_1_exceptions_1_1_user_not_verified_exception.html", "class_app_1_1_exceptions_1_1_user_not_verified_exception" ]
+      ] ],
+      [ "Exports", "namespace_app_1_1_exports.html", [
+        [ "AttendancesExport", "class_app_1_1_exports_1_1_attendances_export.html", "class_app_1_1_exports_1_1_attendances_export" ]
+      ] ],
+      [ "Http", null, [
+        [ "Controllers", "namespace_app_1_1_http_1_1_controllers.html", [
+          [ "Api", "namespace_app_1_1_http_1_1_controllers_1_1_api.html", [
+            [ "AllowanceController", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_allowance_controller.html", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_allowance_controller" ],
+            [ "AssessmentCategoryController", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_assessment_category_controller.html", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_assessment_category_controller" ],
+            [ "AssessmentController", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_assessment_controller.html", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_assessment_controller" ],
+            [ "AttendanceController", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_attendance_controller.html", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_attendance_controller" ],
+            [ "AttendanceCorrectionController", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_attendance_correction_controller.html", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_attendance_correction_controller" ],
+            [ "AttendanceDetailController", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_attendance_detail_controller.html", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_attendance_detail_controller" ],
+            [ "AttendanceRequestController", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_attendance_request_controller.html", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_attendance_request_controller" ],
+            [ "AuthController", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_auth_controller.html", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_auth_controller" ],
+            [ "DashboardController", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_dashboard_controller.html", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_dashboard_controller" ],
+            [ "DivisionController", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_division_controller.html", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_division_controller" ],
+            [ "EarlyLeaveController", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_early_leave_controller.html", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_early_leave_controller" ],
+            [ "EmployeeShiftController", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_employee_shift_controller.html", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_employee_shift_controller" ],
+            [ "EmployeeWorkScheduleController", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_employee_work_schedule_controller.html", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_employee_work_schedule_controller" ],
+            [ "HolidayController", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_holiday_controller.html", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_holiday_controller" ],
+            [ "LeaveController", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_leave_controller.html", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_leave_controller" ],
+            [ "LeaveTypeController", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_leave_type_controller.html", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_leave_type_controller" ],
+            [ "NotificationController", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_notification_controller.html", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_notification_controller" ],
+            [ "OvertimeController", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_overtime_controller.html", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_overtime_controller" ],
+            [ "PayrollController", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_payroll_controller.html", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_payroll_controller" ],
+            [ "PositionController", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_position_controller.html", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_position_controller" ],
+            [ "RoleController", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_role_controller.html", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_role_controller" ],
+            [ "SettingController", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_setting_controller.html", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_setting_controller" ],
+            [ "ShiftTemplateController", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_shift_template_controller.html", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_shift_template_controller" ],
+            [ "UserController", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_user_controller.html", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_user_controller" ],
+            [ "WorkScheduleController", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_work_schedule_controller.html", "class_app_1_1_http_1_1_controllers_1_1_api_1_1_work_schedule_controller" ]
+          ] ],
+          [ "Auth", "namespace_app_1_1_http_1_1_controllers_1_1_auth.html", [
+            [ "ForgotPasswordController", "class_app_1_1_http_1_1_controllers_1_1_auth_1_1_forgot_password_controller.html", "class_app_1_1_http_1_1_controllers_1_1_auth_1_1_forgot_password_controller" ],
+            [ "VerificationController", "class_app_1_1_http_1_1_controllers_1_1_auth_1_1_verification_controller.html", "class_app_1_1_http_1_1_controllers_1_1_auth_1_1_verification_controller" ]
+          ] ],
+          [ "Controller", "class_app_1_1_http_1_1_controllers_1_1_controller.html", null ]
+        ] ],
+        [ "Requests", "namespace_app_1_1_http_1_1_requests.html", [
+          [ "Auth", "namespace_app_1_1_http_1_1_requests_1_1_auth.html", [
+            [ "LoginRequest", "class_app_1_1_http_1_1_requests_1_1_auth_1_1_login_request.html", "class_app_1_1_http_1_1_requests_1_1_auth_1_1_login_request" ],
+            [ "RegisterRequest", "class_app_1_1_http_1_1_requests_1_1_auth_1_1_register_request.html", "class_app_1_1_http_1_1_requests_1_1_auth_1_1_register_request" ]
+          ] ],
+          [ "CreateAllowanceRequest", "class_app_1_1_http_1_1_requests_1_1_create_allowance_request.html", "class_app_1_1_http_1_1_requests_1_1_create_allowance_request" ],
+          [ "CreateAssessmentCategoryRequest", "class_app_1_1_http_1_1_requests_1_1_create_assessment_category_request.html", "class_app_1_1_http_1_1_requests_1_1_create_assessment_category_request" ],
+          [ "CreateAssessmentRequest", "class_app_1_1_http_1_1_requests_1_1_create_assessment_request.html", "class_app_1_1_http_1_1_requests_1_1_create_assessment_request" ],
+          [ "CreateAttendanceCorrectionRequest", "class_app_1_1_http_1_1_requests_1_1_create_attendance_correction_request.html", "class_app_1_1_http_1_1_requests_1_1_create_attendance_correction_request" ],
+          [ "CreateAttendanceSubmissionRequest", "class_app_1_1_http_1_1_requests_1_1_create_attendance_submission_request.html", "class_app_1_1_http_1_1_requests_1_1_create_attendance_submission_request" ],
+          [ "CreateDivisionRequest", "class_app_1_1_http_1_1_requests_1_1_create_division_request.html", "class_app_1_1_http_1_1_requests_1_1_create_division_request" ],
+          [ "CreateEarlyLeaveRequest", "class_app_1_1_http_1_1_requests_1_1_create_early_leave_request.html", "class_app_1_1_http_1_1_requests_1_1_create_early_leave_request" ],
+          [ "CreateEmployeeShiftRequest", "class_app_1_1_http_1_1_requests_1_1_create_employee_shift_request.html", "class_app_1_1_http_1_1_requests_1_1_create_employee_shift_request" ],
+          [ "CreateEmployeeWorkScheduleRequest", "class_app_1_1_http_1_1_requests_1_1_create_employee_work_schedule_request.html", "class_app_1_1_http_1_1_requests_1_1_create_employee_work_schedule_request" ],
+          [ "CreateHolidayRequest", "class_app_1_1_http_1_1_requests_1_1_create_holiday_request.html", "class_app_1_1_http_1_1_requests_1_1_create_holiday_request" ],
+          [ "CreateLeaveRequest", "class_app_1_1_http_1_1_requests_1_1_create_leave_request.html", "class_app_1_1_http_1_1_requests_1_1_create_leave_request" ],
+          [ "CreateLeaveTypeRequest", "class_app_1_1_http_1_1_requests_1_1_create_leave_type_request.html", "class_app_1_1_http_1_1_requests_1_1_create_leave_type_request" ],
+          [ "CreateOvertimeRequest", "class_app_1_1_http_1_1_requests_1_1_create_overtime_request.html", "class_app_1_1_http_1_1_requests_1_1_create_overtime_request" ],
+          [ "CreatePayrollRequest", "class_app_1_1_http_1_1_requests_1_1_create_payroll_request.html", "class_app_1_1_http_1_1_requests_1_1_create_payroll_request" ],
+          [ "CreatePositionRequest", "class_app_1_1_http_1_1_requests_1_1_create_position_request.html", "class_app_1_1_http_1_1_requests_1_1_create_position_request" ],
+          [ "CreateRoleRequest", "class_app_1_1_http_1_1_requests_1_1_create_role_request.html", "class_app_1_1_http_1_1_requests_1_1_create_role_request" ],
+          [ "CreateShiftTemplateRequest", "class_app_1_1_http_1_1_requests_1_1_create_shift_template_request.html", "class_app_1_1_http_1_1_requests_1_1_create_shift_template_request" ],
+          [ "CreateUserRequest", "class_app_1_1_http_1_1_requests_1_1_create_user_request.html", "class_app_1_1_http_1_1_requests_1_1_create_user_request" ],
+          [ "CreateWorkScheduleRequest", "class_app_1_1_http_1_1_requests_1_1_create_work_schedule_request.html", "class_app_1_1_http_1_1_requests_1_1_create_work_schedule_request" ],
+          [ "UpdateAllowanceRequest", "class_app_1_1_http_1_1_requests_1_1_update_allowance_request.html", "class_app_1_1_http_1_1_requests_1_1_update_allowance_request" ],
+          [ "UpdateAssessmentCategoryRequest", "class_app_1_1_http_1_1_requests_1_1_update_assessment_category_request.html", "class_app_1_1_http_1_1_requests_1_1_update_assessment_category_request" ],
+          [ "UpdateAssessmentRequest", "class_app_1_1_http_1_1_requests_1_1_update_assessment_request.html", "class_app_1_1_http_1_1_requests_1_1_update_assessment_request" ],
+          [ "UpdateAttendanceCorrectionRequest", "class_app_1_1_http_1_1_requests_1_1_update_attendance_correction_request.html", "class_app_1_1_http_1_1_requests_1_1_update_attendance_correction_request" ],
+          [ "UpdateAttendanceSubmissionRequest", "class_app_1_1_http_1_1_requests_1_1_update_attendance_submission_request.html", "class_app_1_1_http_1_1_requests_1_1_update_attendance_submission_request" ],
+          [ "UpdateDivisionRequest", "class_app_1_1_http_1_1_requests_1_1_update_division_request.html", "class_app_1_1_http_1_1_requests_1_1_update_division_request" ],
+          [ "UpdateEarlyLeaveRequest", "class_app_1_1_http_1_1_requests_1_1_update_early_leave_request.html", "class_app_1_1_http_1_1_requests_1_1_update_early_leave_request" ],
+          [ "UpdateEmployeeShiftRequest", "class_app_1_1_http_1_1_requests_1_1_update_employee_shift_request.html", "class_app_1_1_http_1_1_requests_1_1_update_employee_shift_request" ],
+          [ "UpdateEmployeeWorkScheduleRequest", "class_app_1_1_http_1_1_requests_1_1_update_employee_work_schedule_request.html", "class_app_1_1_http_1_1_requests_1_1_update_employee_work_schedule_request" ],
+          [ "UpdateHolidayRequest", "class_app_1_1_http_1_1_requests_1_1_update_holiday_request.html", "class_app_1_1_http_1_1_requests_1_1_update_holiday_request" ],
+          [ "UpdateLeaveRequest", "class_app_1_1_http_1_1_requests_1_1_update_leave_request.html", "class_app_1_1_http_1_1_requests_1_1_update_leave_request" ],
+          [ "UpdateLeaveTypeRequest", "class_app_1_1_http_1_1_requests_1_1_update_leave_type_request.html", "class_app_1_1_http_1_1_requests_1_1_update_leave_type_request" ],
+          [ "UpdateOvertimeRequest", "class_app_1_1_http_1_1_requests_1_1_update_overtime_request.html", "class_app_1_1_http_1_1_requests_1_1_update_overtime_request" ],
+          [ "UpdatePayrollRequest", "class_app_1_1_http_1_1_requests_1_1_update_payroll_request.html", "class_app_1_1_http_1_1_requests_1_1_update_payroll_request" ],
+          [ "UpdatePositionRequest", "class_app_1_1_http_1_1_requests_1_1_update_position_request.html", "class_app_1_1_http_1_1_requests_1_1_update_position_request" ],
+          [ "UpdateRoleRequest", "class_app_1_1_http_1_1_requests_1_1_update_role_request.html", "class_app_1_1_http_1_1_requests_1_1_update_role_request" ],
+          [ "UpdateShiftTemplateRequest", "class_app_1_1_http_1_1_requests_1_1_update_shift_template_request.html", "class_app_1_1_http_1_1_requests_1_1_update_shift_template_request" ],
+          [ "UpdateUserRequest", "class_app_1_1_http_1_1_requests_1_1_update_user_request.html", "class_app_1_1_http_1_1_requests_1_1_update_user_request" ],
+          [ "UpdateWorkScheduleRequest", "class_app_1_1_http_1_1_requests_1_1_update_work_schedule_request.html", "class_app_1_1_http_1_1_requests_1_1_update_work_schedule_request" ]
+        ] ],
+        [ "Resources", "namespace_app_1_1_http_1_1_resources.html", [
+          [ "AllowanceResource", "class_app_1_1_http_1_1_resources_1_1_allowance_resource.html", "class_app_1_1_http_1_1_resources_1_1_allowance_resource" ],
+          [ "AssessmentCategoryResource", "class_app_1_1_http_1_1_resources_1_1_assessment_category_resource.html", "class_app_1_1_http_1_1_resources_1_1_assessment_category_resource" ],
+          [ "AssessmentDetailResource", "class_app_1_1_http_1_1_resources_1_1_assessment_detail_resource.html", "class_app_1_1_http_1_1_resources_1_1_assessment_detail_resource" ],
+          [ "AssessmentResource", "class_app_1_1_http_1_1_resources_1_1_assessment_resource.html", "class_app_1_1_http_1_1_resources_1_1_assessment_resource" ],
+          [ "AttendanceCorrectionDetailResource", "class_app_1_1_http_1_1_resources_1_1_attendance_correction_detail_resource.html", "class_app_1_1_http_1_1_resources_1_1_attendance_correction_detail_resource" ],
+          [ "AttendanceCorrectionResource", "class_app_1_1_http_1_1_resources_1_1_attendance_correction_resource.html", "class_app_1_1_http_1_1_resources_1_1_attendance_correction_resource" ],
+          [ "AttendanceDetailResource", "class_app_1_1_http_1_1_resources_1_1_attendance_detail_resource.html", "class_app_1_1_http_1_1_resources_1_1_attendance_detail_resource" ],
+          [ "AttendanceRequestDetailResource", "class_app_1_1_http_1_1_resources_1_1_attendance_request_detail_resource.html", "class_app_1_1_http_1_1_resources_1_1_attendance_request_detail_resource" ],
+          [ "AttendanceRequestResource", "class_app_1_1_http_1_1_resources_1_1_attendance_request_resource.html", "class_app_1_1_http_1_1_resources_1_1_attendance_request_resource" ],
+          [ "AttendanceResource", "class_app_1_1_http_1_1_resources_1_1_attendance_resource.html", "class_app_1_1_http_1_1_resources_1_1_attendance_resource" ],
+          [ "DivisionResource", "class_app_1_1_http_1_1_resources_1_1_division_resource.html", "class_app_1_1_http_1_1_resources_1_1_division_resource" ],
+          [ "DivisionTeamEmployeeResource", "class_app_1_1_http_1_1_resources_1_1_division_team_employee_resource.html", "class_app_1_1_http_1_1_resources_1_1_division_team_employee_resource" ],
+          [ "EarlyLeaveDetailResource", "class_app_1_1_http_1_1_resources_1_1_early_leave_detail_resource.html", "class_app_1_1_http_1_1_resources_1_1_early_leave_detail_resource" ],
+          [ "EarlyLeaveResource", "class_app_1_1_http_1_1_resources_1_1_early_leave_resource.html", "class_app_1_1_http_1_1_resources_1_1_early_leave_resource" ],
+          [ "EmployeeLeaveBalanceResource", "class_app_1_1_http_1_1_resources_1_1_employee_leave_balance_resource.html", "class_app_1_1_http_1_1_resources_1_1_employee_leave_balance_resource" ],
+          [ "EmployeeLiteResources", "class_app_1_1_http_1_1_resources_1_1_employee_lite_resources.html", "class_app_1_1_http_1_1_resources_1_1_employee_lite_resources" ],
+          [ "EmployeeShiftResource", "class_app_1_1_http_1_1_resources_1_1_employee_shift_resource.html", "class_app_1_1_http_1_1_resources_1_1_employee_shift_resource" ],
+          [ "EmployeeWorkScheduleResource", "class_app_1_1_http_1_1_resources_1_1_employee_work_schedule_resource.html", "class_app_1_1_http_1_1_resources_1_1_employee_work_schedule_resource" ],
+          [ "HolidayResource", "class_app_1_1_http_1_1_resources_1_1_holiday_resource.html", "class_app_1_1_http_1_1_resources_1_1_holiday_resource" ],
+          [ "LeaveDetailResource", "class_app_1_1_http_1_1_resources_1_1_leave_detail_resource.html", "class_app_1_1_http_1_1_resources_1_1_leave_detail_resource" ],
+          [ "LeaveResource", "class_app_1_1_http_1_1_resources_1_1_leave_resource.html", "class_app_1_1_http_1_1_resources_1_1_leave_resource" ],
+          [ "LeaveTypeResource", "class_app_1_1_http_1_1_resources_1_1_leave_type_resource.html", "class_app_1_1_http_1_1_resources_1_1_leave_type_resource" ],
+          [ "ManagerResource", "class_app_1_1_http_1_1_resources_1_1_manager_resource.html", "class_app_1_1_http_1_1_resources_1_1_manager_resource" ],
+          [ "MeResource", "class_app_1_1_http_1_1_resources_1_1_me_resource.html", "class_app_1_1_http_1_1_resources_1_1_me_resource" ],
+          [ "OvertimeDetailResource", "class_app_1_1_http_1_1_resources_1_1_overtime_detail_resource.html", "class_app_1_1_http_1_1_resources_1_1_overtime_detail_resource" ],
+          [ "OvertimeResource", "class_app_1_1_http_1_1_resources_1_1_overtime_resource.html", "class_app_1_1_http_1_1_resources_1_1_overtime_resource" ],
+          [ "PayrollDetailResource", "class_app_1_1_http_1_1_resources_1_1_payroll_detail_resource.html", "class_app_1_1_http_1_1_resources_1_1_payroll_detail_resource" ],
+          [ "PayrollResource", "class_app_1_1_http_1_1_resources_1_1_payroll_resource.html", "class_app_1_1_http_1_1_resources_1_1_payroll_resource" ],
+          [ "PositionResource", "class_app_1_1_http_1_1_resources_1_1_position_resource.html", "class_app_1_1_http_1_1_resources_1_1_position_resource" ],
+          [ "RoleResource", "class_app_1_1_http_1_1_resources_1_1_role_resource.html", "class_app_1_1_http_1_1_resources_1_1_role_resource" ],
+          [ "SettingResource", "class_app_1_1_http_1_1_resources_1_1_setting_resource.html", "class_app_1_1_http_1_1_resources_1_1_setting_resource" ],
+          [ "ShiftTemplateResource", "class_app_1_1_http_1_1_resources_1_1_shift_template_resource.html", "class_app_1_1_http_1_1_resources_1_1_shift_template_resource" ],
+          [ "UserDetailResource", "class_app_1_1_http_1_1_resources_1_1_user_detail_resource.html", "class_app_1_1_http_1_1_resources_1_1_user_detail_resource" ],
+          [ "UserResource", "class_app_1_1_http_1_1_resources_1_1_user_resource.html", null ],
+          [ "WorkScheduleResource", "class_app_1_1_http_1_1_resources_1_1_work_schedule_resource.html", "class_app_1_1_http_1_1_resources_1_1_work_schedule_resource" ]
+        ] ]
+      ] ],
+      [ "Jobs", "namespace_app_1_1_jobs.html", [
+        [ "GeneratePayrollSlipJob", "class_app_1_1_jobs_1_1_generate_payroll_slip_job.html", "class_app_1_1_jobs_1_1_generate_payroll_slip_job" ]
+      ] ],
+      [ "Mail", "namespace_app_1_1_mail.html", [
+        [ "PasswordResetMail", "class_app_1_1_mail_1_1_password_reset_mail.html", "class_app_1_1_mail_1_1_password_reset_mail" ],
+        [ "VerifyEmail", "class_app_1_1_mail_1_1_verify_email.html", "class_app_1_1_mail_1_1_verify_email" ]
+      ] ],
+      [ "Models", "namespace_app_1_1_models.html", [
+        [ "Allowance", "class_app_1_1_models_1_1_allowance.html", "class_app_1_1_models_1_1_allowance" ],
+        [ "Assessment", "class_app_1_1_models_1_1_assessment.html", "class_app_1_1_models_1_1_assessment" ],
+        [ "AssessmentCategory", "class_app_1_1_models_1_1_assessment_category.html", "class_app_1_1_models_1_1_assessment_category" ],
+        [ "AssessmentDetail", "class_app_1_1_models_1_1_assessment_detail.html", "class_app_1_1_models_1_1_assessment_detail" ],
+        [ "Attendance", "class_app_1_1_models_1_1_attendance.html", "class_app_1_1_models_1_1_attendance" ],
+        [ "AttendanceCorrection", "class_app_1_1_models_1_1_attendance_correction.html", "class_app_1_1_models_1_1_attendance_correction" ],
+        [ "AttendanceLog", "class_app_1_1_models_1_1_attendance_log.html", "class_app_1_1_models_1_1_attendance_log" ],
+        [ "AttendanceRequest", "class_app_1_1_models_1_1_attendance_request.html", "class_app_1_1_models_1_1_attendance_request" ],
+        [ "BiometricUser", "class_app_1_1_models_1_1_biometric_user.html", "class_app_1_1_models_1_1_biometric_user" ],
+        [ "Division", "class_app_1_1_models_1_1_division.html", "class_app_1_1_models_1_1_division" ],
+        [ "EarlyLeave", "class_app_1_1_models_1_1_early_leave.html", "class_app_1_1_models_1_1_early_leave" ],
+        [ "Employee", "class_app_1_1_models_1_1_employee.html", "class_app_1_1_models_1_1_employee" ],
+        [ "EmployeeLeave", "class_app_1_1_models_1_1_employee_leave.html", "class_app_1_1_models_1_1_employee_leave" ],
+        [ "EmployeeLeaveBalance", "class_app_1_1_models_1_1_employee_leave_balance.html", "class_app_1_1_models_1_1_employee_leave_balance" ],
+        [ "EmployeeShift", "class_app_1_1_models_1_1_employee_shift.html", "class_app_1_1_models_1_1_employee_shift" ],
+        [ "EmployeeWorkSchedule", "class_app_1_1_models_1_1_employee_work_schedule.html", "class_app_1_1_models_1_1_employee_work_schedule" ],
+        [ "Holiday", "class_app_1_1_models_1_1_holiday.html", "class_app_1_1_models_1_1_holiday" ],
+        [ "Leave", "class_app_1_1_models_1_1_leave.html", "class_app_1_1_models_1_1_leave" ],
+        [ "LeaveApproval", "class_app_1_1_models_1_1_leave_approval.html", "class_app_1_1_models_1_1_leave_approval" ],
+        [ "LeaveType", "class_app_1_1_models_1_1_leave_type.html", "class_app_1_1_models_1_1_leave_type" ],
+        [ "Module", "class_app_1_1_models_1_1_module.html", "class_app_1_1_models_1_1_module" ],
+        [ "Overtime", "class_app_1_1_models_1_1_overtime.html", "class_app_1_1_models_1_1_overtime" ],
+        [ "PasswordResetToken", "class_app_1_1_models_1_1_password_reset_token.html", "class_app_1_1_models_1_1_password_reset_token" ],
+        [ "Payroll", "class_app_1_1_models_1_1_payroll.html", "class_app_1_1_models_1_1_payroll" ],
+        [ "Position", "class_app_1_1_models_1_1_position.html", "class_app_1_1_models_1_1_position" ],
+        [ "Role", "class_app_1_1_models_1_1_role.html", null ],
+        [ "Setting", "class_app_1_1_models_1_1_setting.html", "class_app_1_1_models_1_1_setting" ],
+        [ "ShiftTemplate", "class_app_1_1_models_1_1_shift_template.html", "class_app_1_1_models_1_1_shift_template" ],
+        [ "Team", "class_app_1_1_models_1_1_team.html", "class_app_1_1_models_1_1_team" ],
+        [ "User", "class_app_1_1_models_1_1_user.html", "class_app_1_1_models_1_1_user" ],
+        [ "VerificationToken", "class_app_1_1_models_1_1_verification_token.html", "class_app_1_1_models_1_1_verification_token" ],
+        [ "WorkMode", "class_app_1_1_models_1_1_work_mode.html", "class_app_1_1_models_1_1_work_mode" ],
+        [ "WorkSchedule", "class_app_1_1_models_1_1_work_schedule.html", "class_app_1_1_models_1_1_work_schedule" ]
+      ] ],
+      [ "Notifications", "namespace_app_1_1_notifications.html", [
+        [ "CrudActivityNotification", "class_app_1_1_notifications_1_1_crud_activity_notification.html", "class_app_1_1_notifications_1_1_crud_activity_notification" ]
+      ] ],
+      [ "Policies", "namespace_app_1_1_policies.html", [
+        [ "AllowancePolicy", "class_app_1_1_policies_1_1_allowance_policy.html", "class_app_1_1_policies_1_1_allowance_policy" ],
+        [ "AssessmentCategoryPolicy", "class_app_1_1_policies_1_1_assessment_category_policy.html", "class_app_1_1_policies_1_1_assessment_category_policy" ],
+        [ "AssessmentPolicy", "class_app_1_1_policies_1_1_assessment_policy.html", "class_app_1_1_policies_1_1_assessment_policy" ],
+        [ "AttendanceCorrectionPolicy", "class_app_1_1_policies_1_1_attendance_correction_policy.html", "class_app_1_1_policies_1_1_attendance_correction_policy" ],
+        [ "AttendancePolicy", "class_app_1_1_policies_1_1_attendance_policy.html", "class_app_1_1_policies_1_1_attendance_policy" ],
+        [ "AttendanceRequestPolicy", "class_app_1_1_policies_1_1_attendance_request_policy.html", "class_app_1_1_policies_1_1_attendance_request_policy" ],
+        [ "DivisionPolicy", "class_app_1_1_policies_1_1_division_policy.html", "class_app_1_1_policies_1_1_division_policy" ],
+        [ "EarlyLeavePolicy", "class_app_1_1_policies_1_1_early_leave_policy.html", "class_app_1_1_policies_1_1_early_leave_policy" ],
+        [ "EmployeeShiftPolicy", "class_app_1_1_policies_1_1_employee_shift_policy.html", "class_app_1_1_policies_1_1_employee_shift_policy" ],
+        [ "EmployeeWorkSchedulePolicy", "class_app_1_1_policies_1_1_employee_work_schedule_policy.html", "class_app_1_1_policies_1_1_employee_work_schedule_policy" ],
+        [ "HolidayPolicy", "class_app_1_1_policies_1_1_holiday_policy.html", "class_app_1_1_policies_1_1_holiday_policy" ],
+        [ "LeavePolicy", "class_app_1_1_policies_1_1_leave_policy.html", "class_app_1_1_policies_1_1_leave_policy" ],
+        [ "LeaveTypePolicy", "class_app_1_1_policies_1_1_leave_type_policy.html", "class_app_1_1_policies_1_1_leave_type_policy" ],
+        [ "OvertimePolicy", "class_app_1_1_policies_1_1_overtime_policy.html", "class_app_1_1_policies_1_1_overtime_policy" ],
+        [ "PayrollPolicy", "class_app_1_1_policies_1_1_payroll_policy.html", "class_app_1_1_policies_1_1_payroll_policy" ],
+        [ "PositionPolicy", "class_app_1_1_policies_1_1_position_policy.html", "class_app_1_1_policies_1_1_position_policy" ],
+        [ "RolePolicy", "class_app_1_1_policies_1_1_role_policy.html", "class_app_1_1_policies_1_1_role_policy" ],
+        [ "SettingPolicy", "class_app_1_1_policies_1_1_setting_policy.html", "class_app_1_1_policies_1_1_setting_policy" ],
+        [ "ShiftTemplatePolicy", "class_app_1_1_policies_1_1_shift_template_policy.html", "class_app_1_1_policies_1_1_shift_template_policy" ],
+        [ "UserPolicy", "class_app_1_1_policies_1_1_user_policy.html", "class_app_1_1_policies_1_1_user_policy" ],
+        [ "WorkSchedulePolicy", "class_app_1_1_policies_1_1_work_schedule_policy.html", "class_app_1_1_policies_1_1_work_schedule_policy" ]
+      ] ],
+      [ "Providers", "namespace_app_1_1_providers.html", [
+        [ "AppServiceProvider", "class_app_1_1_providers_1_1_app_service_provider.html", "class_app_1_1_providers_1_1_app_service_provider" ],
+        [ "TelescopeServiceProvider", "class_app_1_1_providers_1_1_telescope_service_provider.html", "class_app_1_1_providers_1_1_telescope_service_provider" ]
+      ] ],
+      [ "Services", "namespace_app_1_1_services.html", [
+        [ "Attendance", null, [
+          [ "Internal", "namespace_app_1_1_services_1_1_attendance_1_1_internal.html", [
+            [ "AttendanceLogger", "class_app_1_1_services_1_1_attendance_1_1_internal_1_1_attendance_logger.html", "class_app_1_1_services_1_1_attendance_1_1_internal_1_1_attendance_logger" ],
+            [ "AttendanceUploader", "class_app_1_1_services_1_1_attendance_1_1_internal_1_1_attendance_uploader.html", "class_app_1_1_services_1_1_attendance_1_1_internal_1_1_attendance_uploader" ]
+          ] ],
+          [ "Validators", "namespace_app_1_1_services_1_1_attendance_1_1_validators.html", [
+            [ "FaceValidator", "class_app_1_1_services_1_1_attendance_1_1_validators_1_1_face_validator.html", "class_app_1_1_services_1_1_attendance_1_1_validators_1_1_face_validator" ],
+            [ "GeoFenceValidator", "class_app_1_1_services_1_1_attendance_1_1_validators_1_1_geo_fence_validator.html", "class_app_1_1_services_1_1_attendance_1_1_validators_1_1_geo_fence_validator" ],
+            [ "TimeValidator", "class_app_1_1_services_1_1_attendance_1_1_validators_1_1_time_validator.html", "class_app_1_1_services_1_1_attendance_1_1_validators_1_1_time_validator" ]
+          ] ]
+        ] ],
+        [ "AllowanceService", "class_app_1_1_services_1_1_allowance_service.html", "class_app_1_1_services_1_1_allowance_service" ],
+        [ "AssessmentCategoryService", "class_app_1_1_services_1_1_assessment_category_service.html", "class_app_1_1_services_1_1_assessment_category_service" ],
+        [ "AssessmentService", "class_app_1_1_services_1_1_assessment_service.html", "class_app_1_1_services_1_1_assessment_service" ],
+        [ "AttendanceCorrectionService", "class_app_1_1_services_1_1_attendance_correction_service.html", "class_app_1_1_services_1_1_attendance_correction_service" ],
+        [ "AttendanceDetailService", "class_app_1_1_services_1_1_attendance_detail_service.html", "class_app_1_1_services_1_1_attendance_detail_service" ],
+        [ "AttendanceRequestService", "class_app_1_1_services_1_1_attendance_request_service.html", "class_app_1_1_services_1_1_attendance_request_service" ],
+        [ "AttendanceService", "class_app_1_1_services_1_1_attendance_service.html", "class_app_1_1_services_1_1_attendance_service" ],
+        [ "AuthService", "class_app_1_1_services_1_1_auth_service.html", "class_app_1_1_services_1_1_auth_service" ],
+        [ "DivisionService", "class_app_1_1_services_1_1_division_service.html", "class_app_1_1_services_1_1_division_service" ],
+        [ "EarlyLeaveService", "class_app_1_1_services_1_1_early_leave_service.html", "class_app_1_1_services_1_1_early_leave_service" ],
+        [ "EmailVerificationService", "class_app_1_1_services_1_1_email_verification_service.html", "class_app_1_1_services_1_1_email_verification_service" ],
+        [ "EmployeeShiftService", "class_app_1_1_services_1_1_employee_shift_service.html", "class_app_1_1_services_1_1_employee_shift_service" ],
+        [ "EmployeeWorkScheduleService", "class_app_1_1_services_1_1_employee_work_schedule_service.html", "class_app_1_1_services_1_1_employee_work_schedule_service" ],
+        [ "HolidayService", "class_app_1_1_services_1_1_holiday_service.html", "class_app_1_1_services_1_1_holiday_service" ],
+        [ "LeaveService", "class_app_1_1_services_1_1_leave_service.html", "class_app_1_1_services_1_1_leave_service" ],
+        [ "LeaveTypeService", "class_app_1_1_services_1_1_leave_type_service.html", "class_app_1_1_services_1_1_leave_type_service" ],
+        [ "NotificationService", "class_app_1_1_services_1_1_notification_service.html", "class_app_1_1_services_1_1_notification_service" ],
+        [ "OvertimeService", "class_app_1_1_services_1_1_overtime_service.html", "class_app_1_1_services_1_1_overtime_service" ],
+        [ "PasswordResetService", "class_app_1_1_services_1_1_password_reset_service.html", "class_app_1_1_services_1_1_password_reset_service" ],
+        [ "PayrollService", "class_app_1_1_services_1_1_payroll_service.html", "class_app_1_1_services_1_1_payroll_service" ],
+        [ "PositionService", "class_app_1_1_services_1_1_position_service.html", "class_app_1_1_services_1_1_position_service" ],
+        [ "RoleService", "class_app_1_1_services_1_1_role_service.html", "class_app_1_1_services_1_1_role_service" ],
+        [ "SettingService", "class_app_1_1_services_1_1_setting_service.html", "class_app_1_1_services_1_1_setting_service" ],
+        [ "ShiftTemplateService", "class_app_1_1_services_1_1_shift_template_service.html", "class_app_1_1_services_1_1_shift_template_service" ],
+        [ "UserService", "class_app_1_1_services_1_1_user_service.html", "class_app_1_1_services_1_1_user_service" ],
+        [ "WorkdayService", "class_app_1_1_services_1_1_workday_service.html", "class_app_1_1_services_1_1_workday_service" ],
+        [ "WorkScheduleService", "class_app_1_1_services_1_1_work_schedule_service.html", "class_app_1_1_services_1_1_work_schedule_service" ]
+      ] ]
+    ] ]
+];
