@@ -63,6 +63,7 @@ class UserController extends Controller
      */
     public function store(CreateUserRequest $request): JsonResponse
     {
+        // dd($request->all());
         $this->authorize('create', User::class);
 
         $user = $this->userService->store($request->validated(), Auth::id());
@@ -295,9 +296,9 @@ class UserController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function getEmployeesLite(): JsonResponse
+    public function getEmployeesLite(bool $filterByAuth = true): JsonResponse
     {
-        $users = $this->userService->getEmployeesLite();
+        $users = $this->userService->getEmployeesLite($filterByAuth);
 
         return $this->successResponse(
             EmployeeLiteResources::collection($users),

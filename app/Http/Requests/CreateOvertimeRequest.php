@@ -36,10 +36,10 @@ class CreateOvertimeRequest extends FormRequest
             'date' => ['nullable', 'date'],
         ];
 
-        $user = $this->user();
-
-        if ($user->hasAnyRole([UserRole::ADMIN, UserRole::HR])) {
-            $rules['employee_nik'] = ['nullable', 'exists:employees,nik'];
+        if ($this->user()->hasRole(UserRole::ADMIN->value)) {
+            $rules['employee_nik'] = ['required', 'exists:employees,nik'];
+        } elseif ($this->user()->hasRole(UserRole::HR->value)) {
+            $rules['employee_nik'] = ['sometimes', 'exists:employees,nik'];
         } else {
             $rules['employee_nik'] = ['prohibited'];
         }
@@ -50,7 +50,7 @@ class CreateOvertimeRequest extends FormRequest
     /**
      * Mengonfigurasi instance validator untuk logika validasi tambahan setelah aturan utama.
      *
-     * @param \Illuminate\Validation\Validator $validator
+     * @param  \Illuminate\Validation\Validator  $validator
      */
     public function withValidator($validator)
     {

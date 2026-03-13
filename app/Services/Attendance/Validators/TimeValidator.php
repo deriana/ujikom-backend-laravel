@@ -187,12 +187,15 @@ class TimeValidator
         if ($activeShift) {
             $shift = $activeShift->shiftTemplate;
 
+            // Get requires_office_location from active schedule if available
+            $activeSchedule = $employee->activeWorkSchedule($dateStr)->first();
+
             return [
                 'label' => $shift->name,
                 'work_start_time' => Carbon::parse($dateStr.' '.$shift->start_time->format('H:i:s')),
                 'work_end_time' => Carbon::parse($dateStr.' '.$shift->end_time->format('H:i:s')),
                 'late_tolerance_minutes' => (int) ($shift->late_tolerance_minutes ?? 10),
-                'requires_office_location' => (bool) ($shift->requires_office_location ?? true),
+                'requires_office_location' => $activeSchedule ? (bool) $activeSchedule->workSchedule->requires_office_location : true,
             ];
         }
 

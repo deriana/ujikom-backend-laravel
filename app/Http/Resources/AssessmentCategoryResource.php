@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -25,6 +26,9 @@ class AssessmentCategoryResource extends JsonResource
             'name' => $this->name, /**< Nama kategori penilaian */
             'description' => $this->description ?? '', /**< Deskripsi detail mengenai kategori */
             'is_active' => $this->is_active, /**< Status aktif/tidaknya kategori */
+            'can' => [
+                'update' => Auth::user()?->can('update', $this->resource),
+            ],
 
             'creator' => $this->whenLoaded('creator', function () { /**< Data pengguna yang membuat kategori ini */
                 return [

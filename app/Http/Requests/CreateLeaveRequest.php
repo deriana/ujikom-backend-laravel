@@ -45,7 +45,9 @@ use Illuminate\Support\Facades\Log;
         ];
 
         // Logika Kondisional Role
-        if ($this->user()->hasAnyRole([UserRole::ADMIN, UserRole::HR])) {
+        if ($this->user()->hasRole(UserRole::ADMIN->value)) {
+            $rules['employee_nik'] = ['required', 'exists:employees,nik'];
+        } elseif ($this->user()->hasRole(UserRole::HR->value)) {
             $rules['employee_nik'] = ['sometimes', 'exists:employees,nik'];
         } else {
             $rules['employee_nik'] = ['prohibited'];

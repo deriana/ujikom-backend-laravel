@@ -605,11 +605,12 @@ use Illuminate\Support\Facades\Mail;
     /**
      * Mengambil daftar karyawan dalam format ringkas dengan filter peran.
      *
+     * @param bool $filterByAuth Menentukan apakah akan memfilter berdasarkan bawahan/diri sendiri.
      * @return \Illuminate\Database\Eloquent\Collection Koleksi data karyawan ringkas.
      */
-    public function getEmployeesLite()
+    public function getEmployeesLite(bool $filterByAuth = true)
     {
-        $user = Auth::user();
+        $user = Auth::guard('sanctum')->user();
         $currentUserEmployee = $user->employee;
 
         $query = Employee::whereHas('user', function ($q) {
@@ -620,17 +621,19 @@ use Illuminate\Support\Facades\Mail;
               });
         })->with('user');
 
-        // If Manager, only get their direct subordinates
-        if ($user->hasRole(UserRole::MANAGER->value)) {
-            if ($currentUserEmployee) {
-                $query->where('manager_id', $currentUserEmployee->id);
-            } else {
-                return collect();
+        if ($filterByAuth && $user) {
+            // If Manager, only get their direct subordinates
+            if ($user->hasRole(UserRole::MANAGER->value)) {
+                if ($currentUserEmployee) {
+                    $query->where('manager_id', $currentUserEmployee->id);
+                } else {
+                    return collect();
+                }
             }
-        }
-        // If regular employee, only get themselves
-        elseif ($user->hasRole(UserRole::EMPLOYEE->value)) {
-            $query->where('user_id', $user->id);
+            // If regular employee, only get themselves
+            elseif ($user->hasRole(UserRole::EMPLOYEE->value)) {
+                $query->where('user_id', $user->id);
+            }
         }
 
         return $query->get();

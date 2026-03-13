@@ -36,6 +36,7 @@ class AttendanceController extends Controller
      */
     public function singleAttendance(Request $request)
     {
+        // dd($request->all());
         $request->validate([
             'descriptor' => 'required',
             'photo' => 'required|image|max:5120',

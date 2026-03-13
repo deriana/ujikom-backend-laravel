@@ -75,7 +75,7 @@ class AssessmentController extends Controller
      */
     public function show(Assessment $assessment): JsonResponse
     {
-        $this->authorize('view', $assessment);
+        // $this->authorize('view', $assessment);
 
         $assessment = $this->assessmentService->show($assessment);
 

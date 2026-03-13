@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Attendance;
+use App\Models\Assessment;
+use App\Models\AssessmentDetail;
 use App\Models\AttendanceRequest;
 use App\Models\EarlyLeave;
 use App\Models\Employee;
@@ -152,6 +154,24 @@ class DashboardController extends Controller
             'radius_meters' => $geoSetting->values['office_radius_meters'] ?? 100,
         ];
 
+        // 7. Rata-rata Performance Tahun Ini
+        $avgPerformance = AssessmentDetail::whereHas('assessment', function ($query) use ($year) {
+            $query->whereYear('period', $year);
+        })->avg('score');
+
+        // 8. Rata-rata per Kategori Tahun Ini
+        $categoryPerformance = AssessmentDetail::whereHas('assessment', function ($query) use ($year) {
+            $query->whereYear('period', $year);
+        })
+            ->selectRaw('category_id, old_category_name, AVG(score) as avg_score')
+            ->groupBy('category_id', 'old_category_name')
+            ->with('category:id,name')
+            ->get()
+            ->map(fn($d) => [
+                'name' => $d->category->name ?? $d->old_category_name ?? 'Unknown',
+                'score' => round($d->avg_score, 2)
+            ]);
+
         return $this->successResponse([
             'employee_stats' => $statsKaryawan,
             'attendance_today' => $rekapKehadiran,
@@ -160,6 +180,11 @@ class DashboardController extends Controller
             'pending_tasks' => $pendingApprovals,
             'map_locations' => $mapLocations,
             'monthly_chart' => $chartData,
+            'performance_stats' => [
+                'average' => round($avgPerformance ?? 0, 2),
+                'year' => $year,
+                'categories' => $categoryPerformance
+            ],
         ], 'Admin dashboard data fetched successfully');
     }
 
@@ -266,6 +291,22 @@ class DashboardController extends Controller
         // 6. Riwayat Gaji (Payroll)
         $salaryLogs = $this->getSalaryLogs($employeeId);
 
+        // 7. Performance Tahun Ini
+        $performances = Assessment::where('evaluatee_id', $employeeId)
+            ->whereYear('period', $year)
+            ->with('assessments_details')
+            ->orderBy('period', 'desc')
+            ->get()
+            ->map(fn ($a) => [
+                'period' => Carbon::parse($a->period)->translatedFormat('F Y'),
+                'score' => round($a->assessments_details->avg('score'), 1) ?? 0,
+            ]);
+
+        // 8. Rata-rata Performance Tahun Ini (Personal)
+        $avgEmployeePerformance = AssessmentDetail::whereHas('assessment', function ($query) use ($employeeId, $year) {
+            $query->where('evaluatee_id', $employeeId)->whereYear('period', $year);
+        })->avg('score');
+
         $pendingLeaves = Leave::with('leaveType')
             ->where('employee_id', $employeeId)
             ->pending()
@@ -328,6 +369,7 @@ class DashboardController extends Controller
                 'total_menit_lembur' => (int) $myAttendance->sum('overtime_minutes'),
                 'total_menit_kerja' => (int) $myAttendance->sum('work_minutes'), // Ini yang kamu minta
                 'total_durasi_kerja' => $formattedWorkDuration,
+                'rata_rata_performance' => round($avgEmployeePerformance ?? 0, 1),
                 'kehadiran_bulan_ini' => $myAttendance->count(),
             ],
             'recent_attendance' => $myAttendance->take(5),
@@ -345,6 +387,7 @@ class DashboardController extends Controller
                 'overtime' => $overtimeLogs,
                 'leave' => $leaveLogs,
                 'salary' => $salaryLogs,
+                'performance' => $performances,
             ],
             'today_schedule' => [
                 'date' => $today->toDateString(),
@@ -546,11 +589,31 @@ class DashboardController extends Controller
                 'is_recurring' => $h->is_recurring,
             ]);
 
+        // 5. Yearly Performance
+        $yearlyPerformance = Assessment::where('evaluatee_id', $employee->id)
+            ->whereYear('period', $year)
+            ->with(['assessments_details.category', 'evaluator.user'])
+            ->orderBy('period', 'desc')
+            ->get()
+            ->map(function ($assessment) {
+                return [
+                    'uuid' => $assessment->uuid,
+                    'period' => Carbon::parse($assessment->period)->translatedFormat('F Y'),
+                    'score' => round($assessment->assessments_details->avg('score'), 1) ?? 0,
+                    'evaluator' => $assessment->evaluator->user->name ?? '-',
+                    'details' => $assessment->assessments_details->map(fn ($d) => [
+                        'category' => $d->category->name ?? $d->old_category_name ?? '-',
+                        'score' => (float) $d->score
+                    ])
+                ];
+            });
+
         return $this->successResponse([
             'personal_stats' => $personalStats,
             'weekly_trend' => $weeklyTrend,
             'salary_logs' => $salaryLogs,
             'upcoming_holidays' => $upcomingHolidays,
+            'performances' => $yearlyPerformance,
         ], 'Mobile statistics fetched successfully');
     }
 

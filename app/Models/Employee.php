@@ -79,6 +79,7 @@ class Employee extends Model implements HasMedia
 
             $currentYear = now()->year;
 
+            // Set Gender Belum All Male Female
             $leaveTypes = LeaveType::whereNotNull('default_days')
                 ->where('is_active', true)
                 ->get();
