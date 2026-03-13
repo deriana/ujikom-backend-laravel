@@ -43,12 +43,17 @@ class EarlyLeaveResource extends JsonResource
             'date' => $this->attendance?->date->format('Y-m-d'), /**< Tanggal absensi terkait */
             'minutes_early' => $this->minutes_early, /**< Durasi pulang awal dalam menit */
             'status' => $this->status, /**< Status persetujuan saat ini */
-            'can' => [ /**< Izin aksi yang dapat dilakukan oleh pengguna saat ini */
+            'can' => [/**< Izin aksi yang dapat dilakukan oleh pengguna saat ini */
                 'update' => $user->can('update', $this->resource),
                 'delete' => $user->can('delete', $this->resource),
                 // 'approve' => $user->can('approve', $this->resource) && $isApprover,
-                'approve' => $user->can('approve', $this->resource)
+                'approve' => $user->can('approve', $this->resource),
             ],
+            'attachment' => $this->attachment ? [
+                'exists' => true, /**< Status keberadaan lampiran */
+                'filename' => basename($this->attachment), /**< Nama file lampiran */
+                'path' => $this->attachment, /**< Path file lampiran */
+            ] : null,
             'approved_at' => $this->approved_at?->format('Y-m-d H:i'), /**< Waktu persetujuan diberikan */
             'created_at' => $this->created_at?->format('Y-m-d'), /**< Waktu pembuatan pengajuan */
         ];

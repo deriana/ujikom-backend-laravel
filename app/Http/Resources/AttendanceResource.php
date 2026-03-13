@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Auth;
 
 /**
  * Class AttendanceResource
@@ -19,6 +20,8 @@ class AttendanceResource extends JsonResource
      */
     public function toArray($request)
     {
+        $user = Auth::user();
+
         return [
             'id' => $this->id, /**< Identifier unik record absensi */
             'employee' => [
@@ -32,6 +35,9 @@ class AttendanceResource extends JsonResource
             'late_minutes' => $this->late_minutes, /**< Durasi keterlambatan dalam menit */
             'work_minutes' => $this->work_minutes, /**< Total durasi kerja dalam menit */
             'overtime_minutes' => $this->overtime_minutes, /**< Durasi lembur dalam menit */
+            'can' => [
+                'update' => $this->status !== 'absent' && ! is_null($this->clock_out),
+            ]
         ];
     }
 }

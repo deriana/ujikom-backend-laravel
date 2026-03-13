@@ -60,4 +60,9 @@ class Attendance extends Model
     {
         return $this->belongsTo(Employee::class);
     }
+
+    public function attendanceCorrection()
+    {
+        return $this->hasOne(AttendanceCorrection::class);
+    }
 }

@@ -72,6 +72,6 @@ class AttendanceDetailService
      */
     public function show(Attendance $attendance)
     {
-        return $attendance->load('employee');
+        return $attendance->load('employee.user', 'employee.team.division', 'employee.position',  'attendanceCorrection');
     }
 }

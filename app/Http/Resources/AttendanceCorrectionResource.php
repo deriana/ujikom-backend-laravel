@@ -27,7 +27,7 @@ class AttendanceCorrectionResource extends JsonResource
             'uuid' => $this->uuid, /**< Identifier unik koreksi absensi */
             'employee_name' => $this->employee->user->name ?? null, /**< Nama karyawan yang mengajukan */
             'employee_nik' => $this->employee->nik ?? null, /**< NIK karyawan yang mengajukan */
-
+            'attendance_id' => $this->attendance_id, /**< ID data presensi yang dikoreksi */
             'attendance_date' => $this->attendance?->date?->format('Y-m-d'), /**< Tanggal absensi yang dikoreksi */
             'actual_clock_in' => $this->attendance?->clock_in?->format('H:i'), /**< Waktu masuk aktual di sistem */
             'actual_clock_out' => $this->attendance?->clock_out?->format('H:i'), /**< Waktu keluar aktual di sistem */
@@ -36,13 +36,19 @@ class AttendanceCorrectionResource extends JsonResource
             'clock_out_requested' => $this->clock_out_requested?->format('H:i'), /**< Waktu keluar yang diajukan */
             'reason' => $this->reason, /**< Alasan pengajuan koreksi */
 
+            'attachment' => $this->attachment ? [
+                'exists' => true, /**< Status keberadaan lampiran */
+                'filename' => basename($this->attachment), /**< Nama file lampiran */
+                'path' => $this->attachment, /**< Path file lampiran */
+            ] : null,
+
             'status' => $this->status, /**< Status persetujuan (enum value) */
             'status_label' => $this->getStatusLabel(), /**< Label status yang mudah dibaca */
             'note' => $this->note, /**< Catatan dari pemberi persetujuan */
             'approver_name' => $this->approver?->user?->name ?? null, /**< Nama pemberi persetujuan */
             'approved_at' => $this->approved_at?->format('Y-m-d H:i'), /**< Waktu persetujuan diberikan */
 
-            'can' => [ /**< Izin aksi yang dapat dilakukan oleh pengguna saat ini */
+            'can' => [/**< Izin aksi yang dapat dilakukan oleh pengguna saat ini */
                 'update' => $user->can('update', $this->resource),
                 'delete' => $user->can('delete', $this->resource),
                 'approve' => $user->can('approve', $this->resource) && $this->status === ApprovalStatus::PENDING->value,

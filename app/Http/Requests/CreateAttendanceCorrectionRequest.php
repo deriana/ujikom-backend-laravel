@@ -31,19 +31,11 @@ class CreateAttendanceCorrectionRequest extends FormRequest
     {
         $rules = [
             'attendance_id' => ['required', 'exists:attendances,id'],
-            'clock_in_requested' => ['required', 'date_format:H:i'],
-            'clock_out_requested' => ['required', 'date_format:H:i'],
+            'clock_in_requested' => ['sometimes', 'date_format:H:i'],
+            'clock_out_requested' => ['sometimes', 'date_format:H:i'],
             'reason' => ['required', 'string', 'max:500'],
             'attachment' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
         ];
-
-        $user = $this->user();
-
-        if ($user->hasAnyRole([UserRole::ADMIN, UserRole::HR])) {
-            $rules['employee_nik'] = ['nullable', 'exists:employees,nik'];
-        } else {
-            $rules['employee_nik'] = ['prohibited'];
-        }
 
         return $rules;
     }
@@ -60,16 +52,11 @@ class CreateAttendanceCorrectionRequest extends FormRequest
                 return;
             }
 
-            $user = $this->user();
-
-            if ($user->hasAnyRole([UserRole::ADMIN, UserRole::HR])) {
-                $employee = \App\Models\Employee::where('nik', $this->employee_nik)->first();
-            } else {
-                $employee = $user->employee;
-            }
+            $attendance = \App\Models\Attendance::find($this->attendance_id);
+            $employee = $attendance?->employee;
 
             if (! $employee) {
-                $validator->errors()->add('employee_nik', 'Employee data not found or your account is not linked to an employee record.');
+                $validator->errors()->add('attendance_id', 'The selected attendance record is invalid or has no associated employee.');
 
                 return;
             }

@@ -6,7 +6,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * Class AttendanceCorrectionDetailResource
- * 
+ *
  * Resource class untuk mentransformasi detail model AttendanceCorrection menjadi format JSON yang mendalam.
  */
 class AttendanceCorrectionDetailResource extends JsonResource
@@ -22,18 +22,8 @@ class AttendanceCorrectionDetailResource extends JsonResource
         return [
             'uuid' => $this->uuid, /**< Identifier unik koreksi absensi */
             'attendance' => [
-                'date' => $this->attendance?->date?->format('Y-m-d'), /**< Tanggal absensi yang dikoreksi */
                 'actual_clock_in' => $this->attendance?->clock_in?->format('H:i:s'), /**< Waktu masuk aktual di sistem */
                 'actual_clock_out' => $this->attendance?->clock_out?->format('H:i:s'), /**< Waktu keluar aktual di sistem */
-                'current_status' => $this->attendance?->status, /**< Status absensi saat ini */
-            ],
-            'employee' => [
-                'name' => $this->employee?->user?->name, /**< Nama karyawan */
-                'nik' => $this->employee?->nik, /**< NIK karyawan */
-                'division' => $this->employee?->team?->divison?->name, /**< Nama divisi */
-                'team' => $this->employee?->team?->name, /**< Nama tim */
-                'position' => $this->employee?->position?->name, /**< Nama jabatan */
-                'profile_photo' => $this->employee->getFirstMediaUrl('profile_photo') ?: null, /**< URL foto profil */
             ],
             'requested_times' => [
                 'clock_in' => $this->clock_in_requested?->format('H:i:s'), /**< Waktu masuk yang diajukan */
@@ -47,7 +37,7 @@ class AttendanceCorrectionDetailResource extends JsonResource
             ] : null,
             'status' => $this->status, /**< Status persetujuan (pending/approved/rejected) */
             'approval' => [
-                'approved_by_name' => $this->approver?->user?->name, /**< Nama pemberi persetujuan */
+                'approved_by_name' => $this->approver?->user?->name ?? '-', /**< Nama pemberi persetujuan */
                 'approved_at' => $this->approved_at?->format('Y-m-d H:i:s'), /**< Waktu persetujuan diberikan */
                 'note' => $this->note, /**< Catatan dari pemberi persetujuan */
             ],

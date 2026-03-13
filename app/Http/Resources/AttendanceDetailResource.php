@@ -45,6 +45,11 @@ class AttendanceDetailResource extends JsonResource
                 'latitude' => $this->latitude_out, /**< Koordinat latitude saat clock out */
                 'longitude' => $this->longitude_out, /**< Koordinat longitude saat clock out */
             ],
+            'is_corrected' => $this->is_corrected, /**< Flag apakah data telah dikoreksi */
+            'correction' => $this->whenLoaded('attendanceCorrection', function () {
+                /**< Detail data koreksi jika tersedia */
+                return new AttendanceCorrectionDetailResource($this->attendanceCorrection);
+            }),
         ];
     }
 }

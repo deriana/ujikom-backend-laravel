@@ -10,6 +10,7 @@ use App\Models\AttendanceCorrection;
 use App\Services\AttendanceCorrectionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
 /**
@@ -162,5 +163,16 @@ class AttendanceCorrectionController extends Controller
             new AttendanceCorrectionResource($updated),
             $approve ? 'Attendance correction approved successfully' : 'Attendance correction rejected successfully'
         );
+    }
+
+     public function downloadAttachment(string $filename)
+    {
+        $path = 'private/attendance_corrections/'.$filename;
+
+        if (! Storage::exists($path)) {
+            abort(404, 'File not found');
+        }
+
+        return Storage::download($path);
     }
 }
