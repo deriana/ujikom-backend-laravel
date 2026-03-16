@@ -99,14 +99,27 @@ class LeaveControllerTest extends TestCase
     }
 
     /** @test */
+    /** @test */
     public function admin_can_list_all_leaves()
     {
-        Leave::factory()->count(5)->create();
+        // 1. Buat beberapa employee terlebih dahulu
+        $employees = Employee::factory()->count(5)->create();
 
+        // 2. Buat cuti untuk masing-masing employee tersebut
+        foreach ($employees as $employee) {
+            Leave::factory()->create([
+                'employee_id' => $employee->id,
+                'date_start' => now(),
+                'approval_status' => ApprovalStatus::PENDING->value, // Pastikan statusnya tidak 'cancelled' atau 'rejected' jika ada filter
+            ]);
+        }
+
+        // 3. Login sebagai Admin
         Sanctum::actingAs($this->adminUser, ['*']);
 
         $response = $this->getJson('/api/leaves');
 
+        // Jika masih 0, periksa file LeaveService.php di bagian index()
         $response->assertStatus(200)
             ->assertJsonCount(5, 'data');
     }
@@ -116,6 +129,11 @@ class LeaveControllerTest extends TestCase
     {
         Sanctum::actingAs($this->employeeUser, ['*']);
         Storage::fake('local');
+
+        // Mock WorkdayService to ensure the requested dates are considered workdays
+        $this->mock(\App\Services\WorkdayService::class, function ($mock) {
+            $mock->shouldReceive('isWorkday')->andReturn(true);
+        });
 
         // Pastikan saldo cuti tersedia untuk employee ini, tipe cuti ini, dan tahun ini
         \App\Models\EmployeeLeaveBalance::factory()->create([
