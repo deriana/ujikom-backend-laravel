@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * Class AttendanceLog
@@ -25,4 +26,14 @@ class AttendanceLog extends Model
         'latitude', /**< Koordinat lintang saat aksi dilakukan */
         'longitude', /**< Koordinat bujur saat aksi dilakukan */
     ];
+
+    /**
+     * Relasi ke model Employee.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function employee(): BelongsTo
+    {
+        return $this->belongsTo(Employee::class, 'employee_id');
+    }
 }

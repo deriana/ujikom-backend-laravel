@@ -141,6 +141,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     });
     Route::get('/attendances/today', [AttendanceController::class, 'attendanceStatusToday']);
     Route::get('/attendances/export', [AttendanceDetailController::class, 'export']);
+    Route::get('/attendances/logs', [AttendanceDetailController::class, 'getLogs']);
     Route::apiResource('attendances', AttendanceDetailController::class)->only('index', 'show');
     Route::apiResource('holidays', HolidayController::class);
     Route::prefix('work_schedules')->group(function () {

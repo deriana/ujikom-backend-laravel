@@ -15,7 +15,7 @@ use Illuminate\Notifications\Notifiable;
  */
 class Attendance extends Model
 {
-    use Notifiable, Notificationable, HasFactory;
+    use HasFactory, Notifiable, Notificationable;
 
     /** @var array Konfigurasi notifikasi kustom */
     public $customNotification = []; /**< Pengaturan notifikasi khusus untuk model ini */
@@ -41,7 +41,7 @@ class Attendance extends Model
         'latitude_out', /**< Koordinat lintang saat jam keluar */
         'longitude_out', /**< Koordinat bujur saat jam keluar */
         'is_early_leave_approved', /**< Status persetujuan pulang awal */
-        'is_corrected' /**< Flag apakah data telah dikoreksi secara manual */
+        'is_corrected', /**< Flag apakah data telah dikoreksi secara manual */
     ];
 
     /** @var array<string, string> Casting tipe data atribut */
@@ -61,8 +61,24 @@ class Attendance extends Model
         return $this->belongsTo(Employee::class);
     }
 
+    /**
+     * Relasi ke model AttendanceCorrection.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     */
     public function attendanceCorrection()
     {
         return $this->hasOne(AttendanceCorrection::class);
+    }
+
+    /**
+     * Relasi ke model AttendanceLog.
+     * Menghubungkan lewat employee_id dan difilter berdasarkan tanggal absensi.
+     */
+    public function logs()
+    {
+        // Hubungkan employee_id di Attendance ke employee_id di AttendanceLog
+        return $this->hasMany(AttendanceLog::class, 'employee_id', 'employee_id')
+            ->whereDate('created_at', $this->date);
     }
 }
