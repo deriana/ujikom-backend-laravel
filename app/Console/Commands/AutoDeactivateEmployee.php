@@ -12,14 +12,21 @@ class AutoDeactivateEmployee extends Command
 {
     /**
      * The name and signature of the console command.
+     * @var string
      */
-    protected $signature = 'app:auto-deactivate-employee';
+    protected $signature = 'app:auto-deactivate-employee'; /**< Nama dan signature command di terminal */
 
     /**
      * The console command description.
+     * @var string
      */
-    protected $description = 'Automatically deactivate user accounts if the contract_end date has passed';
+    protected $description = 'Automatically deactivate user accounts if the contract_end date has passed'; /**< Deskripsi singkat fungsi command */
 
+    /**
+     * Menjalankan logika command untuk menonaktifkan akun karyawan yang kontraknya telah berakhir.
+     *
+     * @return int Status keluar (0 untuk sukses)
+     */
     public function handle()
     {
         $today = now()->toDateString();

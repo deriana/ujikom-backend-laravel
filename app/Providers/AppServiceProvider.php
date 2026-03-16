@@ -11,10 +11,15 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 use Symfony\Component\HttpFoundation\Request;
 
+/**
+ * Class AppServiceProvider
+ *
+ * Provider layanan utama aplikasi untuk mengatur konfigurasi boot dan registrasi service.
+ */
 class AppServiceProvider extends ServiceProvider
 {
     /**
-     * Register any application services.
+     * Mendaftarkan layanan aplikasi ke dalam service container.
      */
     public function register(): void
     {
@@ -22,7 +27,10 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * Bootstrap any application services.
+     * Melakukan bootstrap pada layanan aplikasi.
+     *
+     * Mengatur konfigurasi nama aplikasi dari database, pembatasan laju (rate limiting) API,
+     * dan otorisasi super-admin.
      */
     public function boot(): void
     {

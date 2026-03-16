@@ -15,21 +15,21 @@ class ResetLeaveBalances extends Command
      *
      * @var string
      */
-    protected $signature = 'leave:reset-balances';
+    protected $signature = 'leave:reset-balances'; /**< Nama dan signature command di terminal */
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Reset leave balances for all employees at the start of a new year';
+    protected $description = 'Reset leave balances for all employees at the start of a new year'; /**< Deskripsi singkat fungsi command */
 
     /**
-     * Execute the console command.
+     * Menjalankan logika command untuk mereset atau membuat saldo cuti tahunan bagi karyawan.
      *
      * @return void
      */
-    public function handle()
+    public function handle(): void
     {
         // Fetch all employees except those with the OWNER role
         $employees = Employee::whereHas('user', function ($q) {

@@ -20,10 +20,10 @@ class WorkScheduleSeeder extends Seeder
         $schedules = [
             // --- REGULAR SCHEDULES ---
             [
-                'name' => 'Office Regular (08-17)',
+                'name' => 'Office Regular (09-18)',
                 'work_mode_id' => $wfo->id,
-                'work_start_time' => '08:00:00',
-                'work_end_time' => '17:00:00',
+                'work_start_time' => '09:00:00',
+                'work_end_time' => '18:00:00',
                 'break_start_time' => '12:00:00',
                 'break_end_time' => '13:00:00',
                 'requires_office_location' => true,
@@ -40,8 +40,8 @@ class WorkScheduleSeeder extends Seeder
             [
                 'name' => 'Hybrid Standard',
                 'work_mode_id' => $hybrid->id,
-                'work_start_time' => '08:30:00',
-                'work_end_time' => '17:30:00',
+                'work_start_time' => '09:00:00',
+                'work_end_time' => '18:00:00',
                 'break_start_time' => '12:00:00',
                 'break_end_time' => '13:00:00',
                 'requires_office_location' => false,

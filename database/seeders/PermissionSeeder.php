@@ -269,6 +269,42 @@ class PermissionSeeder extends Seeder
                 ],
             ],
 
+            'assessment-categories' => [
+                'actions' => [
+                    'index' => 'assessment-category.index',
+                    'create' => 'assessment-category.create',
+                    'edit' => 'assessment-category.edit',
+                    'destroy' => 'assessment-category.destroy',
+                ],
+                'roles' => [
+                    UserRole::ADMIN->value => ['index', 'show', 'create', 'edit', 'destroy'],
+                    UserRole::HR->value => ['index', 'show', 'create', 'edit', 'destroy'],
+                    UserRole::MANAGER->value => ['index', 'show'],
+                    UserRole::DIRECTOR->value => ['index', 'show'],
+                    UserRole::OWNER->value => ['index', 'show'],
+                    UserRole::EMPLOYEE->value => ['index', 'show'],
+                    UserRole::FINANCE->value => ['index', 'show'],
+                ],
+            ],
+
+            'assessments' => [
+                'actions' => [
+                    'index' => 'assessment.index',
+                    'create' => 'assessment.create',
+                    'edit' => 'assessment.edit',
+                    'destroy' => 'assessment.destroy',
+                ],
+                'roles' => [
+                    UserRole::ADMIN->value => ['index', 'show', 'create', 'edit', 'destroy'],
+                    UserRole::HR->value => ['index', 'show', 'create', 'edit', 'destroy'],
+                    UserRole::MANAGER->value => ['index', 'create', 'edit', 'show'],
+                    UserRole::DIRECTOR->value => ['index', 'show'],
+                    UserRole::OWNER->value => ['index', 'show'],
+                    UserRole::EMPLOYEE->value => ['index', 'show'],
+                    UserRole::FINANCE->value => ['index', 'show'],
+                ],
+            ],
+
             'leaves' => [
                 'actions' => [
                     'index' => 'leave.index',
@@ -332,6 +368,27 @@ class PermissionSeeder extends Seeder
                 ],
             ],
 
+            'attendance_corrections' => [
+                'actions' => [
+                    'index' => 'attendance-correction.index',
+                    'show' => 'attendance-correction.show',
+                    'create' => 'attendance-correction.create',
+                    'edit' => 'attendance-correction.edit',
+                    'destroy' => 'attendance-correction.destroy',
+                    'approve' => 'attendance-correction.approve',
+                    'export' => 'attendance-correction.export',
+                ],
+                'roles' => [
+                    UserRole::ADMIN->value => ['index', 'show', 'create', 'edit', 'destroy', 'approve', 'export'],
+                    UserRole::HR->value => ['index', 'show', 'create', 'edit', 'destroy', 'approve', 'export'],
+                    UserRole::MANAGER->value => ['index', 'show', 'create', 'edit', 'destroy', 'approve'],
+                    UserRole::EMPLOYEE->value => ['index', 'show', 'create', 'edit', 'destroy'],
+                    UserRole::DIRECTOR->value => ['index', 'show', 'approve', 'export'],
+                    UserRole::OWNER->value => ['index', 'show', 'export'],
+                    UserRole::FINANCE->value => ['index', 'show', 'create', 'edit', 'destroy', 'export'],
+                ],
+            ],
+
             'overtimes' => [
                 'actions' => [
                     'index' => 'overtime.index',
@@ -368,6 +425,8 @@ class PermissionSeeder extends Seeder
                     UserRole::FINANCE->value => ['index', 'show', 'create', 'edit', 'destroy', 'export', 'pay'],
                     UserRole::DIRECTOR->value => ['index', 'show'],
                     UserRole::OWNER->value => ['index', 'show', 'export'],
+                    UserRole::HR->value => ['index', 'show'],
+                    UserRole::MANAGER->value => ['index', 'show'],
                     UserRole::EMPLOYEE->value => ['index', 'show'],
                 ],
             ],
@@ -383,7 +442,7 @@ class PermissionSeeder extends Seeder
                     UserRole::DIRECTOR->value => ['admin', 'employee'],
                     UserRole::FINANCE->value => ['admin', 'employee'],
                     UserRole::HR->value => ['admin', 'employee'],
-                    UserRole::MANAGER->value => ['admin', 'employee'],
+                    UserRole::MANAGER->value => ['employee'],
                     UserRole::EMPLOYEE->value => ['employee'],
                 ],
             ],

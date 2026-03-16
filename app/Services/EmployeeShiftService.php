@@ -8,17 +8,30 @@ use App\Models\ShiftTemplate;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Class EmployeeShiftService
+ *
+ * Menangani logika bisnis untuk penugasan shift kerja karyawan,
+ * termasuk validasi hari kerja dan sinkronisasi dengan template shift.
+ */
 class EmployeeShiftService
 {
-    protected WorkdayService $workdayService;
+    protected WorkdayService $workdayService; /**< Layanan untuk validasi hari kerja dan hari libur */
 
+    /**
+     * Membuat instance layanan shift karyawan baru.
+     *
+     * @param WorkdayService $workdayService
+     */
     public function __construct(WorkdayService $workdayService)
     {
         $this->workdayService = $workdayService;
     }
 
     /**
-     * Get all employee shifts with their related employee and shift template.
+     * Mengambil semua data shift karyawan beserta relasi karyawan dan template shift-nya.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection Koleksi data shift karyawan.
      */
     public function index()
     {
@@ -29,7 +42,11 @@ class EmployeeShiftService
     }
 
     /**
-     * Assign a new shift to an employee.
+     * Menugaskan shift baru kepada karyawan.
+     *
+     * @param array $data Data penugasan (employee_nik, shift_template_uuid, shift_date).
+     * @return EmployeeShift Objek shift yang berhasil dibuat atau diperbarui.
+     * @throws \Exception Jika tanggal yang dipilih adalah hari libur atau akhir pekan.
      */
     public function store(array $data): EmployeeShift
     {
@@ -70,7 +87,12 @@ class EmployeeShiftService
     }
 
     /**
-     * Update an existing employee shift assignment.
+     * Memperbarui penugasan shift karyawan yang sudah ada.
+     *
+     * @param EmployeeShift $shift Objek shift yang akan diperbarui.
+     * @param array $data Data pembaruan (shift_date, shift_template_uuid).
+     * @return EmployeeShift Objek shift setelah diperbarui.
+     * @throws \Exception Jika tanggal baru adalah hari libur atau akhir pekan.
      */
     public function update(EmployeeShift $shift, array $data): EmployeeShift
     {
@@ -100,7 +122,10 @@ class EmployeeShiftService
     }
 
     /**
-     * Delete an employee shift assignment.
+     * Menghapus penugasan shift karyawan.
+     *
+     * @param EmployeeShift $shift Objek shift yang akan dihapus.
+     * @return bool True jika berhasil dihapus.
      */
     public function delete(EmployeeShift $shift): bool
     {
@@ -117,7 +142,10 @@ class EmployeeShiftService
     }
 
     /**
-     * Show details of a specific employee shift.
+     * Menampilkan detail lengkap dari satu penugasan shift tertentu.
+     *
+     * @param EmployeeShift $shift Objek shift.
+     * @return EmployeeShift Objek shift dengan relasi yang dimuat.
      */
     public function show(EmployeeShift $shift): EmployeeShift
     {

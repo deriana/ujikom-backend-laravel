@@ -17,8 +17,11 @@ The system is designed to manage the complete employee lifecycle within a compan
 | **Employee Management** | Full employee profiles with position, division, team, and manager relationships |
 | **Attendance** | Daily clock-in/clock-out, biometric sync, and geo-fencing support |
 | **Leave Management** | Leave requests, early leave, leave type configuration, and balance tracking |
-| **Attendance Requests & Overtime** | Employee-submitted corrections and overtime requests with approval flows |
+| **Attendance Correction** | Manual adjustment of attendance logs with approval workflow |
+| **Business Trip** | Management of official travel requests and assignments |
+| **Overtime** | Employee-submitted overtime requests with approval flows |
 | **Payroll** | Payroll generation, finalization, void handling, and downloadable payslips |
+| **Assessments** | Employee performance reviews and periodic evaluations |
 | **Notifications** | In-app notification system with mark-as-read and bulk-delete support |
 | **Settings** | Configurable attendance rules and geo-fencing parameters |
 | **Dashboard** | Separate dashboards for Admin and Employee roles |

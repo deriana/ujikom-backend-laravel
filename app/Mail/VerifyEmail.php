@@ -9,16 +9,25 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
+/**
+ * Class VerifyEmail
+ *
+ * Mailable class untuk mengirimkan email verifikasi alamat email kepada pengguna baru,
+ * sekaligus memberikan tautan untuk pengaturan kata sandi pertama kali.
+ */
 class VerifyEmail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
-    public $user;
-    public $token;
-    public $url;
+    public $user; /**< Instance model User penerima email */
+    public $token; /**< Token unik untuk verifikasi email dan set password */
+    public $url; /**< URL lengkap menuju halaman set-password di frontend */
 
     /**
-     * Create a new message instance.
+     * Membuat instance pesan baru.
+     *
+     * @param mixed $user Model user yang baru didaftarkan.
+     * @param string $token Token verifikasi yang dihasilkan.
      */
     public function __construct($user, $token)
     {
@@ -28,7 +37,9 @@ class VerifyEmail extends Mailable implements ShouldQueue
     }
 
     /**
-     * Get the message envelope.
+     * Mendapatkan amplop pesan (envelope).
+     *
+     * @return Envelope Definisi subjek email.
      */
     public function envelope(): Envelope
     {
@@ -38,7 +49,9 @@ class VerifyEmail extends Mailable implements ShouldQueue
     }
 
     /**
-     * Get the message content definition.
+     * Mendapatkan definisi konten pesan.
+     *
+     * @return Content Definisi view HTML dan teks untuk isi email.
      */
     public function content(): Content
     {
@@ -49,9 +62,9 @@ class VerifyEmail extends Mailable implements ShouldQueue
     }
 
     /**
-     * Get the attachments for the message.
+     * Mendapatkan lampiran untuk pesan.
      *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
+     * @return array<int, \Illuminate\Mail\Mailables\Attachment> Daftar file lampiran.
      */
     public function attachments(): array
     {

@@ -9,10 +9,26 @@ use App\Services\SettingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
+/**
+ * Class SettingController
+ *
+ * Controller untuk mengelola pengaturan sistem (Settings), mencakup konfigurasi umum,
+ * pengaturan absensi (toleransi keterlambatan, jam kerja), dan konfigurasi geo-fencing kantor.
+ */
 class SettingController extends Controller
 {
+    /**
+     * Membuat instance SettingController baru.
+     *
+     * @param SettingService $settingService Instance dari SettingService untuk logika bisnis pengaturan
+     */
     public function __construct(private SettingService $settingService) {}
 
+    /**
+     * Mengambil daftar pengaturan utama (general, attendance, geo_fencing).
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function get(): JsonResponse
     {
         $settings = $this->settingService->getMany([
@@ -29,6 +45,11 @@ class SettingController extends Controller
         );
     }
 
+    /**
+     * Mengambil data pengaturan umum (General Settings).
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getGeneral(): JsonResponse
     {
         $settings = $this->settingService->getMany([
@@ -41,6 +62,12 @@ class SettingController extends Controller
         );
     }
 
+    /**
+     * Memperbarui data pengaturan umum termasuk nama situs, footer, logo, dan favicon.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function updateGeneral(Request $request): JsonResponse
     {
         $this->authorize('update', Setting::class);
@@ -66,24 +93,12 @@ class SettingController extends Controller
 
         if ($request->hasFile('logo')) {
             $setting->clearMediaCollection('logo');
-            $media = $setting->addMediaFromRequest('logo')->toMediaCollection('logo');
-
-            $setting->values = [
-                ...$setting->values,
-                'logo' => $media->getUrl(),
-            ];
-            $setting->save();
+            $setting->addMediaFromRequest('logo')->toMediaCollection('logo');
         }
 
         if ($request->hasFile('favicon')) {
             $setting->clearMediaCollection('favicon');
-            $media = $setting->addMediaFromRequest('favicon')->toMediaCollection('favicon');
-
-            $setting->values = [
-                ...$setting->values,
-                'favicon' => $media->getUrl(),
-            ];
-            $setting->save();
+            $setting->addMediaFromRequest('favicon')->toMediaCollection('favicon');
         }
 
         return $this->successResponse(
@@ -92,6 +107,12 @@ class SettingController extends Controller
         );
     }
 
+    /**
+     * Memperbarui pengaturan terkait absensi seperti jam kerja dan toleransi keterlambatan.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function updateAttendance(Request $request): JsonResponse
     {
         $setting = $this->settingService->get('attendance');
@@ -111,6 +132,11 @@ class SettingController extends Controller
         );
     }
 
+    /**
+     * Mengambil data pengaturan Geo Fencing (lokasi kantor dan radius).
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function geoFencing(): JsonResponse
     {
         $setting = $this->settingService->get('geo_fencing');
@@ -122,6 +148,12 @@ class SettingController extends Controller
         );
     }
 
+    /**
+     * Memperbarui koordinat lokasi kantor dan radius jangkauan absensi (Geo Fencing).
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function updateGeoFencing(Request $request): JsonResponse
     {
         $setting = $this->settingService->get('geo_fencing');

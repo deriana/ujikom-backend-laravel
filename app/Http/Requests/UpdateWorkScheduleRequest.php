@@ -5,13 +5,28 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
+/**
+ * Class UpdateWorkScheduleRequest
+ *
+ * Request class untuk menangani validasi pembaruan data jadwal kerja (Work Schedule).
+ */
 class UpdateWorkScheduleRequest extends FormRequest
 {
+    /**
+     * Menentukan apakah pengguna memiliki izin untuk membuat request ini.
+     *
+     * @return bool
+     */
     public function authorize(): bool
     {
         return true;
     }
 
+    /**
+     * Mendapatkan aturan validasi yang berlaku untuk request ini.
+     *
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string> Aturan validasi untuk nama, mode kerja, waktu kerja, waktu istirahat, toleransi keterlambatan, dan lokasi kantor
+     */
     public function rules(): array
     {
         $scheduleId = $this->route('work_schedule');
@@ -26,7 +41,7 @@ class UpdateWorkScheduleRequest extends FormRequest
             'work_mode_id' => 'required|exists:work_modes,id',
             'work_start_time' => 'required|date_format:H:i',
             'work_end_time' => 'required|date_format:H:i|after:work_start_time',
-            'break_start_time' => 'nullable|date_format:H:i',
+            'break_start_time' => 'nullable|date_format:H:i|after:work_start_time',
             'break_end_time' => 'nullable|date_format:H:i|after:break_start_time',
             'late_tolerance_minutes' => 'nullable|integer|min:0|max:180',
             'requires_office_location' => 'required|boolean',

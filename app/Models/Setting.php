@@ -7,34 +7,34 @@ use Illuminate\Database\Eloquent\Model;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
+/**
+ * Class Setting
+ *
+ * Model yang merepresentasikan pengaturan konfigurasi sistem, menyimpan data
+ * dalam format key-value serta mendukung penyimpanan media seperti logo dan favicon.
+ */
 class Setting extends Model implements HasMedia
 {
     use HasFactory, InteractsWithMedia;
 
-    // protected $guarded = [];
-
+    /** @var array<int, string> Atribut yang dapat diisi secara massal */
     protected $fillable = [
-        'key', 'values',
+        'key', /**< Kunci unik untuk identifikasi pengaturan */
+        'values', /**< Nilai pengaturan dalam format array/JSON */
     ];
 
+    /** @var array<string, string> Casting tipe data atribut */
     protected $casts = [
-        'values' => 'array',
+        'values' => 'array', /**< Konversi kolom values ke format array */
     ];
 
+    /**
+     * Mendaftarkan koleksi media untuk Spatie Media Library.
+     * Digunakan untuk mengelola file logo dan favicon sistem.
+     */
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('logo')->singleFile();
         $this->addMediaCollection('favicon')->singleFile();
     }
-
-    // public function getId($request)
-    // {
-    //     return ($request->id) ? $request->id : $request->route('settings');
-    // }
-
-    // public function setValuesAttribute($value)
-    // {
-    //     $this->attributes['values'] = json_encode($value);
-    // }
-
 }

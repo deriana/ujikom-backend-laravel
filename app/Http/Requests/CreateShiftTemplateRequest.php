@@ -4,13 +4,28 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
+/**
+ * Class CreateShiftTemplateRequest
+ *
+ * Request class untuk menangani validasi pembuatan template shift kerja baru.
+ */
 class CreateShiftTemplateRequest extends FormRequest
 {
+    /**
+     * Menentukan apakah pengguna memiliki izin untuk membuat request ini.
+     *
+     * @return bool
+     */
     public function authorize(): bool
     {
         return true;
     }
 
+    /**
+     * Menyiapkan data untuk validasi dengan mengonversi input cross_day menjadi boolean.
+     *
+     * @return void
+     */
     protected function prepareForValidation(): void
     {
         $this->merge([
@@ -18,6 +33,11 @@ class CreateShiftTemplateRequest extends FormRequest
         ]);
     }
 
+    /**
+     * Mendapatkan aturan validasi yang berlaku untuk request ini.
+     *
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     */
     public function rules(): array
     {
         return [
@@ -29,6 +49,11 @@ class CreateShiftTemplateRequest extends FormRequest
         ];
     }
 
+    /**
+     * Mengonfigurasi instance validator untuk logika validasi tambahan setelah aturan utama.
+     *
+     * @param \Illuminate\Validation\Validator $validator
+     */
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {

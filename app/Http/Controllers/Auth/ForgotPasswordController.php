@@ -9,17 +9,31 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 
+/**
+ * Class ForgotPasswordController
+ *
+ * Mengelola proses pengaturan ulang kata sandi (forgot password),
+ * termasuk pengiriman tautan reset, validasi token, dan pembaruan kata sandi.
+ */
 class ForgotPasswordController extends Controller
 {
-    protected $passwordResetService;
+    protected $passwordResetService; /**< Layanan untuk menangani logika bisnis pengaturan ulang kata sandi */
 
+    /**
+     * Membuat instance controller baru.
+     *
+     * @param PasswordResetService $passwordResetService
+     */
     public function __construct(PasswordResetService $passwordResetService)
     {
         $this->passwordResetService = $passwordResetService;
     }
 
     /**
-     * Send a password reset link to the given user.
+     * Mengirimkan tautan pengaturan ulang kata sandi ke email pengguna.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function sendResetLink(Request $request)
     {
@@ -56,7 +70,10 @@ class ForgotPasswordController extends Controller
     }
 
     /**
-     * Check if the token is valid.
+     * Memeriksa apakah token pengaturan ulang kata sandi valid atau belum kedaluwarsa.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function checkToken(Request $request)
     {
@@ -79,7 +96,10 @@ class ForgotPasswordController extends Controller
     }
 
     /**
-     * Reset the user's password.
+     * Memperbarui kata sandi pengguna berdasarkan token yang valid.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function resetPassword(Request $request)
     {

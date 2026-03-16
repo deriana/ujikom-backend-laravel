@@ -27,6 +27,7 @@ return new class extends Migration
             $table->decimal('base_salary', 15, 2)->default(0);
             $table->decimal('allowance_total', 15, 2)->default(0);
             $table->decimal('overtime_pay', 15, 2)->default(0);
+            $table->decimal('assessment_bonus', 15, 2)->default(0);
 
             // Optional adjustment by finance
             $table->decimal('manual_adjustment', 15, 2)->default(0);

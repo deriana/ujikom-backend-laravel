@@ -22,16 +22,14 @@ class GeneratePayrollSlipJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    /** @var int Number of times the job may be attempted. */
-    public $tries = 3;
+    public $tries = 3; /**< Jumlah maksimal percobaan ulang jika job gagal */
 
-    /** @var int The number of seconds the job can run before timing out. */
-    public $timeout = 120;
+    public $timeout = 120; /**< Batas waktu eksekusi job dalam detik sebelum dianggap timeout */
 
     /**
-     * Create a new job instance.
+     * Membuat instance job baru.
      *
-     * @param Payroll $payroll The payroll model instance to process.
+     * @param Payroll $payroll Instance model payroll yang akan diproses.
      */
     public function __construct(
         protected Payroll $payroll
@@ -46,43 +44,48 @@ class GeneratePayrollSlipJob implements ShouldQueue
     public function handle(): void
     {
         try {
-            // Eager load necessary relationships to prevent N+1 issues
+            // 1. Tentukan string periode (Y-m)
+            $periodString = $this->payroll->period_start->format('Y-m');
+
+            // 2. Eager load relasi yang benar (Pakai assessmentsAsEvaluatee)
             $this->payroll->load([
                 'employee.user',
-                'employee.position.allowances'
+                'employee.position.allowances',
+                // UBAH DI SINI: Samakan dengan yang ada di PayrollService
+                'employee.assessmentsAsEvaluatee' => function ($query) use ($periodString) {
+                    $query->where('period', 'like', $periodString . '%')
+                          ->with('assessments_details');
+                }
             ]);
 
-            // Transform payroll data using the existing API Resource for consistency
+            // 3. Transform data (Resource akan otomatis membaca relasi yang sudah di-load)
             $data = (new PayrollDetailResource($this->payroll))->resolve();
 
-            // Retrieve company general settings (logo, name, etc.)
+            // Sisanya tetap sama...
             $setting = Setting::where('key', 'general')->first();
             $general = $setting?->values ?? [];
 
-            // Render the PDF using the specified blade view
-            // This is the most resource-intensive part of the process
+            // 5. Render PDF
             $pdf = Pdf::loadView('pdf.payroll-slip', [
                 'data' => $data,
                 'company' => $general,
             ]);
 
-            // Define the storage path using the payroll UUID
             $fileName = "slips/{$this->payroll->uuid}.pdf";
 
-            // Save the generated PDF content to the storage disk
+            // 6. Simpan ke Storage
             Storage::put($fileName, $pdf->output());
 
-            // Update the payroll record with the file path and generation timestamp
+            // 7. Update record payroll
             $this->payroll->update([
                 'slip_path' => $fileName,
                 'slip_generated_at' => now(),
             ]);
 
-            // Log::info("Slip PDF generated successfully for Payroll: {$this->payroll->uuid}");
-
         } catch (\Exception $e) {
-            // Log::error("Failed to generate slip for Payroll {$this->payroll->uuid}: " . $e->getMessage());
-            throw $e; // Rethrow to allow Laravel's queue worker to handle retries
+            Log::error("Failed to generate payroll slip for UUID: {$this->payroll->uuid}. Error: {$e->getMessage()}");
+
+            throw $e;
         }
     }
 }

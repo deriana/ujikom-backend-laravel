@@ -15,14 +15,21 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
+/**
+ * Class PayrollService
+ *
+ * Menangani logika bisnis untuk manajemen penggajian (payroll), termasuk perhitungan gaji,
+ * tunjangan, lembur, potongan kehadiran, pajak (PPh21), serta pembuatan slip gaji PDF.
+ */
 class PayrollService
 {
     /**
-     * Get a list of payroll records based on user roles.
+     * Mengambil daftar data payroll berdasarkan peran pengguna yang sedang login.
      *
+     * @param array $filters Filter pencarian (month).
      * @return \Illuminate\Database\Eloquent\Collection
      */
-    public function index()
+    public function index(array $filters = [])
     {
         // 1. Identify the current user and their employee profile
         $user = Auth::user();
@@ -53,22 +60,48 @@ class PayrollService
             return response()->json([], 200);
         }
 
+        // 4. Filter by month (Default to current month)
+        $monthFilter = !empty($filters['month']) ? $filters['month'] : Carbon::now()->format('Y-m');
+
+        try {
+            $date = Carbon::parse($monthFilter);
+        } catch (\Exception $e) {
+            $date = Carbon::now();
+        }
+
+        $query->whereMonth('period_start', $date->month)
+              ->whereYear('period_start', $date->year);
+
         return $query->get();
     }
 
     /**
-     * Show details of a specific payroll record.
+     * Menampilkan detail lengkap dari satu catatan payroll tertentu.
+     *
+     * @param Payroll $payroll Objek payroll.
+     * @return Payroll Objek payroll dengan relasi yang dimuat.
      */
     public function show(Payroll $payroll): Payroll
     {
-        // 1. Load nested relationships for detailed view
-        return $payroll->load(['employee', 'employee.position.allowances']);
+        $periodString = $payroll->period_start->format('Y-m');
+
+        return $payroll->load([
+            'employee.user',
+            'employee.position.allowances',
+            'employee.assessmentsAsEvaluatee' => function ($query) use ($periodString) {
+                $query->where('period', 'like', $periodString.'%')
+                    ->with('assessments_details');
+            },
+        ]);
     }
 
     /**
-     * Store payroll records for specified employees in a given month.
+     * Membuat catatan payroll baru untuk daftar karyawan pada bulan tertentu.
      *
-     * @throws \Exception
+     * @param array $data Data input (month, employee_niks).
+     * @param int $userId ID pengguna yang membuat data.
+     * @return \Illuminate\Support\Collection Koleksi objek payroll yang berhasil dibuat.
+     * @throws \Exception Jika terjadi kesalahan saat pembuatan.
      */
     public function store(array $data, int $userId)
     {
@@ -121,9 +154,13 @@ class PayrollService
     }
 
     /**
-     * Update an existing payroll record with manual adjustments and recalculate totals.
+     * Memperbarui data payroll yang sudah ada dengan penyesuaian manual dan hitung ulang total.
      *
-     * @throws \Exception
+     * @param Payroll $payroll Objek payroll yang akan diperbarui.
+     * @param array $data Data pembaruan (manual_adjustment, adjustment_note).
+     * @param int $userId ID pengguna yang melakukan pembaruan.
+     * @return Payroll Objek payroll setelah diperbarui.
+     * @throws \Exception Jika payroll sudah difinalisasi atau dibatalkan.
      */
     public function update(Payroll $payroll, array $data, int $userId): Payroll
     {
@@ -185,9 +222,11 @@ class PayrollService
     }
 
     /**
-     * Finalize a payroll record and trigger slip generation.
+     * Memfinalisasi catatan payroll dan memicu pembuatan slip gaji.
      *
-     * @throws \Exception
+     * @param Payroll $payroll Objek payroll.
+     * @return Payroll Objek payroll yang telah difinalisasi.
+     * @throws \Exception Jika payroll sudah difinalisasi atau dibatalkan.
      */
     public function finalize(Payroll $payroll): Payroll
     {
@@ -218,7 +257,10 @@ class PayrollService
     }
 
     /**
-     * Bulk finalize payroll records.
+     * Memfinalisasi banyak catatan payroll sekaligus.
+     *
+     * @param array $uuids Daftar UUID payroll yang akan difinalisasi.
+     * @return array Ringkasan jumlah berhasil, gagal, dan detail error.
      */
     public function bulkFinalize(array $uuids): array
     {
@@ -252,9 +294,13 @@ class PayrollService
     }
 
     /**
-     * Void a payroll record with a reason.
+     * Membatalkan (void) catatan payroll dengan alasan tertentu.
      *
-     * @throws \Exception
+     * @param Payroll $payroll Objek payroll.
+     * @param string $note Alasan pembatalan.
+     * @param int $userId ID pengguna yang melakukan aksi.
+     * @return Payroll Objek payroll yang telah dibatalkan.
+     * @throws \Exception Jika payroll sudah difinalisasi atau sudah dibatalkan sebelumnya.
      */
     public function void(Payroll $payroll, string $note, int $userId): Payroll
     {
@@ -282,11 +328,11 @@ class PayrollService
     }
 
     /**
-     * Generate a PDF payroll slip and store it.
+     * Membuat file PDF slip gaji dan menyimpannya ke penyimpanan.
      *
-     * @return Payroll
-     *
-     * @throws \Exception
+     * @param Payroll $payroll Objek payroll.
+     * @return Payroll Objek payroll dengan metadata slip yang diperbarui.
+     * @throws \Exception Jika payroll belum difinalisasi.
      */
     public function generateSlip(Payroll $payroll)
     {
@@ -326,7 +372,12 @@ class PayrollService
     }
 
     /**
-     * Calculate payroll for a single employee for a given period.
+     * Menghitung komponen payroll untuk satu karyawan dalam periode tertentu.
+     *
+     * @param Employee $employee Objek karyawan.
+     * @param Carbon $periodStart Tanggal mulai periode.
+     * @param Carbon $periodEnd Tanggal akhir periode.
+     * @return array Hasil perhitungan gaji, tunjangan, lembur, potongan, dan pajak.
      */
     private function calculatePayroll(Employee $employee, Carbon $periodStart, Carbon $periodEnd): array
     {
@@ -348,7 +399,14 @@ class PayrollService
         $overtimeMinutes = $employee->overtimes->sum('duration_minutes');
         $overtimePay = ($overtimeMinutes / 60) * $hourlyRate;
 
-        $grossSalary = $baseSalary + $allowanceTotal + $overtimePay;
+        // --- 2.1 CALCULATE BONUS FROM ASSESSMENT ---
+        $assessmentBonus = 0;
+        foreach ($employee->assessmentsAsEvaluatee as $assessment) {
+            // Sum bonus_salary from each assessment detail
+            $assessmentBonus += $assessment->assessments_details->sum('bonus_salary');
+        }
+
+        $grossSalary = $baseSalary + $allowanceTotal + $overtimePay + $assessmentBonus;
 
         // --- 3. CALCULATE ATTENDANCE DEDUCTIONS (Late & Early Leave) ---
         $lateMinutes = $employee->attendances->sum('late_minutes');
@@ -374,6 +432,7 @@ class PayrollService
             'base_salary' => $baseSalary,
             'allowance_total' => $allowanceTotal,
             'overtime_pay' => $overtimePay,
+            'assessment_bonus' => $assessmentBonus,
             'late_deduction' => $lateDeduction,
             'early_leave_deduction' => $earlyLeaveDeduction,
             'total_deduction' => $totalDeduction,
@@ -387,10 +446,17 @@ class PayrollService
     }
 
     /**
-     * Fetch employees who are eligible for payroll in a specific period.
+     * Mengambil data karyawan yang memenuhi syarat untuk payroll pada periode tertentu.
+     *
+     * @param array $employeeNiks Daftar NIK karyawan.
+     * @param Carbon $periodStart Tanggal mulai periode.
+     * @param Carbon $periodEnd Tanggal akhir periode.
+     * @return \Illuminate\Database\Eloquent\Collection Koleksi data karyawan beserta relasi terkait.
      */
     private function getEligibleEmployees(array $employeeNiks, Carbon $periodStart, Carbon $periodEnd)
     {
+        $periodString = $periodStart->format('Y-m');
+
         return Employee::whereIn('nik', $employeeNiks)
             ->whereHas('user.roles', function ($query) {
                 $query->where('name', '!=', UserRole::OWNER->value);
@@ -414,10 +480,22 @@ class PayrollService
                             $query->whereBetween('date', [$periodStart, $periodEnd]);
                         });
                 },
+                'assessmentsAsEvaluatee' => function ($q) use ($periodString) {
+                    $q->where('period', 'like', $periodString.'%')
+                        ->with('assessments_details');
+                },
             ])
             ->get();
     }
 
+    /**
+     * Menghasilkan payroll bulanan secara otomatis untuk semua karyawan yang memenuhi syarat.
+     *
+     * @param Carbon $periodStart Tanggal mulai periode.
+     * @param Carbon $periodEnd Tanggal akhir periode.
+     * @param int $userId ID pengguna yang menjalankan proses.
+     * @return \Illuminate\Support\Collection Koleksi objek payroll yang dibuat.
+     */
     public function generateMonthlyPayroll(Carbon $periodStart, Carbon $periodEnd, int $userId)
     {
         // Get all eligible employees' NIKs
@@ -435,9 +513,11 @@ class PayrollService
     }
 
     /**
-     * Fetch employees who are eligible for monthly payroll in a specific period (public version).
+     * Mengambil daftar karyawan yang memenuhi syarat untuk payroll bulanan (versi publik).
      *
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @param Carbon $periodStart Tanggal mulai periode.
+     * @param Carbon $periodEnd Tanggal akhir periode.
+     * @return \Illuminate\Database\Eloquent\Collection Koleksi data karyawan.
      */
     public function getEligibleEmployeesForMonthly(Carbon $periodStart, Carbon $periodEnd)
     {

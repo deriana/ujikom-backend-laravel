@@ -22,9 +22,9 @@ class CreateRoleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|string|unique:roles,name',
-            'permissions' => 'array',
-            'permissions.*' => 'integer|exists:permissions,id',
+            'name' => 'required|string|unique:roles,name', // Nama peran harus unik
+            'permissions' => 'array', // Daftar izin harus berupa array
+            'permissions.*' => 'integer|exists:permissions,id', // Setiap ID izin harus ada di tabel permissions
         ];
     }
 }

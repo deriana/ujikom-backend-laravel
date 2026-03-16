@@ -4,14 +4,21 @@ namespace App\Services;
 
 use App\Enums\UserRole;
 use App\Models\Attendance;
+use App\Models\AttendanceLog;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * Class AttendanceDetailService
+ *
+ * Menangani pengambilan data detail kehadiran karyawan dengan filter berdasarkan peran pengguna.
+ */
 class AttendanceDetailService
 {
     /**
-     * Get a list of attendance records based on user roles and filters.
+     * Mengambil daftar catatan kehadiran berdasarkan peran pengguna dan filter.
      *
+     * @param array $filters Filter rentang tanggal (start_date, end_date).
      * @return \Illuminate\Database\Eloquent\Collection
      */
     public function index(array $filters = [])
@@ -45,7 +52,7 @@ class AttendanceDetailService
             return collect([]);
         }
 
-        // --- FILTER DATE RANGE (Logika kamu sebelumnya) ---
+        // --- FILTER RENTANG TANGGAL ---
         if (! empty($filters['start_date']) && ! empty($filters['end_date'])) {
             $query->whereBetween('date', [
                 Carbon::parse($filters['start_date'])->startOfDay(),
@@ -59,12 +66,32 @@ class AttendanceDetailService
     }
 
     /**
-     * Get the details of a specific attendance record.
+     * Mengambil detail lengkap dari satu catatan kehadiran tertentu.
      *
+     * @param Attendance $attendance Objek kehadiran.
      * @return Attendance
      */
     public function show(Attendance $attendance)
     {
-        return $attendance->load('employee');
+        return $attendance->load('employee.user', 'employee.team.division', 'employee.position',  'attendanceCorrection');
+    }
+
+    /**
+     * Mengambil log aktivitas kehadiran (clock in/out) untuk catatan tertentu.
+     *
+     * @param Attendance $attendance
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getLogs(array $filters = [])
+    {
+        $query = AttendanceLog::query()->with(['employee.user']);
+
+        $date = ! empty($filters['date'])
+            ? Carbon::parse($filters['date'])->toDateString()
+            : Carbon::today()->toDateString();
+
+        $query->whereDate('created_at', $date);
+
+        return $query->latest()->get();
     }
 }

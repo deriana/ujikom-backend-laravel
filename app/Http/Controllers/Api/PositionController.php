@@ -11,15 +11,31 @@ use App\Services\PositionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * Class PositionController
+ *
+ * Controller untuk mengelola data jabatan (Position) dalam organisasi,
+ * mencakup operasi CRUD, pemulihan data terhapus, dan manajemen tunjangan terkait jabatan.
+ */
 class PositionController extends Controller
 {
-    protected PositionService $positionService;
+    protected PositionService $positionService; /**< Instance dari PositionService untuk logika bisnis jabatan */
 
+    /**
+     * Membuat instance PositionController baru.
+     *
+     * @param PositionService $positionService
+     */
     public function __construct(PositionService $positionService)
     {
         $this->positionService = $positionService;
     }
 
+    /**
+     * Menampilkan daftar semua jabatan yang tersedia.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function index(): JsonResponse
     {
         $this->authorize('viewAny', Position::class);
@@ -32,6 +48,12 @@ class PositionController extends Controller
         );
     }
 
+    /**
+     * Menyimpan data jabatan baru ke database.
+     *
+     * @param CreatePositionRequest $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function store(CreatePositionRequest $request): JsonResponse
     {
         $this->authorize('create', Position::class);
@@ -48,6 +70,12 @@ class PositionController extends Controller
         );
     }
 
+    /**
+     * Menampilkan detail data jabatan tertentu beserta relasi tunjangannya.
+     *
+     * @param Position $position
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function show(Position $position): JsonResponse
     {
         $this->authorize('view', $position);
@@ -60,6 +88,13 @@ class PositionController extends Controller
         );
     }
 
+    /**
+     * Memperbarui data jabatan yang sudah ada.
+     *
+     * @param UpdatePositionRequest $request
+     * @param Position $position
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function update(UpdatePositionRequest $request, Position $position): JsonResponse
     {
         $this->authorize('edit', $position);
@@ -72,6 +107,12 @@ class PositionController extends Controller
         );
     }
 
+    /**
+     * Menghapus data jabatan (Soft Delete).
+     *
+     * @param Position $position
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function destroy(Position $position): JsonResponse
     {
         $this->authorize('destroy', $position);
@@ -84,6 +125,12 @@ class PositionController extends Controller
         );
     }
 
+    /**
+     * Memulihkan data jabatan yang telah dihapus (Restore).
+     *
+     * @param string $uuid
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function restore(string $uuid): JsonResponse
     {
         $this->authorize('restore', Position::class);
@@ -96,6 +143,12 @@ class PositionController extends Controller
         );
     }
 
+    /**
+     * Menghapus data jabatan secara permanen dari database.
+     *
+     * @param string $uuid
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function forceDelete(string $uuid): JsonResponse
     {
         $this->authorize('forceDelete', Position::class);
@@ -108,6 +161,11 @@ class PositionController extends Controller
         );
     }
 
+    /**
+     * Mengambil daftar jabatan yang berada di dalam trash (terhapus sementara).
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getTrashed()
     {
         $this->authorize('restore', Position::class);

@@ -13,17 +13,30 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
+/**
+ * Class AttendanceRequestController
+ *
+ * Controller untuk mengelola pengajuan kehadiran (Attendance Request) seperti tugas luar,
+ * dinas, atau koreksi manual oleh karyawan dan proses persetujuannya.
+ */
 class AttendanceRequestController extends Controller
 {
-    protected AttendanceRequestService $attendanceRequestService;
+    protected AttendanceRequestService $attendanceRequestService; /**< Instance dari AttendanceRequestService untuk logika bisnis pengajuan kehadiran */
 
+    /**
+     * Membuat instance AttendanceRequestController baru.
+     *
+     * @param AttendanceRequestService $attendanceRequestService
+     */
     public function __construct(AttendanceRequestService $attendanceRequestService)
     {
         $this->attendanceRequestService = $attendanceRequestService;
     }
 
     /**
-     * Index / list leaves
+     * Menampilkan daftar pengajuan kehadiran berdasarkan role pengguna.
+     *
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
      */
     public function index(): JsonResponse
     {
@@ -31,22 +44,30 @@ class AttendanceRequestController extends Controller
 
         return $this->successResponse(
             AttendanceRequestResource::collection($attendanceRequests),
-            'Leaves fetched successfully'
+            'Attendance requests fetched successfully'
         );
     }
 
+    /**
+     * Menampilkan daftar pengajuan kehadiran yang memerlukan persetujuan (approval).
+     *
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
+     */
     public function indexApproval(): JsonResponse
     {
         $approvals = $this->attendanceRequestService->indexApproval(Auth::user());
 
         return $this->successResponse(
             AttendanceRequestResource::collection($approvals),
-            'Leave approvals fetched successfully'
+            'Attendance request approvals fetched successfully'
         );
     }
 
     /**
-     * Show detail leave
+     * Menampilkan detail data pengajuan kehadiran tertentu.
+     *
+     * @param AttendanceRequest $attendance_request
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
      */
     public function show(AttendanceRequest $attendance_request): JsonResponse
     {
@@ -61,7 +82,10 @@ class AttendanceRequestController extends Controller
     }
 
     /**
-     * Create attendanceRequest
+     * Menyimpan pengajuan kehadiran baru ke database.
+     *
+     * @param CreateAttendanceSubmissionRequest $request
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
      */
     public function store(CreateAttendanceSubmissionRequest $request): JsonResponse
     {
@@ -78,7 +102,11 @@ class AttendanceRequestController extends Controller
     }
 
     /**
-     * Update attendanceRequest
+     * Memperbarui data pengajuan kehadiran yang sudah ada.
+     *
+     * @param UpdateAttendanceSubmissionRequest $request
+     * @param AttendanceRequest $attendance_request
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
      */
     public function update(UpdateAttendanceSubmissionRequest $request, AttendanceRequest $attendance_request): JsonResponse
     {
@@ -93,7 +121,10 @@ class AttendanceRequestController extends Controller
     }
 
     /**
-     * Delete / cancel attendanceRequest (soft delete)
+     * Menghapus atau membatalkan pengajuan kehadiran (soft delete).
+     *
+     * @param AttendanceRequest $attendance_request
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
      */
     public function destroy(AttendanceRequest $attendance_request): JsonResponse
     {
@@ -108,7 +139,11 @@ class AttendanceRequestController extends Controller
     }
 
     /**
-     * Approval
+     * Menangani proses persetujuan (approve) atau penolakan (reject) pengajuan kehadiran.
+     *
+     * @param Request $request
+     * @param AttendanceRequest $attendance_request
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
      */
     public function approve(Request $request, AttendanceRequest $attendance_request): JsonResponse
     {
@@ -130,7 +165,7 @@ class AttendanceRequestController extends Controller
 
         return $this->successResponse(
             $updated,
-            $approve ? 'Leave approved successfully' : 'Leave rejected successfully'
+            $approve ? 'Attendance request approved successfully' : 'Attendance request rejected successfully'
         );
     }
 }

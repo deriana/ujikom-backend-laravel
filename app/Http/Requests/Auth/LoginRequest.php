@@ -4,10 +4,17 @@ namespace App\Http\Requests\Auth;
 
 use Illuminate\Foundation\Http\FormRequest;
 
+/**
+ * Class LoginRequest
+ *
+ * Request class untuk menangani validasi proses masuk (login) pengguna ke dalam sistem.
+ */
 class LoginRequest extends FormRequest
 {
     /**
-     * Determine if the user is authorized to make this request.
+     * Menentukan apakah pengguna memiliki izin untuk membuat request ini.
+     *
+     * @return bool
      */
     public function authorize(): bool
     {
@@ -15,15 +22,16 @@ class LoginRequest extends FormRequest
     }
 
     /**
-     * Get the validation rules that apply to the request.
+     * Mendapatkan aturan validasi yang berlaku untuk request ini.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string> Aturan validasi untuk email dan password
      */
     public function rules(): array
     {
         return [
             'email' => 'required|string|email',
-            'password' => 'required|min:8',
+            'password' => 'required',
         ];
     }
+
 }

@@ -13,19 +13,19 @@ class RefreshHolidays extends Command
      *
      * @var string
      */
-    protected $signature = 'holidays:refresh {year?}';
+    protected $signature = 'holidays:refresh {year?}'; /**< Nama dan signature command di terminal dengan argumen opsional year */
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Refresh holidays from external API';
+    protected $description = 'Refresh holidays from external API'; /**< Deskripsi singkat fungsi command */
 
     /**
-     * Execute the console command.
+     * Menjalankan logika command untuk memperbarui data hari libur dari API eksternal.
      *
-     * @return int
+     * @return int Status keluar (0 untuk sukses, 1 untuk gagal)
      */
     public function handle(): int
     {

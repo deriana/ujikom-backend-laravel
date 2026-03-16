@@ -3,30 +3,41 @@
 namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Auth;
 
+/**
+ * Class AttendanceResource
+ *
+ * Resource class untuk mentransformasi model Attendance menjadi format JSON yang ringkas untuk tampilan tabel/list.
+ */
 class AttendanceResource extends JsonResource
 {
     /**
-     * Transform the resource into an array.
+     * Transform resource ke dalam array.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return array
+     * @return array<string, mixed> Representasi data absensi harian karyawan secara ringkas.
      */
     public function toArray($request)
     {
+        $user = Auth::user();
+
         return [
-            'id' => $this->id,
+            'id' => $this->id, /**< Identifier unik record absensi */
             'employee' => [
-                'nik' => $this->employee->nik ?? null,
-                'name' => $this->employee->user->name ?? null,
+                'nik' => $this->employee->nik ?? null, /**< NIK karyawan */
+                'name' => $this->employee->user->name ?? null, /**< Nama karyawan */
             ],
-            'date' => $this->date->format('Y-m-d'),
-            'status' => $this->status,
-            'clock_in' => $this->clock_in?->format('Y-m-d H:i:s'),
-            'clock_out' => $this->clock_out?->format('Y-m-d H:i:s'),
-            'late_minutes' => $this->late_minutes,
-            'work_minutes' => $this->work_minutes,
-            'overtime_minutes' => $this->overtime_minutes,
+            'date' => $this->date->format('Y-m-d'), /**< Tanggal absensi */
+            'status' => $this->status, /**< Status kehadiran (misal: present, late, absent) */
+            'clock_in' => $this->clock_in?->format('Y-m-d H:i:s'), /**< Waktu masuk (clock in) */
+            'clock_out' => $this->clock_out?->format('Y-m-d H:i:s'), /**< Waktu keluar (clock out) */
+            'late_minutes' => $this->late_minutes, /**< Durasi keterlambatan dalam menit */
+            'work_minutes' => $this->work_minutes, /**< Total durasi kerja dalam menit */
+            'overtime_minutes' => $this->overtime_minutes, /**< Durasi lembur dalam menit */
+            'can' => [
+                'update' => $this->status !== 'absent' && ! is_null($this->clock_out),
+            ]
         ];
     }
 }

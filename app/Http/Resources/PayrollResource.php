@@ -6,12 +6,18 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * Class PayrollResource
+ *
+ * Resource class untuk mentransformasi model Payroll menjadi format JSON yang ringkas untuk tampilan tabel/list.
+ */
 class PayrollResource extends JsonResource
 {
     /**
-     * Transform the resource into an array.
+     * Transform resource ke dalam array untuk tampilan tabel/list.
      *
-     * @return array<string, mixed>
+     * @param  Request  $request
+     * @return array<string, mixed> Representasi data ringkasan penggajian karyawan beserta status dan izin aksi.
      */
     public function toArray(Request $request): array
     {
@@ -20,18 +26,18 @@ class PayrollResource extends JsonResource
         $statusDraft = 0;
 
         return [
-            'uuid' => $this->uuid,
-            'employee_name' => $this->employee?->user?->name,
-            'employee_nik' => $this->employee?->nik,
-            'period_start' => $this->period_start->format('Y-m-d'),
-            'period_end' => $this->period_end->format('Y-m-d'),
-            'net_salary' => $this->net_salary,
-            'gross_salary' => $this->gross_salary,
-            'manual_adjustment' => $this->manual_adjustment,
-            'adjustment_note' => $this->adjustment_note,
-            'status' => $this->status,
-            'finalized_at' => $this->finalized_at,
-            'can' => [
+            'uuid' => $this->uuid, /**< Identifier unik record payroll */
+            'employee_name' => $this->employee?->user?->name, /**< Nama lengkap karyawan */
+            'employee_nik' => $this->employee?->nik, /**< Nomor Induk Karyawan */
+            'period_start' => $this->period_start->format('Y-m-d'), /**< Tanggal mulai periode penggajian */
+            'period_end' => $this->period_end->format('Y-m-d'), /**< Tanggal berakhir periode penggajian */
+            'net_salary' => $this->net_salary, /**< Gaji bersih yang diterima (Take Home Pay) */
+            'gross_salary' => $this->gross_salary, /**< Total gaji kotor sebelum potongan */
+            'manual_adjustment' => $this->manual_adjustment, /**< Nominal penyesuaian manual */
+            'adjustment_note' => $this->adjustment_note, /**< Catatan alasan penyesuaian manual */
+            'status' => $this->status, /**< Status pembayaran/proses payroll */
+            'finalized_at' => $this->finalized_at, /**< Waktu ketika payroll diselesaikan/dikunci */
+            'can' => [ /**< Izin aksi yang dapat dilakukan oleh pengguna saat ini */
                 'update' => $this->status == $statusDraft && $user->can('update', $this->resource),
                 'pay' => $this->status == $statusDraft && $user->can('pay', $this->resource),
             ],

@@ -8,7 +8,7 @@ use Illuminate\Validation\Rule;
 class UpdateShiftTemplateRequest extends FormRequest
 {
     /**
-     * Determine if the user is authorized to make this request.
+     * Menentukan apakah pengguna memiliki izin untuk membuat request ini.
      */
     public function authorize(): bool
     {
@@ -16,9 +16,9 @@ class UpdateShiftTemplateRequest extends FormRequest
     }
 
     /**
-     * Get the validation rules that apply to the request.
+     * Mendapatkan aturan validasi yang berlaku untuk request ini.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string> Aturan validasi untuk nama, waktu mulai, waktu selesai, dan toleransi keterlambatan
      */
     public function rules(): array
     {

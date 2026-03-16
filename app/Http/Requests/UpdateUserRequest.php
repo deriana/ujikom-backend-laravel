@@ -6,13 +6,28 @@ use App\Enums\UserRole;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
+/**
+ * Class UpdateUserRequest
+ *
+ * Request class untuk menangani validasi pembaruan data pengguna (User) dan data karyawan (Employee) terkait.
+ */
 class UpdateUserRequest extends FormRequest
 {
+    /**
+     * Menentukan apakah pengguna memiliki izin untuk membuat request ini.
+     *
+     * @return bool
+     */
     public function authorize(): bool
     {
         return true;
     }
 
+    /**
+     * Mendapatkan aturan validasi yang berlaku untuk request ini.
+     *
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string> Aturan validasi untuk data akun, peran, jabatan, status kontrak, dan informasi pribadi
+     */
     public function rules(): array
     {
         $userId = $this->route('user');

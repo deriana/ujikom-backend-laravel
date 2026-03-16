@@ -8,17 +8,35 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Class AttendanceController
+ *
+ * Controller untuk menangani proses absensi karyawan menggunakan pengenalan wajah (biometrik),
+ * mendukung absensi tunggal, absensi massal (bulk), dan pengecekan status harian.
+ */
 class AttendanceController extends Controller
 {
-    protected $attendanceService;
+    protected $attendanceService; /**< Instance dari AttendanceService untuk logika pemrosesan absensi */
 
+    /**
+     * Membuat instance AttendanceController baru.
+     *
+     * @param AttendanceService $attendanceService
+     */
     public function __construct(AttendanceService $attendanceService)
     {
         $this->attendanceService = $attendanceService;
     }
 
+    /**
+     * Menangani permintaan absensi untuk satu orang (Single Attendance).
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function singleAttendance(Request $request)
     {
+        // dd($request->all());
         $request->validate([
             'descriptor' => 'required',
             'photo' => 'required|image|max:5120',
@@ -50,6 +68,12 @@ class AttendanceController extends Controller
         );
     }
 
+    /**
+     * Menangani permintaan absensi untuk banyak orang sekaligus (Bulk Attendance).
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function bulkAttendance(Request $request)
     {
         $request->validate([
@@ -105,12 +129,62 @@ class AttendanceController extends Controller
         return $this->successResponse($result['summary'], 'Bulk Attendance Processed');
     }
 
+    /**
+     * Menangani permintaan absensi manual (Alternatif jika Face Recognition gagal).
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function manualAttendance(Request $request)
+    {
+        $user = Auth::user();
+
+        if (! $user || ! $user->employee) {
+            return $this->errorResponse('Employee profile not found.', 404);
+        }
+
+        $request->validate([
+            'reason' => 'required|string|max:255',
+            'attachment' => 'required|image|max:5120',
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
+        ]);
+
+        $payload = [
+            'reason' => $request->reason,
+            'attachment' => $request->file('attachment'),
+            'latitude' => $request->latitude,
+            'longitude' => $request->longitude,
+        ];
+
+        $result = $this->attendanceService->executeProcessManual(
+            $user->employee,
+            $payload,
+            $request->header('User-Agent')
+        );
+
+        if (! $result['success']) {
+            return $this->errorResponse($result['message'], 422);
+        }
+
+        return $this->successResponse(
+            $result['data'] ?? null,
+            $result['message']
+        );
+    }
+
+    /**
+     * Mengambil status kehadiran karyawan yang sedang login untuk hari ini.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function attendanceStatusToday(Request $request)
     {
         $user = Auth::user();
 
         if (! $user || ! $user->employee) {
-            return $this->errorResponse('Profil karyawan tidak ditemukan.', 404);
+            return $this->errorResponse('Employee profile not found.', 404);
         }
 
         $status = $this->attendanceService->getTodayAttendanceStatus($user->employee);

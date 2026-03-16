@@ -23,8 +23,8 @@ class DatabaseSeeder extends Seeder
             PositionAllowanceSeeder::class,
             AllowanceSeeder::class,
             EmployeeSeeder::class,
-            // AttendanceSeeder::class, // Developing
-            AttendanceYearSeeder::class,
+            AttendanceSeeder::class, // Developing
+            // AttendanceYearSeeder::class,
             // BiometricSeeder::class,
             BiometricUserSeeder::class,
             WorkModeSeeder::class,
@@ -39,7 +39,10 @@ class DatabaseSeeder extends Seeder
             EarlyLeaveSeeder::class,
             AttendanceRequestSeeder::class,
             OvertimeSeeder::class,
-            PayrollSeeder::class
+            PayrollSeeder::class,
+            AssessmentCategorySeeder::class,
+            AssessmentSeeder::class,
+            AttendanceCorrectionSeeder::class
         ]);
     }
 }

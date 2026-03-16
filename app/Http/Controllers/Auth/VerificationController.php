@@ -9,17 +9,31 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 
+/**
+ * Class VerificationController
+ *
+ * Mengelola proses verifikasi email pengguna, termasuk pengecekan token,
+ * aktivasi akun, dan pengiriman ulang tautan verifikasi.
+ */
 class VerificationController extends Controller
 {
-    protected $verificationService;
+    protected $verificationService; /**< Layanan untuk menangani logika bisnis verifikasi email */
 
+    /**
+     * Membuat instance controller baru.
+     *
+     * @param EmailVerificationService $verificationService
+     */
     public function __construct(EmailVerificationService $verificationService)
     {
         $this->verificationService = $verificationService;
     }
 
     /**
-     * Handle the verification link click.
+     * Menangani klik tautan verifikasi dari email.
+     *
+     * @param Request $request
+     * @return \Illuminate\Contracts\View\View
      */
     public function verify(Request $request)
     {
@@ -39,7 +53,10 @@ class VerificationController extends Controller
     }
 
     /**
-     * Check if the token is valid.
+     * Memeriksa apakah token verifikasi valid atau belum kedaluwarsa.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function checkToken(Request $request)
     {
@@ -61,6 +78,12 @@ class VerificationController extends Controller
         return response()->json(['message' => 'Invalid or expired token.'], 410);
     }
 
+    /**
+     * Menyelesaikan proses aktivasi akun dengan mengatur kata sandi pengguna.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function finalizeActivation(Request $request)
     {
         $request->validate([
@@ -81,7 +104,10 @@ class VerificationController extends Controller
     }
 
     /**
-     * Handle resending the verification email.
+     * Mengirimkan ulang email verifikasi ke pengguna.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function resend(Request $request)
     {
@@ -118,7 +144,9 @@ class VerificationController extends Controller
     }
 
     /**
-     * Verification Pending landing page.
+     * Menampilkan halaman landas (landing page) untuk status verifikasi tertunda.
+     *
+     * @return \Illuminate\Contracts\View\View
      */
     public function pending()
     {

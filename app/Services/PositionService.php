@@ -7,10 +7,16 @@ use App\Models\Position;
 use Exception;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Class PositionService
+ *
+ * Menangani logika bisnis untuk manajemen jabatan (position),
+ * termasuk pengaturan gaji pokok dan sinkronisasi tunjangan terkait.
+ */
 class PositionService
 {
     /**
-     * Get all positions with their creator and associated allowances.
+     * Mengambil semua data jabatan beserta pembuat dan tunjangan terkait.
      *
      * @return \Illuminate\Database\Eloquent\Collection
      */
@@ -21,10 +27,10 @@ class PositionService
     }
 
     /**
-     * Store a new position and sync its allowances.
+     * Menyimpan data jabatan baru dan menyinkronkan tunjangannya.
      *
-     * @param array $data
-     * @param int $userId
+     * @param array $data Data jabatan (name, base_salary, allowances).
+     * @param int $userId ID pengguna yang melakukan aksi.
      * @return Position
      */
     public function store(array $data, int $userId)
@@ -44,13 +50,13 @@ class PositionService
     }
 
     /**
-     * Update an existing position and its allowances.
+     * Memperbarui data jabatan yang sudah ada beserta tunjangannya.
      *
-     * @param Position $position
-     * @param array $data
-     * @param int $userId
+     * @param Position $position Objek jabatan yang akan diperbarui.
+     * @param array $data Data pembaruan.
+     * @param int $userId ID pengguna yang melakukan aksi.
      * @return Position
-     * @throws Exception
+     * @throws Exception Jika jabatan sudah dihapus atau merupakan cadangan sistem.
      */
     public function update(Position $position, array $data, int $userId)
     {
@@ -76,11 +82,11 @@ class PositionService
     }
 
     /**
-     * Soft delete a position.
+     * Menghapus jabatan secara lunak (soft delete).
      *
-     * @param Position $position
+     * @param Position $position Objek jabatan yang akan dihapus.
      * @return bool
-     * @throws Exception
+     * @throws Exception Jika jabatan sudah dalam status terhapus atau merupakan cadangan sistem.
      */
     public function delete(Position $position): bool
     {
@@ -97,11 +103,11 @@ class PositionService
     }
 
     /**
-     * Restore a soft-deleted position.
+     * Memulihkan data jabatan yang telah dihapus lunak.
      *
-     * @param string $uuid
+     * @param string $uuid UUID jabatan.
      * @return Position
-     * @throws Exception
+     * @throws Exception Jika jabatan tidak dalam status terhapus.
      */
     public function restore(string $uuid): Position
     {
@@ -121,9 +127,9 @@ class PositionService
     }
 
     /**
-     * Permanently delete a position.
+     * Menghapus data jabatan secara permanen dari database.
      *
-     * @param string $uuid
+     * @param string $uuid UUID jabatan.
      * @return bool
      */
     public function forceDelete(string $uuid): bool
@@ -140,7 +146,7 @@ class PositionService
     }
 
     /**
-     * Get all soft-deleted positions.
+     * Mengambil semua daftar jabatan yang telah dihapus lunak.
      *
      * @return \Illuminate\Database\Eloquent\Collection
      */
@@ -150,7 +156,12 @@ class PositionService
     }
 
     /**
-     * Synchronize allowances for a position (UUID → ID mapping).
+     * Menyinkronkan tunjangan untuk sebuah jabatan (Pemetaan UUID ke ID).
+     *
+     * @param Position $position Objek jabatan.
+     * @param array $data Data tunjangan yang berisi array UUID dan nominal.
+     * @return void
+     * @throws Exception Jika UUID tunjangan tidak ditemukan.
      */
     private function syncAllowances(Position $position, array $data): void
     {

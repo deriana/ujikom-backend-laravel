@@ -37,51 +37,51 @@ class UserResource extends JsonResource
                 return [
                     'nik' => $this->employee->nik,
                     'status' => $this->employee->status_label,
-                    'join_date' => $this->employee->join_date?->format('Y-m-d'),
-                    'resign_date' => $this->employee->resign_date?->format('Y-m-d'),
-                    'contract_start' => $this->employee->contract_start?->format('Y-m-d'),
-                    'contract_end' => $this->employee->contract_end?->format('Y-m-d'),
-                    'base_salary' => $this->employee->base_salary,
-                    'date_of_birth' => $this->employee->date_of_birth?->format('Y-m-d'),
-                    'address' => $this->employee->address,
-                    'employment_state' => $this->employee->employment_state,
-                    'has_face_descriptor' => $this->employee->has_face_descriptor,
+                    'join_date' => $this->employee->join_date?->format('Y-m-d'), /**< Tanggal bergabung */
+                    'resign_date' => $this->employee->resign_date?->format('Y-m-d'), /**< Tanggal pengunduran diri */
+                    'contract_start' => $this->employee->contract_start?->format('Y-m-d'), /**< Tanggal mulai kontrak */
+                    'contract_end' => $this->employee->contract_end?->format('Y-m-d'), /**< Tanggal berakhir kontrak */
+                    'base_salary' => $this->employee->base_salary, /**< Gaji pokok karyawan */
+                    'date_of_birth' => $this->employee->date_of_birth?->format('Y-m-d'), /**< Tanggal lahir */
+                    'address' => $this->employee->address, /**< Alamat tempat tinggal */
+                    'employment_state' => $this->employee->employment_state, /**< Status kondisi kerja */
+                    'has_face_descriptor' => $this->employee->has_face_descriptor, /**< Status pendaftaran biometrik wajah */
 
                     'position' => [
-                        'name' => $this->employee->position?->name,
-                        'base_salary' => $this->employee->position?->base_salary,
+                        'name' => $this->employee->position?->name, /**< Nama jabatan */
+                        'base_salary' => $this->employee->position?->base_salary, /**< Gaji standar jabatan */
                         'allowances' => $this->employee->position?->allowances->map(function ($allowance) {
                             return [
-                                'name' => $allowance->name,
-                                'type' => $allowance->type,
-                                'amount' => $allowance->pivot->amount ?? $allowance->amount,
+                                'name' => $allowance->name, /**< Nama tunjangan */
+                                'type' => $allowance->type, /**< Tipe tunjangan */
+                                'amount' => $allowance->pivot->amount ?? $allowance->amount, /**< Nominal tunjangan */
                             ];
                         }),
                     ],
                     'team' => [
-                        'name' => $this->employee->team?->name,
-                        'division' => $this->employee->team?->division?->name,
+                        'name' => $this->employee->team?->name, /**< Nama tim */
+                        'division' => $this->employee->team?->division?->name, /**< Nama divisi */
                     ],
 
                     'manager' => $this->employee->manager ? [
-                        'name' => $this->employee->manager->user?->name,
-                        'nik' => $this->employee->manager->nik,
+                        'name' => $this->employee->manager->user?->name, /**< Nama atasan langsung */
+                        'nik' => $this->employee->manager->nik, /**< NIK atasan langsung */
                     ] : null,
 
-                    'phone' => $this->employee->phone,
-                    'profile_photo' => $this->employee->getFirstMediaUrl('profile_photo') ?: null,
-                    'gender' => $this->employee->gender,
+                    'phone' => $this->employee->phone, /**< Nomor telepon */
+                    'profile_photo' => $this->employee->getFirstMediaUrl('profile_photo') ?: null, /**< URL foto profil */
+                    'gender' => $this->employee->gender, /**< Jenis kelamin */
                     'leave_balances' => $this->when(isset($this->all_leave_types), fn() => $this->all_leave_types->map(function ($type) {
                         $balance = $this->employee->leaveBalances->where('leave_type_id', $type->id)->first();
 
                         return [
-                            'leave_type' => $type->name,
-                            'year' => $balance->year ?? now()->year,
-                            'total_days' => $type->is_unlimited ? '∞' : ($balance->total_days ?? $type->default_days),
-                            'used_days' => $balance->used_days ?? 0,
-                            'remaining_days' => $type->is_unlimited ? '∞' : ($balance->remaining_days ?? $type->default_days),
-                            'is_unlimited' => (bool) $type->is_unlimited,
-                            'description' => $type->description,
+                            'leave_type' => $type->name, /**< Nama tipe cuti */
+                            'year' => $balance->year ?? now()->year, /**< Tahun periode saldo */
+                            'total_days' => $type->is_unlimited ? '∞' : ($balance->total_days ?? $type->default_days), /**< Total jatah hari */
+                            'used_days' => $balance->used_days ?? 0, /**< Hari yang telah digunakan */
+                            'remaining_days' => $type->is_unlimited ? '∞' : ($balance->remaining_days ?? $type->default_days), /**< Sisa hari cuti */
+                            'is_unlimited' => (bool) $type->is_unlimited, /**< Status apakah cuti tidak terbatas */
+                            'description' => $type->description, /**< Deskripsi tipe cuti */
                         ];
                     })),
                 ];

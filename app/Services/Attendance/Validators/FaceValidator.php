@@ -6,20 +6,28 @@ use App\Exceptions\Attendance\FaceValidationException;
 use App\Models\BiometricUser;
 use App\Models\Employee;
 
+/**
+ * Class FaceValidator
+ *
+ * Menangani validasi pengenalan wajah menggunakan perbandingan vektor (cosine similarity).
+ */
 class FaceValidator
 {
     /**
-     * Minimum similarity score required to consider a face match valid (0.0 to 1.0).
+     * Skor kemiripan minimum yang diperlukan agar kecocokan wajah dianggap valid (0.0 hingga 1.0).
      */
-    protected float $threshold = 0.90;
+    protected float $threshold = 0.90; /**< Ambang batas skor kemiripan */
 
     /**
-     * Minimum gap between the top match and the second-best match to prevent ambiguity.
+     * Selisih minimum antara skor terbaik pertama dan kedua untuk mencegah ambiguitas.
      */
-    protected float $minGap = 0.03;
+    protected float $minGap = 0.03; /**< Selisih minimum antar kandidat */
 
     /**
-     * Validate an input face descriptor against all registered biometric data.
+     * Memvalidasi deskriptor wajah input terhadap semua data biometrik yang terdaftar.
+     *
+     * @param array|null $inputDescriptor Vektor fitur wajah dari input.
+     * @return array Data karyawan dan skor kemiripan jika ditemukan.
      *
      * @throws FaceValidationException
      */
@@ -42,7 +50,11 @@ class FaceValidator
     }
 
     /**
-     * Verify if the input face descriptor matches a specific employee's registered biometrics.
+     * Memverifikasi apakah deskriptor wajah input cocok dengan biometrik terdaftar milik karyawan tertentu.
+     *
+     * @param Employee $employee Objek karyawan yang akan diverifikasi.
+     * @param array|null $inputDescriptor Vektor fitur wajah dari input.
+     * @return array Data karyawan dan skor kemiripan.
      *
      * @throws FaceValidationException
      */
@@ -71,7 +83,11 @@ class FaceValidator
     }
 
     /**
-     * Ensure the provided descriptor is not empty.
+     * Memastikan bahwa deskriptor yang diberikan tidak kosong.
+     *
+     * @param array|null $inputDescriptor Vektor fitur wajah.
+     *
+     * @throws FaceValidationException
      */
     protected function ensureDescriptorExists(?array $inputDescriptor): void
     {
@@ -81,8 +97,10 @@ class FaceValidator
     }
 
     /**
-     * Iterate through all stored biometric descriptors to find the best matching employee
-     * based on cosine similarity and defined thresholds.
+     * Mencari kecocokan terbaik dari semua deskriptor biometrik yang tersimpan.
+     *
+     * @param array $inputDescriptor Vektor fitur wajah dari input.
+     * @return array Hasil pencocokan terbaik (karyawan dan skor).
      */
     protected function findBestMatch(array $inputDescriptor): array
     {
@@ -133,7 +151,11 @@ class FaceValidator
     }
 
     /**
-     * Calculate the cosine similarity between two numerical vectors.
+     * Menghitung cosine similarity antara dua vektor numerik.
+     *
+     * @param array $a Vektor pertama.
+     * @param array $b Vektor kedua.
+     * @return float Nilai kemiripan antara 0.0 hingga 1.0.
      */
     protected function cosineSimilarity(array $a, array $b): float
     {

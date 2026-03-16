@@ -11,17 +11,31 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Class AuthController
+ *
+ * Controller untuk menangani proses autentikasi pengguna, termasuk registrasi,
+ * login, dan logout menggunakan token (Sanctum).
+ */
 class AuthController extends Controller
 {
-    protected AuthService $authService;
+    protected AuthService $authService; /**< Instance dari AuthService untuk logika bisnis autentikasi */
 
+    /**
+     * Membuat instance AuthController baru.
+     *
+     * @param AuthService $authService
+     */
     public function __construct(AuthService $authService)
     {
         $this->authService = $authService;
     }
 
     /**
-     * Register a new user
+     * Mendaftarkan pengguna baru ke dalam sistem.
+     *
+     * @param RegisterRequest $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function register(RegisterRequest $request): JsonResponse
     {
@@ -34,7 +48,10 @@ class AuthController extends Controller
     }
 
     /**
-     * Login user
+     * Melakukan proses autentikasi pengguna dan memberikan token akses.
+     *
+     * @param LoginRequest $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function login(LoginRequest $request): JsonResponse
     {
@@ -48,7 +65,9 @@ class AuthController extends Controller
     }
 
     /**
-     * Logout user
+     * Mencabut token akses pengguna yang sedang login (Logout).
+     *
+     * @return \Illuminate\Http\JsonResponse
      */
     public function logout(): JsonResponse
     {

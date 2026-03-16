@@ -7,10 +7,16 @@ use App\Enums\UserRole;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Trait Notificationable
+ *
+ * Trait ini menyediakan fungsionalitas otomatis untuk mengirim notifikasi CRUD
+ * berdasarkan event model Eloquent serta mendukung pengiriman notifikasi kustom.
+ */
 trait Notificationable
 {
     /**
-     * Boot the trait and register Eloquent model event listeners.
+     * Melakukan booting trait dan mendaftarkan event listener untuk model Eloquent.
      */
     protected static function bootNotificationable(): void
     {
@@ -60,7 +66,13 @@ trait Notificationable
     }
 
     /**
-     * Send a custom notification manually for the current model.
+     * Mengirim notifikasi kustom secara manual untuk model saat ini.
+     *
+     * @param string $title Judul notifikasi.
+     * @param string $message Pesan notifikasi.
+     * @param string|null $url URL tautan opsional.
+     * @param mixed $customUsers Koleksi pengguna penerima kustom.
+     * @return void
      */
     public function notifyCustom(string $title, string $message, ?string $url = null, $customUsers = null): void
     {
@@ -82,7 +94,11 @@ trait Notificationable
     }
 
     /**
-     * Handle automatic notification logic triggered by model events.
+     * Menangani logika notifikasi otomatis yang dipicu oleh event model.
+     *
+     * @param mixed $model Instance model.
+     * @param \App\Enums\CrudAction $action Aksi CRUD yang dilakukan.
+     * @return void
      */
     protected static function handleNotification($model, $action)
     {
@@ -114,7 +130,11 @@ trait Notificationable
     }
 
     /**
-     * Generate a default title for the notification.
+     * Menghasilkan judul default untuk notifikasi.
+     *
+     * @param \App\Enums\CrudAction $action Aksi CRUD.
+     * @param mixed $model Instance model.
+     * @return string Judul default.
      */
     protected static function defaultTitle($action, $model): string
     {
@@ -122,7 +142,11 @@ trait Notificationable
     }
 
     /**
-     * Generate a default message based on the action and model context.
+     * Menghasilkan pesan default berdasarkan aksi dan konteks model.
+     *
+     * @param \App\Enums\CrudAction $action Aksi CRUD.
+     * @param mixed $model Instance model.
+     * @return string Pesan default.
      */
     protected static function defaultMessage($action, $model): string
     {
@@ -145,7 +169,10 @@ trait Notificationable
     }
 
     /**
-     * Determine the list of users who should receive the notification.
+     * Menentukan daftar pengguna yang harus menerima notifikasi.
+     *
+     * @param mixed $model Instance model.
+     * @return \Illuminate\Support\Collection Koleksi pengguna unik.
      */
     protected static function getNotifyUsers($model)
     {

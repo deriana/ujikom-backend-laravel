@@ -6,6 +6,7 @@ use App\Exports\AttendancesExport;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\AttendanceResource;
 use App\Http\Resources\AttendanceDetailResource;
+use App\Http\Resources\AttendanceLogResource;
 use App\Models\Attendance;
 use App\Services\AttendanceDetailService;
 use Illuminate\Http\Request;
@@ -15,15 +16,32 @@ use Illuminate\Support\Carbon;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
+/**
+ * Class AttendanceDetailController
+ *
+ * Controller untuk mengelola detail data absensi, termasuk menampilkan daftar absensi,
+ * melihat detail spesifik, dan mengekspor data absensi ke format Excel.
+ */
 class AttendanceDetailController extends Controller
 {
-    protected $attendanceDetailService;
+    protected $attendanceDetailService; /**< Instance dari AttendanceDetailService untuk logika bisnis detail absensi */
 
+    /**
+     * Membuat instance AttendanceDetailController baru.
+     *
+     * @param AttendanceDetailService $attendanceDetailService
+     */
     public function __construct(AttendanceDetailService $attendanceDetailService)
     {
         $this->attendanceDetailService = $attendanceDetailService;
     }
 
+    /**
+     * Menampilkan daftar data absensi dengan filter rentang tanggal.
+     *
+     * @param Request $request
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
+     */
     public function index(Request $request): JsonResponse
     {
         $this->authorize('viewAny', Attendance::class);
@@ -39,6 +57,12 @@ class AttendanceDetailController extends Controller
         );
     }
 
+    /**
+     * Menampilkan detail data absensi tertentu.
+     *
+     * @param Attendance $attendance
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
+     */
     public function show(Attendance $attendance): JsonResponse
     {
         // $this->authorize('view', Attendance::class);
@@ -56,6 +80,12 @@ class AttendanceDetailController extends Controller
         );
     }
 
+    /**
+     * Mengekspor data absensi ke dalam file Excel berdasarkan rentang tanggal.
+     *
+     * @param Request $request
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+     */
     public function export(Request $request)
     {
         $this->authorize('export', Attendance::class);
@@ -86,6 +116,27 @@ class AttendanceDetailController extends Controller
         return Excel::download(
             new AttendancesExport($validated),
             $fileName
+        );
+    }
+
+    /**
+     * Mengambil log aktivitas kehadiran untuk catatan tertentu.
+     *
+     * @param Attendance $attendance
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
+     */
+    public function getLogs(Request $request): JsonResponse
+    {
+        // $this->authorize('view', $attendance);
+
+        $filters = $request->only(['date']);
+
+        $logs = $this->attendanceDetailService->getLogs($filters);
+
+        return $this->successResponse(
+            AttendanceLogResource::collection($logs),
+            'Attendance logs fetched successfully',
+            200
         );
     }
 }

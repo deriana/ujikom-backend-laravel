@@ -6,10 +6,16 @@ use App\Models\WorkSchedule;
 use Exception;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Class WorkScheduleService
+ *
+ * Menangani logika bisnis untuk manajemen jadwal kerja (work schedule),
+ * termasuk pengaturan waktu kerja, toleransi keterlambatan, dan mode kerja.
+ */
 class WorkScheduleService
 {
     /**
-     * Get all work schedules with related work mode and assignments.
+     * Mengambil semua jadwal kerja beserta mode kerja dan penugasan terkait.
      *
      * @return \Illuminate\Database\Eloquent\Collection
      */
@@ -20,9 +26,9 @@ class WorkScheduleService
     }
 
     /**
-     * Store a new work schedule record.
+     * Menyimpan data jadwal kerja baru ke dalam database.
      *
-     * @param array $data
+     * @param array $data Data jadwal kerja.
      * @return WorkSchedule
      */
     public function store(array $data)
@@ -44,12 +50,12 @@ class WorkScheduleService
     }
 
     /**
-     * Update an existing work schedule.
+     * Memperbarui data jadwal kerja yang sudah ada.
      *
-     * @param WorkSchedule $schedule
-     * @param array $data
+     * @param WorkSchedule $schedule Objek jadwal kerja yang akan diperbarui.
+     * @param array $data Data pembaruan.
      * @return WorkSchedule
-     * @throws Exception
+     * @throws Exception Jika jadwal sudah dihapus.
      */
     public function update(WorkSchedule $schedule, array $data)
     {
@@ -76,11 +82,11 @@ class WorkScheduleService
     }
 
     /**
-     * Soft delete a work schedule.
+     * Menghapus jadwal kerja secara lunak (soft delete).
      *
-     * @param WorkSchedule $schedule
+     * @param WorkSchedule $schedule Objek jadwal kerja yang akan dihapus.
      * @return bool
-     * @throws Exception
+     * @throws Exception Jika jadwal sudah dihapus atau masih digunakan oleh karyawan.
      */
     public function delete(WorkSchedule $schedule): bool
     {
@@ -102,11 +108,11 @@ class WorkScheduleService
     }
 
     /**
-     * Restore a soft-deleted work schedule.
+     * Memulihkan data jadwal kerja yang telah dihapus lunak.
      *
-     * @param string $uuid
+     * @param string $uuid UUID jadwal kerja.
      * @return WorkSchedule
-     * @throws Exception
+     * @throws Exception Jika jadwal tidak dalam status terhapus.
      */
     public function restore(string $uuid): WorkSchedule
     {
@@ -129,11 +135,11 @@ class WorkScheduleService
     }
 
     /**
-     * Permanently delete a work schedule.
+     * Menghapus data jadwal kerja secara permanen dari database.
      *
-     * @param string $uuid
+     * @param string $uuid UUID jadwal kerja.
      * @return bool
-     * @throws Exception
+     * @throws Exception Jika jadwal memiliki riwayat penugasan.
      */
     public function forceDelete(string $uuid): bool
     {
@@ -155,7 +161,7 @@ class WorkScheduleService
     }
 
     /**
-     * Get all soft-deleted work schedules.
+     * Mengambil semua daftar jadwal kerja yang telah dihapus lunak.
      *
      * @return \Illuminate\Database\Eloquent\Collection
      */

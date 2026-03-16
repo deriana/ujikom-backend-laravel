@@ -11,15 +11,21 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Class OvertimeService
+ *
+ * Menangani logika bisnis untuk pengajuan lembur (overtime) karyawan,
+ * termasuk validasi kelayakan, perhitungan durasi otomatis, dan manajemen persetujuan.
+ */
 class OvertimeService
 {
     /**
-     * Get all overtime records with role-based filtering.
+     * Mengambil semua data lembur dengan filter berdasarkan peran pengguna.
      *
-     * @param \App\Models\User $user
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @param \App\Models\User $user Objek pengguna yang sedang login.
+     * @return \Illuminate\Database\Eloquent\Collection Koleksi data lembur.
      */
-    public function index($user)
+    public function index($user, ?array $filters = null)
     {
         // 1. Initialize query with necessary relationships
         $query = Overtime::with(['employee.user', 'attendance', 'manager.user']);
@@ -46,14 +52,27 @@ class OvertimeService
             $query->where('employee_id', $user->employee->id);
         }
 
+        if (!empty($filters['start_date']) && !empty($filters['end_date'])) {
+            $query->whereHas('attendance', function ($q) use ($filters) {
+                $q->whereBetween('date', [
+                    Carbon::parse($filters['start_date'])->toDateString(),
+                    Carbon::parse($filters['end_date'])->toDateString(),
+                ]);
+            });
+        } else {
+            $query->whereHas('attendance', function ($q) {
+                $q->whereDate('date', Carbon::today());
+            });
+        }
+
         return $query->latest()->get();
     }
 
     /**
-     * Get a list of pending overtime requests that require approval.
+     * Mengambil daftar pengajuan lembur yang sedang menunggu persetujuan.
      *
-     * @param \App\Models\User $user
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @param \App\Models\User $user Objek pengguna penyetuju.
+     * @return \Illuminate\Database\Eloquent\Collection Koleksi data pengajuan yang tertunda.
      */
     public function indexApproval($user)
     {
@@ -86,10 +105,10 @@ class OvertimeService
     }
 
     /**
-     * Show details of a specific overtime request.
+     * Menampilkan detail lengkap dari satu pengajuan lembur tertentu.
      *
-     * @param Overtime $overtime
-     * @return Overtime
+     * @param Overtime $overtime Objek pengajuan lembur.
+     * @return Overtime Objek lembur dengan relasi yang dimuat.
      */
     public function show(Overtime $overtime)
     {
@@ -98,12 +117,12 @@ class OvertimeService
     }
 
     /**
-     * Store a new overtime request.
+     * Menyimpan pengajuan lembur baru ke dalam database.
      *
-     * @param \App\Models\User $user
-     * @param array $data
-     * @return Overtime
-     * @throws Exception
+     * @param \App\Models\User $user Objek pengguna yang membuat pengajuan.
+     * @param array $data Data pengajuan (attendance_id, employee_id, reason).
+     * @return Overtime Objek lembur yang berhasil dibuat.
+     * @throws Exception Jika karyawan belum layak mengajukan lembur.
      */
     public function store($user, array $data): Overtime
     {
@@ -131,13 +150,13 @@ class OvertimeService
     }
 
     /**
-     * Update an existing overtime request.
+     * Memperbarui data pengajuan lembur yang sudah ada.
      *
-     * @param Overtime $overtime
-     * @param array $data
-     * @param \App\Models\User $user
-     * @return Overtime
-     * @throws Exception
+     * @param Overtime $overtime Objek pengajuan yang akan diperbarui.
+     * @param array $data Data pembaruan.
+     * @param \App\Models\User $user Objek pengguna yang melakukan aksi.
+     * @return Overtime Objek lembur setelah diperbarui.
+     * @throws Exception Jika pengajuan sudah diproses dan pengguna bukan HR/Admin.
      */
     public function update(Overtime $overtime, array $data, $user): Overtime
     {
@@ -164,14 +183,14 @@ class OvertimeService
     }
 
     /**
-     * Process approval or rejection of an overtime request.
+     * Memproses persetujuan atau penolakan pengajuan lembur.
      *
-     * @param Overtime $overtime
-     * @param \App\Models\User $user
-     * @param bool $approve
-     * @param string|null $note
-     * @return Overtime
-     * @throws Exception
+     * @param Overtime $overtime Objek pengajuan lembur.
+     * @param \App\Models\User $user Objek pengguna penyetuju.
+     * @param bool $approve Status persetujuan (true untuk setuju, false untuk tolak).
+     * @param string|null $note Catatan dari penyetuju.
+     * @return Overtime Objek lembur yang telah diperbarui.
+     * @throws Exception Jika pengajuan sudah diproses atau pengguna tidak memiliki izin.
      */
     public function approve(Overtime $overtime, $user, bool $approve, ?string $note = null)
     {
@@ -208,10 +227,11 @@ class OvertimeService
     }
 
     /**
-     * Update overtime duration automatically after clock out.
+     * Memperbarui durasi lembur secara otomatis setelah karyawan melakukan clock-out.
      *
-     * @param Attendance $attendance
+     * @param Attendance $attendance Objek kehadiran yang baru saja di-update clock-out-nya.
      * @return void
+     * @throws Exception Jika pengaturan kehadiran default tidak ditemukan.
      */
     public function updateDurationAfterClockOut(Attendance $attendance)
     {
@@ -277,10 +297,10 @@ class OvertimeService
     }
 
     /**
-     * Delete an overtime request.
+     * Menghapus data pengajuan lembur.
      *
-     * @param Overtime $overtime
-     * @return bool
+     * @param Overtime $overtime Objek pengajuan lembur yang akan dihapus.
+     * @return bool True jika berhasil dihapus.
      */
     public function delete(Overtime $overtime): bool
     {
@@ -296,10 +316,10 @@ class OvertimeService
     }
 
     /**
-     * Validate if the employee is eligible to submit an overtime request.
+     * Memvalidasi apakah karyawan layak untuk mengajukan lembur.
      *
-     * @param Attendance $attendance
-     * @throws Exception
+     * @param Attendance $attendance Objek kehadiran terkait.
+     * @throws Exception Jika belum clock-in, sudah clock-out, atau sudah pernah mengajukan.
      */
     private function validateOvertimeEligibility(Attendance $attendance): void
     {

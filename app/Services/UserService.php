@@ -16,14 +16,19 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Str;
 
-class UserService
+/**
+ * Class UserService
+ *
+ * Service class untuk menangani logika bisnis terkait manajemen pengguna (User) dan profil karyawan (Employee),
+ * termasuk pendaftaran, pembaruan data, terminasi, biometrik, dan saldo cuti.
+ */
+ class UserService
 {
     /**
-     * Get a list of users with role-based filtering.
+     * Mengambil daftar pengguna dengan pemfilteran berdasarkan peran.
      *
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @return \Illuminate\Support\Collection|\Illuminate\Database\Eloquent\Collection Koleksi data pengguna.
      */
     public function index()
     {
@@ -69,7 +74,11 @@ class UserService
     }
 
     /**
-     * Store a new user and their employee profile.
+     * Menyimpan pengguna baru beserta profil karyawannya.
+     *
+     * @param array $data Data input pengguna dan karyawan.
+     * @param int $creatorId ID pengguna yang membuat data.
+     * @return User Objek pengguna yang berhasil dibuat.
      */
     public function store(array $data, int $creatorId): User
     {
@@ -146,7 +155,10 @@ class UserService
     }
 
     /**
-     * Show details of a specific user.
+     * Menampilkan detail lengkap dari satu pengguna tertentu.
+     *
+     * @param User $user Objek pengguna.
+     * @return User Objek pengguna dengan relasi yang dimuat.
      */
     public function show(User $user)
     {
@@ -181,7 +193,13 @@ class UserService
     }
 
     /**
-     * Update an existing user and their employee profile.
+     * Memperbarui data pengguna dan profil karyawan yang sudah ada.
+     *
+     * @param User $user Objek pengguna yang akan diperbarui.
+     * @param array $data Data pembaruan.
+     * @param int $updaterId ID pengguna yang melakukan pembaruan.
+     * @return User Objek pengguna setelah diperbarui.
+     * @throws Exception Jika pengguna adalah cadangan sistem atau profil karyawan tidak ditemukan.
      */
     public function update(User $user, array $data, int $updaterId): User
     {
@@ -270,7 +288,11 @@ class UserService
     }
 
     /**
-     * Soft delete a user and their employee profile.
+     * Menghapus pengguna dan profil karyawannya secara lunak (soft delete).
+     *
+     * @param User $user Objek pengguna yang akan dihapus.
+     * @return bool True jika berhasil dihapus.
+     * @throws Exception Jika pengguna adalah cadangan sistem atau sudah dihapus.
      */
     public function delete(User $user): bool
     {
@@ -300,7 +322,11 @@ class UserService
     }
 
     /**
-     * Restore a soft-deleted user and their employee profile.
+     * Memulihkan pengguna dan profil karyawan yang telah dihapus lunak.
+     *
+     * @param string $uuid UUID pengguna.
+     * @return User Objek pengguna yang dipulihkan.
+     * @throws Exception Jika pengguna tidak dalam status terhapus.
      */
     public function restore(string $uuid): User
     {
@@ -333,31 +359,47 @@ class UserService
     }
 
     /**
-     * Permanently delete a user and their employee profile.
+     * Menghapus pengguna dan profil karyawannya secara permanen dari database.
+     *
+     * @param string $uuid UUID pengguna.
+     * @return bool True jika berhasil dihapus permanen.
      */
+// app/Services/UserService.php
+
     public function forceDelete(string $uuid): bool
     {
         return DB::transaction(function () use ($uuid) {
 
-            // 1. Find the user including trashed ones
-            $user = User::withTrashed()->whereUuid($uuid)->firstOrFail();
+            // 1. Ambil user (termasuk yang sudah di-soft delete)
+            // Tambahkan with('employee') agar relasinya ikut terbawa
+            $user = User::withTrashed()->with('employee')->whereUuid($uuid)->firstOrFail();
 
             // 2. Set custom notification data
-            $user->employee->customNotification = [
-                'title' => 'Permanently Deleted Employee',
-                'message' => "Employee {$user->employee->user->name} (NIK: {$user->employee->nik}) has been permanently deleted.",
-            ];
+            if ($user->employee) {
+                $user->employee->customNotification = [
+                    'title' => 'Permanently Deleted Employee',
+                    // PERBAIKAN: Langsung ambil $user->name, jangan muter lewat relasi lagi
+                    'message' => "Employee {$user->name} (NIK: {$user->employee->nik}) has been permanently deleted.",
+                ];
 
-            // 3. Force delete both records
-            $user->employee()->withTrashed()->forceDelete();
-            $user->forceDelete();
+                // 3. Force delete employee dulu
+                $user->employee()->withTrashed()->forceDelete();
+            }
 
-            return true;
+            // 4. Baru force delete user-nya
+            return $user->forceDelete();
         });
     }
 
     /**
-     * Terminate an employee's employment.
+     * Mengakhiri hubungan kerja (terminasi) seorang karyawan.
+     *
+     * @param string $uuid UUID pengguna.
+     * @param string $state Status terminasi (resigned/terminated).
+     * @param string|null $date Tanggal berhenti.
+     * @param int $adminId ID admin yang memproses aksi.
+     * @return User Objek pengguna yang telah dinonaktifkan.
+     * @throws Exception Jika profil karyawan tidak ditemukan atau sudah tidak aktif.
      */
     public function terminateEmployment(string $uuid, string $state, ?string $date, int $adminId): User
     {
@@ -397,7 +439,13 @@ class UserService
     }
 
     /**
-     * Change the authenticated user's password.
+     * Mengubah kata sandi pengguna yang sedang terautentikasi.
+     *
+     * @param User $user Objek pengguna.
+     * @param string $currentPassword Kata sandi saat ini.
+     * @param string $newPassword Kata sandi baru.
+     * @return void
+     * @throws Exception Jika kata sandi saat ini salah.
      */
     public function changePassword(User $user, string $currentPassword, string $newPassword): void
     {
@@ -418,7 +466,11 @@ class UserService
     }
 
     /**
-     * Change a user's password by an administrator.
+     * Mengubah kata sandi pengguna oleh administrator.
+     *
+     * @param string $uuid UUID pengguna.
+     * @param string $newPassword Kata sandi baru.
+     * @return void
      */
     public function adminChangePassword(string $uuid, string $newPassword): void
     {
@@ -438,7 +490,13 @@ class UserService
     }
 
     /**
-     * Toggle a user's active status.
+     * Mengubah status aktif/nonaktif akun pengguna.
+     *
+     * @param string $uuid UUID pengguna.
+     * @param bool $isActive Status aktif baru.
+     * @param int $adminId ID admin yang melakukan aksi.
+     * @return User Objek pengguna dengan status terbaru.
+     * @throws Exception Jika mencoba mengaktifkan kembali karyawan yang sudah diterminasi.
      */
     public function status(string $uuid, bool $isActive, int $adminId): User
     {
@@ -474,9 +532,9 @@ class UserService
     }
 
     /**
-     * Get all soft-deleted users.
+     * Mengambil semua daftar pengguna yang telah dihapus lunak.
      *
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @return \Illuminate\Database\Eloquent\Collection Koleksi pengguna yang terhapus.
      */
     public function getTrashed()
     {
@@ -493,10 +551,13 @@ class UserService
     }
 
     /**
-     * Upload and set a profile photo for a user.
+     * Mengunggah dan mengatur foto profil untuk pengguna.
      *
-     * @param  mixed  $photoFile
-     * @param  string  $uuid
+     * @param User $user Objek pengguna.
+     * @param mixed $photoFile File gambar yang diunggah.
+     * @param string $uuid UUID pengguna.
+     * @return User Objek pengguna dengan foto profil baru.
+     * @throws Exception Jika profil karyawan tidak ditemukan.
      */
     public function uploadProfilePhoto(User $user, $photoFile, $uuid): User
     {
@@ -524,9 +585,9 @@ class UserService
     }
 
     /**
-     * Get a list of users with management roles.
+     * Mengambil daftar pengguna yang memiliki peran manajerial (Director/Manager).
      *
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @return \Illuminate\Database\Eloquent\Collection Koleksi data manajer.
      */
     public function getManagers()
     {
@@ -542,11 +603,48 @@ class UserService
     }
 
     /**
-     * Get a simplified list of employees.
+     * Mengambil daftar karyawan dalam format ringkas dengan filter peran.
      *
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @param bool $filterByAuth Menentukan apakah akan memfilter berdasarkan bawahan/diri sendiri.
+     * @return \Illuminate\Database\Eloquent\Collection Koleksi data karyawan ringkas.
      */
-    public function getEmployeesLite()
+    public function getEmployeesLite(bool $filterByAuth = true)
+    {
+        $user = Auth::guard('sanctum')->user();
+        $currentUserEmployee = $user->employee;
+
+        $query = Employee::whereHas('user', function ($q) {
+            $q->where('system_reserve', false)
+              ->where('is_active', true)
+              ->whereDoesntHave('roles', function ($rq) {
+                  $rq->where('name', UserRole::DIRECTOR->value);
+              });
+        })->with('user');
+
+        if ($filterByAuth && $user) {
+            // If Manager, only get their direct subordinates
+            if ($user->hasRole(UserRole::MANAGER->value)) {
+                if ($currentUserEmployee) {
+                    $query->where('manager_id', $currentUserEmployee->id);
+                } else {
+                    return collect();
+                }
+            }
+            // If regular employee, only get themselves
+            elseif ($user->hasRole(UserRole::EMPLOYEE->value)) {
+                $query->where('user_id', $user->id);
+            }
+        }
+
+        return $query->get();
+    }
+
+    /**
+     * Mengambil daftar semua karyawan non-sistem (tanpa filter manajer).
+     *
+     * @return \Illuminate\Database\Eloquent\Collection Koleksi data karyawan.
+     */
+    public function getEmployeeLiteWithoutDirectur()
     {
         // 1. Retrieve non-system employees with basic user info
         return Employee::whereHas('user', function ($query) {
@@ -555,7 +653,12 @@ class UserService
     }
 
     /**
-     * Update biometric descriptors for a user.
+     * Memperbarui deskriptor biometrik wajah untuk seorang pengguna.
+     *
+     * @param User $user Objek pengguna.
+     * @param array $descriptors Array berisi data vektor fitur wajah.
+     * @return void
+     * @throws Exception Jika profil karyawan tidak ditemukan.
      */
     public function updateBiometricDescriptors(User $user, array $descriptors): void
     {
@@ -579,10 +682,10 @@ class UserService
     }
 
     /**
-     * Get all employee leave balances for a given year.
+     * Mengambil semua saldo cuti karyawan untuk tahun tertentu.
      *
-     * @param int|null $year
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @param int|null $year Tahun saldo (default tahun berjalan).
+     * @return \Illuminate\Database\Eloquent\Collection Koleksi data saldo cuti karyawan.
      */
     public function getEmployeeLeaveBalances(?int $year = null)
     {
@@ -598,10 +701,32 @@ class UserService
             'leaveBalances.leaveType:id,name,is_unlimited',
             'media',
         ])
-        ->active() // Only active employees
-        ->whereHas('user', function ($query) {
-            $query->where('system_reserve', false);
-        })
-        ->get();
+            ->active() // Only active employees
+            ->whereHas('user', function ($query) {
+                $query->where('system_reserve', false);
+            })
+            ->get();
+    }
+
+    /**
+     * Mengambil saldo cuti milik pengguna yang sedang login.
+     *
+     * @return Employee|null Objek karyawan beserta saldo cutinya.
+     */
+    public function getMyLeaveBalances()
+    {
+        $year = Carbon::now()->year;
+
+        return Employee::with([
+            'user:id,name,email',
+            'position:id,name',
+            'media',
+            'leaveBalances' => function ($query) use ($year) {
+                $query->where('year', $year);
+            },
+            'leaveBalances.leaveType:id,name,is_unlimited',
+        ])
+            ->where('user_id', Auth::id())
+            ->first();
     }
 }

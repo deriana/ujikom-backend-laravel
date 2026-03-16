@@ -8,11 +8,19 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
+/**
+ * Class EmailVerificationService
+ *
+ * Menangani logika verifikasi email pengguna, termasuk pembuatan token,
+ * validasi token, dan pengaturan kata sandi saat verifikasi.
+ */
 class EmailVerificationService
 {
     /**
-     * Generate a new verification token for the user.
-     * Returns the plain-text token.
+     * Membuat token verifikasi baru untuk pengguna.
+     *
+     * @param User $user Objek pengguna.
+     * @return string Token dalam format teks biasa (plain-text).
      */
     public function generateToken(User $user): string
     {
@@ -32,10 +40,10 @@ class EmailVerificationService
     }
 
     /**
-     * Verify the token and update the user status in a single transaction.
+     * Memverifikasi token dan memperbarui status verifikasi pengguna dalam satu transaksi.
      *
-     * @param string $plainToken
-     * @return bool
+     * @param string $plainToken Token teks biasa yang akan diverifikasi.
+     * @return bool True jika verifikasi berhasil, false jika token tidak valid atau kedaluwarsa.
      */
     public function verifyToken(string $plainToken): bool
     {
@@ -65,10 +73,10 @@ class EmailVerificationService
     }
 
     /**
-     * Get user by email without leaking if it exists (for account enumeration protection).
+     * Mengambil data pengguna berdasarkan alamat email.
      *
-     * @param string $email
-     * @return User|null
+     * @param string $email Alamat email pengguna.
+     * @return User|null Objek pengguna jika ditemukan, atau null.
      */
     public function getUserByEmail(string $email): ?User
     {
@@ -76,11 +84,11 @@ class EmailVerificationService
     }
 
     /**
-     * Verify the token, set a new password, and mark user as verified.
+     * Memverifikasi token, menetapkan kata sandi baru, dan menandai pengguna sebagai terverifikasi.
      *
-     * @param string $plainToken
-     * @param string $newPassword
-     * @return bool
+     * @param string $plainToken Token teks biasa.
+     * @param string $newPassword Kata sandi baru yang akan disimpan.
+     * @return bool True jika berhasil, false jika gagal.
      */
     public function verifyAndSetPassword(string $plainToken, string $newPassword): bool
     {
@@ -111,10 +119,10 @@ class EmailVerificationService
     }
 
     /**
-     * Check if a token is valid and return the associated user.
+     * Memeriksa apakah token valid dan mengembalikan pengguna yang terkait.
      *
-     * @param string $plainToken
-     * @return User|null
+     * @param string $plainToken Token teks biasa.
+     * @return User|null Objek pengguna jika token valid, atau null.
      */
     public function checkToken(string $plainToken): ?User
     {

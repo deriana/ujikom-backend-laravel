@@ -12,15 +12,23 @@ use App\Models\Setting;
 use App\Services\WorkdayService;
 use Carbon\Carbon;
 
+/**
+ * Class TimeValidator
+ *
+ * Menangani validasi waktu kehadiran, termasuk pengecekan hari kerja, jendela waktu masuk/pulang,
+ * serta pengambilan jadwal kerja karyawan dari berbagai tingkatan (shift, jadwal rutin, atau default).
+ */
 class TimeValidator
 {
     /**
-     * The workday service instance.
+     * Instance layanan hari kerja.
      */
-    protected WorkdayService $workdayService;
+    protected WorkdayService $workdayService; /**< Layanan untuk mengecek validitas hari kerja */
 
     /**
-     * Create a new validator instance.
+     * Membuat instance validator baru.
+     *
+     * @param WorkdayService $workdayService
      */
     public function __construct(WorkdayService $workdayService)
     {
@@ -28,9 +36,12 @@ class TimeValidator
     }
 
     /**
-     * Validate if the given date is a valid workday for the employee.
+     * Memvalidasi apakah tanggal yang diberikan adalah hari kerja yang valid bagi karyawan.
      *
-     * @throws TimeValidationException
+     * @param Carbon $date Tanggal yang akan divalidasi.
+     * @param Employee|null $employee Objek karyawan (opsional) untuk pengecekan cuti.
+     *
+     * @throws TimeValidationException Jika bukan hari kerja atau sedang cuti penuh.
      */
     public function validateWorkday(Carbon $date, ?Employee $employee = null): void
     {
@@ -47,7 +58,11 @@ class TimeValidator
     }
 
     /**
-     * Get approved leave for the employee on a specific date.
+     * Mengambil data cuti yang telah disetujui untuk karyawan pada tanggal tertentu.
+     *
+     * @param Employee $employee Objek karyawan.
+     * @param Carbon $date Objek tanggal.
+     * @return Leave|null Data cuti jika ditemukan, atau null.
      */
     private function getApprovedLeave(Employee $employee, Carbon $date): ?Leave
     {
@@ -59,9 +74,13 @@ class TimeValidator
     }
 
     /**
-     * Validate the clock-in window and determine attendance status.
+     * Memvalidasi jendela waktu clock-in dan menentukan status kehadiran (tepat waktu, terlambat, atau absen).
      *
-     * @throws AttendanceException
+     * @param Employee $employee Objek karyawan.
+     * @param Carbon $now Waktu saat ini.
+     * @return array Status kehadiran dan detail keterlambatan.
+     *
+     * @throws AttendanceException Jika mencoba clock-in terlalu awal.
      */
     public function validateClockInWindow(Employee $employee, Carbon $now): array
     {
@@ -70,7 +89,7 @@ class TimeValidator
 
         $maxEarlyMinutes = 120;
         if ($now->lt($workStart->copy()->subMinutes($maxEarlyMinutes))) {
-            throw new AttendanceException('Belum waktunya absen.');
+            throw new AttendanceException('It is not time to clock in yet. Work starts at ' . $workStart->format('H:i'));
         }
 
         $lateTolerance = (int) ($times['late_tolerance_minutes'] ?? 10);
@@ -93,7 +112,13 @@ class TimeValidator
     }
 
     /**
-     * Validate the clock-out window and calculate early leave or overtime.
+     * Memvalidasi jendela waktu clock-out dan menghitung menit pulang awal atau lembur.
+     *
+     * @param Employee $employee Objek karyawan.
+     * @param Carbon $now Waktu saat ini.
+     * @return array Detail pulang awal, lembur, dan status persetujuan pulang awal.
+     *
+     * @throws AttendanceException Jika mencoba clock-out sebelum batas minimum (50% durasi kerja) tanpa izin.
      */
     public function validateClockOutWindow(Employee $employee, Carbon $now): array
     {
@@ -139,10 +164,13 @@ class TimeValidator
     }
 
     /**
-     * Ambil jam kerja employee dengan 3-layer fallback:
+     * Mengambil jam kerja karyawan dengan mekanisme 3-layer fallback.
      * 1. Shift override tanggal tertentu
      * 2. WorkSchedule default employee
      * 3. Default setting
+     *
+     * @param Employee $employee Objek karyawan.
+     * @param Carbon $date Objek tanggal.
      */
     public function getEmployeeScheduleTimes(Employee $employee, Carbon $date): array
     {
@@ -159,12 +187,15 @@ class TimeValidator
         if ($activeShift) {
             $shift = $activeShift->shiftTemplate;
 
+            // Get requires_office_location from active schedule if available
+            $activeSchedule = $employee->activeWorkSchedule($dateStr)->first();
+
             return [
                 'label' => $shift->name,
                 'work_start_time' => Carbon::parse($dateStr.' '.$shift->start_time->format('H:i:s')),
                 'work_end_time' => Carbon::parse($dateStr.' '.$shift->end_time->format('H:i:s')),
                 'late_tolerance_minutes' => (int) ($shift->late_tolerance_minutes ?? 10),
-                'requires_office_location' => (bool) ($shift->requires_office_location ?? true),
+                'requires_office_location' => $activeSchedule ? (bool) $activeSchedule->workSchedule->requires_office_location : true,
             ];
         }
 
@@ -199,7 +230,9 @@ class TimeValidator
     }
 
     /**
-     * Get the default late tolerance from system settings.
+     * Mengambil toleransi keterlambatan default dari pengaturan sistem.
+     *
+     * @return int Toleransi keterlambatan dalam menit.
      */
     protected function getDefaultLateTolerance(): int
     {

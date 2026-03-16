@@ -15,9 +15,9 @@ class CreateWorkScheduleRequest extends FormRequest
     }
 
     /**
-     * Get the validation rules that apply to the request.
+     * Mendapatkan aturan validasi yang berlaku untuk request ini.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string> Aturan validasi untuk nama, mode kerja, waktu kerja, waktu istirahat, toleransi keterlambatan, dan lokasi kantor
      */
     public function rules(): array
     {
@@ -26,7 +26,7 @@ class CreateWorkScheduleRequest extends FormRequest
             'work_mode_id' => 'required|exists:work_modes,id',
             'work_start_time' => 'required|date_format:H:i',
             'work_end_time' => 'required|date_format:H:i|after:work_start_time',
-            'break_start_time' => 'nullable|date_format:H:i',
+            'break_start_time' => 'nullable|date_format:H:i|after:work_start_time',
             'break_end_time' => 'nullable|date_format:H:i|after:break_start_time',
             'late_tolerance_minutes' => 'nullable|integer|min:0|max:180',
             'requires_office_location' => 'required|boolean',

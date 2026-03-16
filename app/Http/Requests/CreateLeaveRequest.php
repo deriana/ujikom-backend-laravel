@@ -11,13 +11,28 @@ use Carbon\CarbonPeriod;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Log;
 
-class CreateLeaveRequest extends FormRequest
+/**
+ * Class CreateLeaveRequest
+ *
+ * Request class untuk menangani validasi pengajuan cuti (Leave) karyawan.
+ */
+ class CreateLeaveRequest extends FormRequest
 {
+    /**
+     * Menentukan apakah pengguna memiliki izin untuk membuat request ini.
+     *
+     * @return bool
+     */
     public function authorize()
     {
         return true;
     }
 
+    /**
+     * Mendapatkan aturan validasi yang berlaku untuk request ini.
+     *
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     */
     public function rules(): array
     {
         $rules = [
@@ -30,7 +45,9 @@ class CreateLeaveRequest extends FormRequest
         ];
 
         // Logika Kondisional Role
-        if ($this->user()->hasAnyRole([UserRole::ADMIN, UserRole::HR])) {
+        if ($this->user()->hasRole(UserRole::ADMIN->value)) {
+            $rules['employee_nik'] = ['required', 'exists:employees,nik'];
+        } elseif ($this->user()->hasRole(UserRole::HR->value)) {
             $rules['employee_nik'] = ['sometimes', 'exists:employees,nik'];
         } else {
             $rules['employee_nik'] = ['prohibited'];
@@ -39,6 +56,11 @@ class CreateLeaveRequest extends FormRequest
         return $rules;
     }
 
+    /**
+     * Mengonfigurasi instance validator untuk logika validasi tambahan setelah aturan utama.
+     *
+     * @param \Illuminate\Validation\Validator $validator
+     */
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
@@ -77,7 +99,7 @@ class CreateLeaveRequest extends FormRequest
             $daysRequested = $this->calculateWorkDays(
                 $this->date_start,
                 $this->date_end,
-                $this->is_half_day,
+                (bool) $this->is_half_day,
                 $workdayService
             );
 
@@ -133,7 +155,13 @@ class CreateLeaveRequest extends FormRequest
     }
 
     /**
-     * Menghitung hari kerja (Senin-Jumat)
+     * Menghitung jumlah hari kerja dalam rentang tanggal yang diajukan.
+     *
+     * @param string $start Tanggal mulai
+     * @param string $end Tanggal selesai
+     * @param bool $isHalfDay Status apakah cuti setengah hari
+     * @param WorkdayService $workdayService Service untuk mengecek hari kerja
+     * @return float Jumlah hari kerja yang dihitung
      */
     private function calculateWorkDays(
         string $start,

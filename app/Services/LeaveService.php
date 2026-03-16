@@ -21,22 +21,33 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
+/**
+ * Class LeaveService
+ *
+ * Menangani logika bisnis untuk pengajuan cuti karyawan, termasuk perhitungan hari kerja,
+ * validasi saldo cuti, manajemen persetujuan bertingkat, dan sinkronisasi saldo.
+ */
 class LeaveService
 {
-    protected WorkdayService $workdayService;
+    protected WorkdayService $workdayService; /**< Layanan untuk validasi hari kerja dan hari libur */
 
+    /**
+     * Membuat instance layanan cuti baru.
+     *
+     * @param WorkdayService $workdayService
+     */
     public function __construct(WorkdayService $workdayService)
     {
         $this->workdayService = $workdayService;
     }
 
     /**
-     * Get a list of leave requests with role-based filtering.
+     * Mengambil daftar pengajuan cuti dengan filter berdasarkan peran pengguna.
      *
-     * @param \App\Models\User $user
-     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+     * @param \App\Models\User $user Objek pengguna yang sedang login.
+     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection Koleksi data pengajuan cuti.
      */
-    public function index($user)
+    public function index($user, array $filters = [])
     {
         // 1. Initialize query with necessary relationships
         $query = Leave::with(['employee.user', 'leaveType', 'approvals.approver.user']);
@@ -67,14 +78,24 @@ class LeaveService
             $query->where('employee_id', $user->employee->id);
         }
 
+        // --- FILTER RENTANG TANGGAL ---
+        if (! empty($filters['start_date']) && ! empty($filters['end_date'])) {
+            $query->whereBetween('date_start', [
+                Carbon::parse($filters['start_date'])->startOfDay(),
+                Carbon::parse($filters['end_date'])->endOfDay(),
+            ]);
+        } else {
+            $query->whereDate('date_start', Carbon::today());
+        }
+
         return LeaveResource::collection($query->latest()->get());
     }
 
     /**
-     * Get the authenticated user's leave history.
+     * Mengambil riwayat cuti milik pengguna yang sedang terautentikasi.
      *
-     * @param \App\Models\User $user
-     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+     * @param \App\Models\User $user Objek pengguna.
+     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection Koleksi data riwayat cuti terpaginasi.
      */
     public function myLeaves($user)
     {
@@ -88,10 +109,10 @@ class LeaveService
     }
 
     /**
-     * Get a list of pending leave requests that require approval.
+     * Mengambil daftar pengajuan cuti yang sedang menunggu persetujuan.
      *
-     * @param \App\Models\User $user
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @param \App\Models\User $user Objek pengguna penyetuju.
+     * @return \Illuminate\Database\Eloquent\Collection Koleksi data pengajuan yang tertunda.
      */
     public function indexApprovals($user)
     {
@@ -136,10 +157,10 @@ class LeaveService
     }
 
     /**
-     * Show details of a specific leave request.
+     * Menampilkan detail lengkap dari satu pengajuan cuti tertentu.
      *
-     * @param Leave $leave
-     * @return LeaveDetailResource
+     * @param Leave $leave Objek pengajuan cuti.
+     * @return LeaveDetailResource Resource detail pengajuan cuti.
      */
     public function show(Leave $leave)
     {
@@ -150,12 +171,12 @@ class LeaveService
     }
 
     /**
-     * Store a new leave request.
+     * Menyimpan pengajuan cuti baru ke dalam database.
      *
-     * @param array $data
-     * @param \App\Models\User $user
-     * @return Leave
-     * @throws Exception
+     * @param array $data Data pengajuan (employee_id, leave_type_id, date_start, dll).
+     * @param \App\Models\User $user Objek pengguna yang membuat pengajuan.
+     * @return Leave Objek cuti yang berhasil dibuat.
+     * @throws Exception Jika hari kerja tidak ditemukan, saldo tidak cukup, atau manager tidak ada.
      */
     public function store(array $data, $user)
     {
@@ -294,13 +315,13 @@ class LeaveService
     }
 
     /**
-     * Update an existing leave request.
+     * Memperbarui data pengajuan cuti yang sudah ada.
      *
-     * @param Leave $leave
-     * @param array $data
-     * @param \App\Models\User $user
-     * @return Leave
-     * @throws Exception
+     * @param Leave $leave Objek pengajuan cuti yang akan diperbarui.
+     * @param array $data Data pembaruan.
+     * @param \App\Models\User $user Objek pengguna yang melakukan aksi.
+     * @return Leave Objek cuti setelah diperbarui.
+     * @throws Exception Jika pengajuan sudah diproses atau cuti sudah dimulai/berlalu.
      */
     public function update(Leave $leave, array $data, $user)
     {
@@ -370,14 +391,14 @@ class LeaveService
     }
 
     /**
-     * Process approval or rejection of a leave request.
+     * Memproses persetujuan atau penolakan pengajuan cuti.
      *
-     * @param LeaveApproval $approval
-     * @param \App\Models\User $user
-     * @param bool $approve
-     * @param string|null $note
-     * @return LeaveApproval
-     * @throws Exception
+     * @param LeaveApproval $approval Objek persetujuan cuti.
+     * @param \App\Models\User $user Objek pengguna penyetuju.
+     * @param bool $approve Status persetujuan (true untuk setuju, false untuk tolak).
+     * @param string|null $note Catatan dari penyetuju.
+     * @return LeaveApproval Objek persetujuan yang telah diperbarui.
+     * @throws Exception Jika persetujuan sudah diproses sebelumnya.
      */
     public function approve(LeaveApproval $approval, $user, bool $approve, ?string $note = null)
     {
@@ -490,12 +511,12 @@ class LeaveService
     }
 
     /**
-     * Delete or cancel a leave request.
+     * Menghapus atau membatalkan pengajuan cuti.
      *
-     * @param Leave $leave
-     * @param \App\Models\User $user
-     * @return bool
-     * @throws Exception
+     * @param Leave $leave Objek pengajuan cuti yang akan dihapus.
+     * @param \App\Models\User $user Objek pengguna yang melakukan aksi.
+     * @return bool True jika berhasil dihapus.
+     * @throws Exception Jika status bukan pending atau pengguna tidak memiliki izin.
      */
     public function delete(Leave $leave, $user): bool
     {
@@ -531,13 +552,13 @@ class LeaveService
     }
 
     /**
-     * Calculate actual working days between two dates.
+     * Menghitung jumlah hari kerja aktual di antara dua tanggal.
      *
-     * @param string $start
-     * @param string $end
-     * @param bool $isHalfDay
-     * @param WorkdayService $workdayService
-     * @return float
+     * @param string $start Tanggal mulai.
+     * @param string $end Tanggal berakhir.
+     * @param bool $isHalfDay Status apakah cuti setengah hari.
+     * @param WorkdayService $workdayService Layanan validasi hari kerja.
+     * @return float Jumlah hari kerja dalam format desimal.
      */
     private function calculateWorkDays(string $start, string $end, bool $isHalfDay, WorkdayService $workdayService): float
     {
@@ -568,10 +589,10 @@ class LeaveService
     }
 
     /**
-     * Finalize leave: Create realization record and deduct balance.
+     * Memfinalisasi cuti: Membuat catatan realisasi dan memotong saldo cuti.
      *
-     * @param Leave $leave
-     * @param float $days
+     * @param Leave $leave Objek cuti yang disetujui.
+     * @param float $days Jumlah hari yang diambil.
      */
     private function finalizeLeave($leave, $days)
     {
@@ -592,19 +613,29 @@ class LeaveService
             'year' => \Carbon\Carbon::parse($leave->date_start)->year,
         ])->first();
 
-        if ($balance) {
-            $balance->useDays($days);
+        $isUnlimited = $leave->leaveType->is_unlimited ?? false;
+
+        if (!$isUnlimited) {
+            $balance = EmployeeLeaveBalance::where([
+                'employee_id' => $leave->employee_id,
+                'leave_type_id' => $leave->leave_type_id,
+                'year' => \Carbon\Carbon::parse($leave->date_start)->year,
+            ])->first();
+
+            if ($balance) {
+                $balance->useDays($days);
+            }
         }
     }
 
     /**
-     * Create an approval record for a leave request.
+     * Membuat catatan persetujuan untuk pengajuan cuti.
      *
-     * @param int $leaveId
-     * @param int $approverId
-     * @param int $level
-     * @param string|null $status
-     * @return LeaveApproval
+     * @param int $leaveId ID pengajuan cuti.
+     * @param int $approverId ID karyawan penyetuju.
+     * @param int $level Tingkat persetujuan (0, 1, dst).
+     * @param string|null $status Status awal persetujuan.
+     * @return LeaveApproval Objek persetujuan yang dibuat.
      */
     private function createApproval($leaveId, $approverId, $level, $status = null)
     {

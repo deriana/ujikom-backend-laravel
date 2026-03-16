@@ -10,13 +10,18 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Laravel\Sanctum\PersonalAccessToken;
 
+/**
+ * Class AuthService
+ *
+ * Menangani logika autentikasi pengguna termasuk registrasi, login, dan logout.
+ */
 class AuthService
 {
     /**
-     * Register a new user and generate an authentication token.
+     * Mendaftarkan pengguna baru dan membuat token autentikasi.
      *
-     * @param array $data
-     * @return array [$user, $token]
+     * @param array $data Data registrasi (name, email, password).
+     * @return array Array berisi objek User dan string token.
      */
     public function register(array $data): array
     {
@@ -36,10 +41,10 @@ class AuthService
     }
 
     /**
-     * Authenticate user credentials and return user profile with token.
+     * Melakukan autentikasi kredensial pengguna dan mengembalikan profil beserta token.
      *
-     * @param array $data
-     * @return array [$user, $token]
+     * @param array $data Data login (email, password).
+     * @return array Array berisi objek User dan string token.
      * @throws DomainException|UserNotVerifiedException
      */
     public function login(array $data): array
@@ -72,10 +77,10 @@ class AuthService
     }
 
     /**
-     * Revoke the user's current access token to perform logout.
+     * Mencabut token akses pengguna saat ini untuk melakukan logout.
      *
-     * @param User $user
-     * @return bool
+     * @param User $user Objek pengguna yang sedang login.
+     * @return bool True jika berhasil logout.
      */
     public function logout(User $user): bool
     {

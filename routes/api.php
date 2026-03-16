@@ -1,7 +1,10 @@
 <?php
 
 use App\Http\Controllers\Api\AllowanceController;
+use App\Http\Controllers\Api\AssessmentCategoryController;
+use App\Http\Controllers\Api\AssessmentController;
 use App\Http\Controllers\Api\AttendanceController;
+use App\Http\Controllers\Api\AttendanceCorrectionController;
 use App\Http\Controllers\Api\AttendanceDetailController;
 use App\Http\Controllers\Api\AttendanceRequestController;
 use App\Http\Controllers\Api\AuthController;
@@ -79,9 +82,11 @@ Route::group(['prefix' => 'auth', 'middleware' => 'throttle:api'], function () {
 
 Route::post('/attendance/bulk-send', [AttendanceController::class, 'bulkAttendance']);
 Route::post('/attendance/single-send', [AttendanceController::class, 'singleAttendance']);
+Route::post('/attendance/manual-send', [AttendanceController::class, 'manualAttendance']);
 route::get('/settings/get/general', [SettingController::class, 'getGeneral']);
 Route::get('/leaves/download-attachment/{filename}', [LeaveController::class, 'downloadAttachment']);
 Route::get('/early_leaves/download-attachment/{filename}', [EarlyLeaveController::class, 'downloadAttachment']);
+Route::get('/attendance_corrections/download-attachment/{filename}', [AttendanceCorrectionController::class, 'downloadAttachment']);
 
 Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::get('/user', function (Request $request) {
@@ -95,6 +100,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::delete('/force-delete/{uuid}', [UserController::class, 'forceDelete']);
         Route::put('terminate-employment/{uuid}', [UserController::class, 'terminateEmployment']);
         Route::put('change-password/{uuid}', [UserController::class, 'changePassword']);
+        Route::put('admin-change-password/{uuid}', [UserController::class, 'adminChangePassword']);
         Route::put('status/{uuid}', [UserController::class, 'status']);
         Route::get('/trashed', [UserController::class, 'getTrashed']);
         Route::post('/upload-profile-photo/{uuid}', [UserController::class, 'uploadProfilePhoto']);
@@ -104,9 +110,11 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::put('/change-password', [UserController::class, 'changePassword']);
         Route::put('/update-biometric', [UserController::class, 'updateBiometricDescriptors']);
         Route::get('/employee-leave-balances', [UserController::class, 'getEmployeeLeaveBalances']);
+        Route::get('/my-leave-balances', [UserController::class, 'getMyLeaveBalances']);
     });
     Route::apiResource('users', UserController::class);
     Route::prefix('divisions')->group(function () {
+        Route::get('/with-teams-and-employees', [DivisionController::class, 'getDivisionsWithTeamsAndEmployees']);
         Route::get('/trashed', [DivisionController::class, 'getTrashed']);
         Route::post('/restore/{uuid}', [DivisionController::class, 'restore']);
         Route::delete('/force-delete/{uuid}', [DivisionController::class, 'forceDelete']);
@@ -133,6 +141,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     });
     Route::get('/attendances/today', [AttendanceController::class, 'attendanceStatusToday']);
     Route::get('/attendances/export', [AttendanceDetailController::class, 'export']);
+    Route::get('/attendances/logs', [AttendanceDetailController::class, 'getLogs']);
     Route::apiResource('attendances', AttendanceDetailController::class)->only('index', 'show');
     Route::apiResource('holidays', HolidayController::class);
     Route::prefix('work_schedules')->group(function () {
@@ -147,13 +156,19 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::delete('/force-delete/{uuid}', [ShiftTemplateController::class, 'forceDelete']);
         Route::get('/trashed', [ShiftTemplateController::class, 'getTrashed']);
     });
+
     Route::apiResource('shift_templates', ShiftTemplateController::class);
     Route::apiResource('employee_shift', EmployeeShiftController::class);
     Route::apiResource('leave_types', LeaveTypeController::class);
+    Route::put('/assessment_category/{assessment_category:uuid}/toggle-status', [AssessmentCategoryController::class, 'toggleStatus']);
+    Route::apiResource('assessment_category', AssessmentCategoryController::class)->except('show');
+    route::get('/assessments/export', [AssessmentController::class, 'export']);
+    Route::apiResource('assessments', AssessmentController::class);
 
     Route::prefix('approvals')->group(function () {
         Route::get('/leaves', [LeaveController::class, 'indexApproval']);
         Route::get('/early_leaves', [EarlyLeaveController::class, 'indexApproval']);
+        Route::get('/attendance_corrections', [AttendanceCorrectionController::class, 'indexApproval']);
         Route::get('/attendance_request', [AttendanceRequestController::class, 'indexApproval']);
         Route::get('/overtime', [OvertimeController::class, 'indexApproval']);
     });
@@ -161,6 +176,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::prefix('leaves')->group(function () {
         Route::get('/', [LeaveController::class, 'index']);
         Route::get('/my-leaves', [LeaveController::class, 'myLeaves']);
+        Route::get('/export', [LeaveController::class, 'export']);
         Route::post('/', [LeaveController::class, 'store']);
         Route::get('/{leave}', [LeaveController::class, 'show']);
         Route::post('/{leave}', [LeaveController::class, 'update']);
@@ -172,6 +188,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::prefix('early_leaves')->group(function () {
         Route::get('/', [EarlyLeaveController::class, 'index']);
         Route::post('/', [EarlyLeaveController::class, 'store']);
+        Route::get('export', [EarlyLeaveController::class, 'export']);
         Route::get('/{early_leave}', [EarlyLeaveController::class, 'show']);
         Route::post('/{early_leave}', [EarlyLeaveController::class, 'update']);
         Route::delete('/{early_leave}', [EarlyLeaveController::class, 'destroy']);
@@ -179,14 +196,26 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         // Route::get('/download-attachment/{filename}', [EarlyLeaveController::class, 'downloadAttachment']);
     });
 
+    Route::prefix('attendance_corrections')->group(function () {
+        Route::get('/', [AttendanceCorrectionController::class, 'index']);
+        Route::post('/', [AttendanceCorrectionController::class, 'store']);
+        Route::get('/{attendance_correction}', [AttendanceCorrectionController::class, 'show']);
+        Route::post('/{attendance_correction}', [AttendanceCorrectionController::class, 'update']);
+        Route::delete('/{attendance_correction}', [AttendanceCorrectionController::class, 'destroy']);
+        Route::put('/approvals/{attendance_correction:uuid}/approve', [AttendanceCorrectionController::class, 'approve']);
+        // Route::get('/download-attachment/{filename}', [EarlyLeaveController::class, 'downloadAttachment']);
+    });
+
     Route::apiResource('attendance_request', AttendanceRequestController::class);
     Route::put('/attendance_request/{attendance_request:uuid}/approve', [AttendanceRequestController::class, 'approve']);
 
+    Route::get('/overtime/export', [OvertimeController::class, 'export']);
     Route::apiResource('overtime', OvertimeController::class);
     Route::put('/overtime/{overtime:uuid}/approve', [OvertimeController::class, 'approve']);
 
     Route::prefix('payrolls')->group(function () {
         Route::get('/', [PayrollController::class, 'index']);
+        Route::get('/export', [PayrollController::class, 'export']);
         Route::get('/{payroll}', [PayrollController::class, 'show']);
         Route::post('/', [PayrollController::class, 'store']);
         Route::put('/{payroll}', [PayrollController::class, 'update']);
@@ -207,4 +236,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
 
     Route::get('/dashboard/admin', [DashboardController::class, 'getAdminDashboard']);
     Route::get('/dashboard/employee', [DashboardController::class, 'getEmployeeDashboard']);
+    Route::get('/mobile-home-data', [DashboardController::class, 'mobileHomePage']);
+    Route::get('/mobile-stats-data', [DashboardController::class, 'mobileStatsPage']);
+    Route::get('/mobile-daily-tracker-data', [DashboardController::class, 'mobileDailyTrackerPage']);
 });
