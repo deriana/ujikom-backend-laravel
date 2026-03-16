@@ -130,6 +130,50 @@ class AttendanceController extends Controller
     }
 
     /**
+     * Menangani permintaan absensi manual (Alternatif jika Face Recognition gagal).
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function manualAttendance(Request $request)
+    {
+        $user = Auth::user();
+
+        if (! $user || ! $user->employee) {
+            return $this->errorResponse('Employee profile not found.', 404);
+        }
+
+        $request->validate([
+            'reason' => 'required|string|max:255',
+            'attachment' => 'required|image|max:5120',
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
+        ]);
+
+        $payload = [
+            'reason' => $request->reason,
+            'attachment' => $request->file('attachment'),
+            'latitude' => $request->latitude,
+            'longitude' => $request->longitude,
+        ];
+
+        $result = $this->attendanceService->executeProcessManual(
+            $user->employee,
+            $payload,
+            $request->header('User-Agent')
+        );
+
+        if (! $result['success']) {
+            return $this->errorResponse($result['message'], 422);
+        }
+
+        return $this->successResponse(
+            $result['data'] ?? null,
+            $result['message']
+        );
+    }
+
+    /**
      * Mengambil status kehadiran karyawan yang sedang login untuk hari ini.
      *
      * @param Request $request
@@ -140,7 +184,7 @@ class AttendanceController extends Controller
         $user = Auth::user();
 
         if (! $user || ! $user->employee) {
-            return $this->errorResponse('Profil karyawan tidak ditemukan.', 404);
+            return $this->errorResponse('Employee profile not found.', 404);
         }
 
         $status = $this->attendanceService->getTodayAttendanceStatus($user->employee);

@@ -82,6 +82,7 @@ Route::group(['prefix' => 'auth', 'middleware' => 'throttle:api'], function () {
 
 Route::post('/attendance/bulk-send', [AttendanceController::class, 'bulkAttendance']);
 Route::post('/attendance/single-send', [AttendanceController::class, 'singleAttendance']);
+Route::post('/attendance/manual-send', [AttendanceController::class, 'manualAttendance']);
 route::get('/settings/get/general', [SettingController::class, 'getGeneral']);
 Route::get('/leaves/download-attachment/{filename}', [LeaveController::class, 'downloadAttachment']);
 Route::get('/early_leaves/download-attachment/{filename}', [EarlyLeaveController::class, 'downloadAttachment']);
@@ -160,6 +161,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::apiResource('leave_types', LeaveTypeController::class);
     Route::put('/assessment_category/{assessment_category:uuid}/toggle-status', [AssessmentCategoryController::class, 'toggleStatus']);
     Route::apiResource('assessment_category', AssessmentCategoryController::class)->except('show');
+    route::get('/assessments/export', [AssessmentController::class, 'export']);
     Route::apiResource('assessments', AssessmentController::class);
 
     Route::prefix('approvals')->group(function () {
@@ -173,6 +175,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::prefix('leaves')->group(function () {
         Route::get('/', [LeaveController::class, 'index']);
         Route::get('/my-leaves', [LeaveController::class, 'myLeaves']);
+        Route::get('/export', [LeaveController::class, 'export']);
         Route::post('/', [LeaveController::class, 'store']);
         Route::get('/{leave}', [LeaveController::class, 'show']);
         Route::post('/{leave}', [LeaveController::class, 'update']);
@@ -184,6 +187,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::prefix('early_leaves')->group(function () {
         Route::get('/', [EarlyLeaveController::class, 'index']);
         Route::post('/', [EarlyLeaveController::class, 'store']);
+        Route::get('export', [EarlyLeaveController::class, 'export']);
         Route::get('/{early_leave}', [EarlyLeaveController::class, 'show']);
         Route::post('/{early_leave}', [EarlyLeaveController::class, 'update']);
         Route::delete('/{early_leave}', [EarlyLeaveController::class, 'destroy']);
@@ -204,11 +208,13 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::apiResource('attendance_request', AttendanceRequestController::class);
     Route::put('/attendance_request/{attendance_request:uuid}/approve', [AttendanceRequestController::class, 'approve']);
 
+    Route::get('/overtime/export', [OvertimeController::class, 'export']);
     Route::apiResource('overtime', OvertimeController::class);
     Route::put('/overtime/{overtime:uuid}/approve', [OvertimeController::class, 'approve']);
 
     Route::prefix('payrolls')->group(function () {
         Route::get('/', [PayrollController::class, 'index']);
+        Route::get('/export', [PayrollController::class, 'export']);
         Route::get('/{payroll}', [PayrollController::class, 'show']);
         Route::post('/', [PayrollController::class, 'store']);
         Route::put('/{payroll}', [PayrollController::class, 'update']);

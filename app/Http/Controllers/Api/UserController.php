@@ -11,6 +11,7 @@ use App\Http\Resources\EmployeeLiteResources;
 use App\Http\Resources\ManagerResource;
 use App\Http\Resources\UserDetailResource;
 use App\Http\Resources\UserResource;
+use App\Jobs\GenerateEmployeeProfilePdf;
 use App\Models\User;
 use App\Services\UserService;
 use Illuminate\Http\JsonResponse;
@@ -403,4 +404,14 @@ class UserController extends Controller
             'My leave balances fetched successfully'
         );
     }
+
+    public function generatePdf(User $user)
+{
+    // Dispatch job ke antrian
+    GenerateEmployeeProfilePdf::dispatch($user);
+
+    return response()->json([
+        'message' => 'The PDF report is being processed'
+    ], 202);
+}
 }

@@ -31,6 +31,14 @@ class SettingSeeder extends Seeder
                 'late_tolerance_minutes' => 10,
                 'work_start_time' => '09:00',
                 'work_end_time' => '17:00',
+                'work_hour_target' => 8,
+            ]]
+        );
+
+        Setting::updateOrCreate(
+            ['key' => 'payroll'],
+            ['values' => [
+                'payday_date' => 26,
             ]]
         );
 

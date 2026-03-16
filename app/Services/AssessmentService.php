@@ -119,17 +119,20 @@ use Illuminate\Support\Facades\DB;
     public function update(Assessment $assessment, array $data)
     {
         return DB::transaction(function () use ($assessment, $data) {
-            // 1. Update data utama (Note)
-            $assessment->update([
+            $updateData = [
                 'note' => $data['note'] ?? $assessment->note,
-            ]);
+            ];
 
-            // 2. Sync ulang details (Hapus yang lama, buat yang baru)
+            if (isset($data['period'])) {
+                $updateData['period'] = Carbon::parse($data['period'])->startOfMonth()->format('Y-m-d');
+            }
+
+            $assessment->update($updateData);
+
             if (!empty($data['assessment_details'])) {
                 $this->syncDetails($assessment, $data['assessment_details']);
             }
 
-            // 3. Send notification
             $assessment->notifyCustom(
                 title: 'Assessment Updated',
                 message: 'The performance assessment for period '.Carbon::parse($assessment->period)->format('M Y').' has been updated.'

@@ -265,34 +265,38 @@ class AttendanceCorrectionService
                 $requestedIn = $correction->clock_in_requested ? Carbon::parse($correction->clock_in_requested) : null;
                 $requestedOut = $correction->clock_out_requested ? Carbon::parse($correction->clock_out_requested) : null;
 
+                // Gunakan jam baru dari koreksi, atau tetap gunakan jam lama jika koreksi tidak menyertakan jam tersebut
+                $finalClockIn = $requestedIn ?? $attendance->clock_in;
+                $finalClockOut = $requestedOut ?? $attendance->clock_out;
+
+                // --- Rekalkulasi berdasarkan $finalClockIn & $finalClockOut ---
                 $lateMinutes = 0;
-                if ($requestedIn && $requestedIn->greaterThan($schedule['work_start_time'])) {
-                    $diffIn = $requestedIn->diffInMinutes($schedule['work_start_time']);
+                if ($finalClockIn && $finalClockIn->greaterThan($schedule['work_start_time'])) {
+                    $diffIn = $finalClockIn->diffInMinutes($schedule['work_start_time']);
                     if ($diffIn > $schedule['late_tolerance_minutes']) {
                         $lateMinutes = $diffIn;
                     }
                 }
 
                 $earlyLeaveMinutes = 0;
-                if ($requestedOut && $requestedOut->lessThan($schedule['work_end_time'])) {
-                    $earlyLeaveMinutes = $requestedOut->diffInMinutes($schedule['work_end_time']);
+                if ($finalClockOut && $finalClockOut->lessThan($schedule['work_end_time'])) {
+                    $earlyLeaveMinutes = $finalClockOut->diffInMinutes($schedule['work_end_time']);
                 }
 
                 $workMinutes = 0;
-                if ($requestedIn && $requestedOut) {
-                    $workMinutes = $requestedIn->diffInMinutes($requestedOut);
+                if ($finalClockIn && $finalClockOut) {
+                    $workMinutes = $finalClockIn->diffInMinutes($finalClockOut);
                 }
 
-                $newStatus = 'present';
-
                 $attendance->update([
-                    'clock_in' => $requestedIn,
-                    'clock_out' => $requestedOut,
+                    'clock_in' => $finalClockIn,
+                    'clock_out' => $finalClockOut,
                     'late_minutes' => $lateMinutes,
                     'early_leave_minutes' => $earlyLeaveMinutes,
                     'work_minutes' => $workMinutes,
                     'is_corrected' => true,
-                    'status' => $newStatus,
+                    'input_type' => 'manual',
+                    'status' => 'present',
                 ]);
             }
             // 5. Kirim notifikasi ke karyawan

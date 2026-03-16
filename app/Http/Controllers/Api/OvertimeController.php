@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exports\OvertimeExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CreateOvertimeRequest;
 use App\Http\Requests\UpdateOvertimeRequest;
@@ -9,8 +10,10 @@ use App\Http\Resources\OvertimeDetailResource;
 use App\Http\Resources\OvertimeResource;
 use App\Models\Overtime;
 use App\Services\OvertimeService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
 /**
@@ -38,9 +41,11 @@ class OvertimeController extends Controller
      *
      * @return \Symfony\Component\HttpFoundation\JsonResponse
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $overtimes = $this->overtimeService->index(Auth::user());
+        $filters = $request->only(['start_date', 'end_date']);
+
+        $overtimes = $this->overtimeService->index(Auth::user(), $filters);
 
         return $this->successResponse(
             OvertimeResource::collection($overtimes),
@@ -163,6 +168,39 @@ class OvertimeController extends Controller
         return $this->successResponse(
             new OvertimeResource($updated),
             $request->input('approve') ? 'Overtime approved successfully' : 'Overtime rejected successfully'
+        );
+    }
+
+    public function export(Request $request)
+    {
+        $this->authorize('export', Overtime::class);
+
+        $validated = $request->validate([
+            'start_date' => ['nullable', 'date'],
+            'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
+        ]);
+
+
+        $start = isset($validated['start_date'])
+            ? Carbon::parse($validated['start_date'])
+            : now()->startOfDay();
+
+        $end = isset($validated['end_date'])
+            ? Carbon::parse($validated['end_date'])
+            : now()->endOfDay();
+
+        // if ($start->diffInDays($end) > 31) {
+        //     throw ValidationException::withMessages([
+        //         'end_date' => 'Maximum export range is 31 days.',
+        //     ]);
+        // }
+
+        $fileName = 'overtimes_' . $start->format('Y-m-d') . '_to_' . $end->format('Y-m-d') . '.xlsx';
+        // Log::info($fileName);
+
+        return Excel::download(
+            new OvertimeExport($validated),
+            $fileName
         );
     }
 }

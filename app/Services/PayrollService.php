@@ -26,9 +26,10 @@ class PayrollService
     /**
      * Mengambil daftar data payroll berdasarkan peran pengguna yang sedang login.
      *
+     * @param array $filters Filter pencarian (month).
      * @return \Illuminate\Database\Eloquent\Collection
      */
-    public function index()
+    public function index(array $filters = [])
     {
         // 1. Identify the current user and their employee profile
         $user = Auth::user();
@@ -58,6 +59,18 @@ class PayrollService
         } else {
             return response()->json([], 200);
         }
+
+        // 4. Filter by month (Default to current month)
+        $monthFilter = !empty($filters['month']) ? $filters['month'] : Carbon::now()->format('Y-m');
+
+        try {
+            $date = Carbon::parse($monthFilter);
+        } catch (\Exception $e) {
+            $date = Carbon::now();
+        }
+
+        $query->whereMonth('period_start', $date->month)
+              ->whereYear('period_start', $date->year);
 
         return $query->get();
     }

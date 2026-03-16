@@ -165,6 +165,84 @@ class AttendanceControllerTest extends TestCase
     }
 
     /** @test */
+    public function it_handles_successful_manual_attendance()
+    {
+        // Arrange
+        $user = User::factory()->create();
+        $employee = Employee::factory()->create(['user_id' => $user->id]);
+        Sanctum::actingAs($user, ['*']);
+
+        $this->mock(AttendanceService::class, function (MockInterface $mock) use ($employee) {
+            $mock->shouldReceive('executeProcessManual')
+                ->once()
+                ->withArgs(function ($emp, $payload, $userAgent) use ($employee) {
+                    return $emp->id === $employee->id &&
+                           $payload['reason'] === 'Camera broken' &&
+                           $payload['latitude'] == -6.200 &&
+                           $payload['attachment'] instanceof UploadedFile;
+                })
+                ->andReturn([
+                    'success' => true,
+                    'message' => 'Manual attendance submitted',
+                    'data' => ['id' => 1, 'type' => 'manual']
+                ]);
+        });
+
+        $payload = [
+            'reason' => 'Camera broken',
+            'latitude' => -6.200,
+            'longitude' => 106.816,
+            'attachment' => UploadedFile::fake()->image('proof.jpg'),
+        ];
+
+        // Act
+        $response = $this->postJson('/api/attendance/manual-send', $payload);
+
+        // Assert
+        $response->assertStatus(200)
+            ->assertJson([
+                'status' => 'success',
+                'message' => 'Manual attendance submitted',
+                'data' => ['id' => 1, 'type' => 'manual']
+            ]);
+    }
+
+    /** @test */
+    public function it_handles_failed_manual_attendance_service_response()
+    {
+        // Arrange
+        $user = User::factory()->create();
+        Employee::factory()->create(['user_id' => $user->id]);
+        Sanctum::actingAs($user, ['*']);
+
+        $this->mock(AttendanceService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('executeProcessManual')
+                ->once()
+                ->andReturn([
+                    'success' => false,
+                    'message' => 'You have already clocked in today',
+                ]);
+        });
+
+        $payload = [
+            'reason' => 'Camera broken',
+            'latitude' => -6.200,
+            'longitude' => 106.816,
+            'attachment' => UploadedFile::fake()->image('proof.jpg'),
+        ];
+
+        // Act
+        $response = $this->postJson('/api/attendance/manual-send', $payload);
+
+        // Assert
+        $response->assertStatus(422)
+            ->assertJson([
+                'status' => 'error',
+                'message' => 'You have already clocked in today',
+            ]);
+    }
+
+    /** @test */
     public function it_gets_attendance_status_today_for_authenticated_employee()
     {
         // Arrange
@@ -217,7 +295,7 @@ class AttendanceControllerTest extends TestCase
         $response->assertStatus(404)
             ->assertJson([
                 'status' => 'error',
-                'message' => 'Profil karyawan tidak ditemukan.'
+                'message' => 'Employee profile not found.'
             ]);
     }
 }

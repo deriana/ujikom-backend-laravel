@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\ApprovalStatus;
 use App\Exceptions\Attendance\AttendanceException;
 use App\Models\Attendance;
+use App\Models\AttendanceCorrection;
 use App\Models\EarlyLeave;
 use App\Services\Attendance\Internal\AttendanceLogger;
 use App\Services\Attendance\Internal\AttendanceUploader;
@@ -13,9 +14,11 @@ use App\Services\Attendance\Validators\GeoFenceValidator;
 use App\Services\Attendance\Validators\TimeValidator;
 use Carbon\Carbon;
 use Exception;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 /**
  * Class AttendanceService
@@ -28,12 +31,12 @@ class AttendanceService
     /**
      * Membuat instance layanan kehadiran baru dengan dependensi yang diperlukan.
      *
-     * @param FaceValidator $faceValidator Validator pengenalan wajah.
-     * @param GeoFenceValidator $geoValidator Validator radius lokasi kantor.
-     * @param TimeValidator $timeValidator Validator jendela waktu kerja.
-     * @param AttendanceUploader $uploader Pengunggah foto kehadiran.
-     * @param AttendanceLogger $logger Pencatat log aktivitas kehadiran.
-     * @param OvertimeService $overtimeService Layanan manajemen lembur.
+     * @param  FaceValidator  $faceValidator  Validator pengenalan wajah.
+     * @param  GeoFenceValidator  $geoValidator  Validator radius lokasi kantor.
+     * @param  TimeValidator  $timeValidator  Validator jendela waktu kerja.
+     * @param  AttendanceUploader  $uploader  Pengunggah foto kehadiran.
+     * @param  AttendanceLogger  $logger  Pencatat log aktivitas kehadiran.
+     * @param  OvertimeService  $overtimeService  Layanan manajemen lembur.
      */
     public function __construct(
         protected FaceValidator $faceValidator, /**< Validator untuk verifikasi biometrik wajah */
@@ -47,8 +50,8 @@ class AttendanceService
     /**
      * Menangani permintaan kehadiran tunggal untuk pengguna yang terautentikasi.
      *
-     * @param array $data Data input (descriptor wajah, koordinat, foto).
-     * @param string $userAgent Informasi browser/perangkat pengguna.
+     * @param  array  $data  Data input (descriptor wajah, koordinat, foto).
+     * @param  string  $userAgent  Informasi browser/perangkat pengguna.
      * @return array Status keberhasilan dan pesan respon.
      */
     public function handleAttendance(array $data, string $userAgent): array
@@ -79,10 +82,10 @@ class AttendanceService
     /**
      * Memproses logika clock-in (masuk) untuk catatan kehadiran.
      *
-     * @param Attendance $attendance Objek model kehadiran.
-     * @param Carbon $now Waktu saat ini.
-     * @param array $data Data tambahan (koordinat).
-     * @param string|null $photoPath Path foto yang diunggah.
+     * @param  Attendance  $attendance  Objek model kehadiran.
+     * @param  Carbon  $now  Waktu saat ini.
+     * @param  array  $data  Data tambahan (koordinat).
+     * @param  string|null  $photoPath  Path foto yang diunggah.
      */
     protected function processClockIn(Attendance $attendance, Carbon $now, array $data, ?string $photoPath): void
     {
@@ -114,10 +117,10 @@ class AttendanceService
     /**
      * Memproses logika clock-out (pulang) untuk catatan kehadiran.
      *
-     * @param Attendance $attendance Objek model kehadiran.
-     * @param Carbon $now Waktu saat ini.
-     * @param array $data Data tambahan (koordinat).
-     * @param string|null $photoPath Path foto yang diunggah.
+     * @param  Attendance  $attendance  Objek model kehadiran.
+     * @param  Carbon  $now  Waktu saat ini.
+     * @param  array  $data  Data tambahan (koordinat).
+     * @param  string|null  $photoPath  Path foto yang diunggah.
      */
     protected function processClockOut(Attendance $attendance, Carbon $now, array $data, ?string $photoPath): void
     {
@@ -165,8 +168,8 @@ class AttendanceService
     /**
      * Menangani permintaan kehadiran massal (misalnya dari terminal bersama).
      *
-     * @param array $data Array berisi daftar data kehadiran.
-     * @param string $userAgent Informasi perangkat.
+     * @param  array  $data  Array berisi daftar data kehadiran.
+     * @param  string  $userAgent  Informasi perangkat.
      * @return array Ringkasan jumlah berhasil dan gagal beserta detailnya.
      */
     public function handleBulkAttendance(array $data, string $userAgent): array
@@ -201,38 +204,54 @@ class AttendanceService
     }
 
     /**
+     * Menjalankan validasi aturan umum kehadiran sebelum pemrosesan data.
+     *
+     * @param  mixed  $employee  Objek karyawan yang teridentifikasi.
+     * @param  Carbon  $date  Tanggal kehadiran.
+     * @param  float|null  $latitude  Koordinat lintang.
+     * @param  float|null  $longitude  Koordinat bujur.
+     * @return array Hasil pemrosesan.
+     */
+    protected function validateCommonRules($employee, $date, $latitude, $longitude)
+    {
+        $user = $employee->user;
+
+        // 1. Cek Role (Director/Owner tidak perlu absen)
+        if ($user->hasRole([\App\Enums\UserRole::DIRECTOR->value, \App\Enums\UserRole::OWNER->value])) {
+            throw new AttendanceException('This position is exempt from daily attendance.');
+        }
+
+        // 2. Validasi Hari Kerja & Jadwal
+        $this->timeValidator->validateWorkday($date, $employee);
+        $scheduleTimes = $this->timeValidator->getEmployeeScheduleTimes($employee, $date);
+
+        // 3. Validasi Geolocation
+        $this->geoValidator->validate(
+            (float) ($latitude ?? 0),
+            (float) ($longitude ?? 0),
+            (bool) $scheduleTimes['requires_office_location']
+        );
+    }
+
+    /**
      * Menjalankan logika inti pemrosesan kehadiran di dalam transaksi database.
      *
-     * @param mixed $employee Objek karyawan yang teridentifikasi.
-     * @param float $score Skor kemiripan wajah.
-     * @param array $data Data input kehadiran.
-     * @param string $userAgent Informasi perangkat.
+     * @param  mixed  $employee  Objek karyawan yang teridentifikasi.
+     * @param  float  $score  Skor kemiripan wajah.
+     * @param  array  $data  Data input kehadiran.
+     * @param  string  $userAgent  Informasi perangkat.
      * @return array Hasil pemrosesan.
      */
     protected function executeProcess($employee, $score, array $data, string $userAgent): array
     {
         DB::beginTransaction();
         try {
-            $user = $employee->user;
-
-            // 1. Check if the user's role is exempt from daily attendance
-            if ($user->hasRole([\App\Enums\UserRole::DIRECTOR->value, \App\Enums\UserRole::OWNER->value])) {
-                throw new AttendanceException('This position is exempt from daily attendance.');
-            }
-
-            // 2. Validate geographical location and workday status
             $today = Carbon::today();
-            $this->timeValidator->validateWorkday($today, $employee);
-            $scheduleTimes = $this->timeValidator->getEmployeeScheduleTimes($employee, $today);
-            $isRequired = $scheduleTimes['requires_office_location'];
 
-            $this->geoValidator->validate(
-                (float) ($data['latitude'] ?? 0),
-                (float) ($data['longitude'] ?? 0),
-                (bool) $isRequired
-            );
+            // Validation
+            $this->validateCommonRules($employee, $today, $data['latitude'] ?? 0, $data['longitude'] ?? 0);
 
-            // 3. Retrieve or create the attendance record for today
+            // Retrieve or create the attendance record for today
             $attendance = Attendance::firstOrCreate(['employee_id' => $employee->id, 'date' => $today], ['status' => 'present']);
             $now = Carbon::now();
             $photoPath = isset($data['photo']) ? $this->uploader->upload($data['photo'], $employee->id, $today) : null;
@@ -240,7 +259,7 @@ class AttendanceService
             $resultMessage = 'Already completed attendance for today';
 
             $actionType = null;
-            // 4. Determine whether to process Clock-In or Clock-Out
+            // Determine whether to process Clock-In or Clock-Out
             if (! $attendance->clock_in) {
                 $actionType = 'clock_in';
                 $this->processClockIn($attendance, $now, $data, $photoPath);
@@ -253,7 +272,7 @@ class AttendanceService
                 throw new AttendanceException('You have already clocked in and out today.');
             }
 
-            // 5. Log the successful action and commit the transaction
+            // Log the successful action and commit the transaction
             $this->logger->logSuccess($actionType, [
                 'employee_id' => $employee->id,
                 'employee_nik' => $employee->nik,
@@ -292,9 +311,82 @@ class AttendanceService
     }
 
     /**
+     * Memproses permintaan kehadiran manual ketika verifikasi biometrik gagal.
+     * Ini akan membuat permintaan koreksi yang memerlukan persetujuan administratif.
+     *
+     * @param  mixed  $employee  Objek karyawan yang teridentifikasi.
+     * @param  array  $data  Data input (koordinat, alasan, lampiran).
+     * @param  string  $userAgent  Informasi perangkat pengguna.
+     * @return array Hasil dari proses manual.
+     */
+    public function executeProcessManual($employee, array $data, string $userAgent): array
+    {
+        DB::beginTransaction();
+        try {
+            $today = Carbon::today();
+            $now = Carbon::now();
+
+            // 1. Perform standard attendance rule validation
+            // $this->validateCommonRules($employee, $today, $data['latitude'], $data['longitude']);
+
+            // 2. Retrieve or initialize today's attendance record
+            $attendance = Attendance::firstOrCreate(
+                ['employee_id' => $employee->id, 'date' => $today],
+                ['status' => 'present']
+            );
+
+            $isClockIn = false;
+            $isClockOut = false;
+
+            if (! $attendance->clock_in) {
+                $isClockIn = true;
+            } elseif (! $attendance->clock_out) {
+                $isClockOut = true;
+            } else {
+                throw new AttendanceException('You have already completed your attendance for today.');
+            }
+
+            // 3. Upload supporting evidence (e.g., photo of camera issue)
+            $attachmentPath = null;
+            if (! empty($data['attachment']) && $data['attachment'] instanceof UploadedFile) {
+                $filename = Str::uuid().'.'.$data['attachment']->getClientOriginalExtension();
+                $attachmentPath = $data['attachment']->storeAs('private/attendance_corrections', $filename);
+            }
+
+            // 4. Create a correction request
+            $correction = AttendanceCorrection::create([
+                'attendance_id' => $attendance->id,
+                'employee_id' => $employee->id,
+                'clock_in_requested' => $isClockIn ? $now : null,
+                'clock_out_requested' => $isClockOut ? $now : null,
+                'reason' => $data['reason'],
+                'attachment' => $attachmentPath,
+                'status' => ApprovalStatus::PENDING->value, // Pending
+            ]);
+
+            DB::commit();
+
+            return [
+                'success' => true,
+                'message' => ($isClockIn ? 'Clock-in' : 'Clock-out').' manual request submitted.',
+                'data' => $correction,
+            ];
+
+        } catch (AttendanceException $e) {
+            DB::rollBack();
+
+            return ['success' => false, 'message' => $e->getMessage()];
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return ['success' => false, 'message' => 'A system error occurred.'];
+        }
+    }
+
+    /**
      * Mengurai deskriptor wajah mentah menjadi array.
      *
-     * @param mixed $raw Data deskriptor (array atau string JSON).
+     * @param  mixed  $raw  Data deskriptor (array atau string JSON).
      * @return array Deskriptor dalam format array.
      */
     protected function parseDescriptor($raw): array
@@ -305,7 +397,7 @@ class AttendanceService
     /**
      * Mendapatkan string status kehadiran karyawan untuk hari ini.
      *
-     * @param mixed $employee Objek karyawan.
+     * @param  mixed  $employee  Objek karyawan.
      * @return string Status (absent, clocked_in, completed).
      */
     public function getTodayAttendanceStatus($employee): string

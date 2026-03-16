@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exports\LeaveExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CreateLeaveRequest;
 use App\Http\Requests\UpdateLeaveRequest;
@@ -9,10 +10,12 @@ use App\Http\Resources\LeaveResource;
 use App\Models\Leave;
 use App\Models\LeaveApproval;
 use App\Services\LeaveService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
 /**
@@ -40,9 +43,11 @@ class LeaveController extends Controller
      *
      * @return \Symfony\Component\HttpFoundation\JsonResponse
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $leaves = $this->leaveService->index(Auth::user());
+        $filters = $request->only(['start_date', 'end_date']);
+
+        $leaves = $this->leaveService->index(Auth::user(), $filters);
 
         return $this->successResponse(
             $leaves,
@@ -205,5 +210,38 @@ class LeaveController extends Controller
         }
 
         return Storage::download($path);
+    }
+
+    public function export(Request $request)
+    {
+        $this->authorize('export', Leave::class);
+
+        $validated = $request->validate([
+            'start_date' => ['nullable', 'date'],
+            'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
+        ]);
+
+
+        $start = isset($validated['start_date'])
+            ? Carbon::parse($validated['start_date'])
+            : now()->startOfDay();
+
+        $end = isset($validated['end_date'])
+            ? Carbon::parse($validated['end_date'])
+            : now()->endOfDay();
+
+        // if ($start->diffInDays($end) > 31) {
+        //     throw ValidationException::withMessages([
+        //         'end_date' => 'Maximum export range is 31 days.',
+        //     ]);
+        // }
+
+        $fileName = 'leaves_' . $start->format('Y-m-d') . '_to_' . $end->format('Y-m-d') . '.xlsx';
+        // Log::info($fileName);
+
+        return Excel::download(
+            new LeaveExport($validated),
+            $fileName
+        );
     }
 }

@@ -20,6 +20,8 @@ return new class extends Migration
             $table->dateTime('clock_in')->nullable();
             $table->dateTime('clock_out')->nullable();
 
+            $table->enum('input_type', ['system', 'manual'])->default('system');
+
             $table->integer('late_minutes')->default(0);
             $table->integer('early_leave_minutes')->default(0);
             $table->boolean('is_early_leave_approved')->default(false);
@@ -34,7 +36,7 @@ return new class extends Migration
             $table->decimal('latitude_out', 10, 7)->nullable();
             $table->decimal('longitude_out', 10, 7)->nullable();
 
-            $table->boolean('is_corrected')->default(false); 
+            $table->boolean('is_corrected')->default(false);
 
             $table->timestamps();
 

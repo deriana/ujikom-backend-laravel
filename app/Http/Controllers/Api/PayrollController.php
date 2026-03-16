@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exports\PayrollExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CreatePayrollRequest;
 use App\Http\Requests\UpdatePayrollRequest;
@@ -9,10 +10,12 @@ use App\Http\Resources\PayrollDetailResource;
 use App\Http\Resources\PayrollResource;
 use App\Models\Payroll;
 use App\Services\PayrollService;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Maatwebsite\Excel\Facades\Excel;
 
 /**
  * Class PayrollController
@@ -40,11 +43,13 @@ class PayrollController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         $this->authorize('viewAny', Payroll::class);
 
-        $payrolls = $this->payrollService->index();
+        $filters = $request->only(['month']);
+
+        $payrolls = $this->payrollService->index($filters);
 
         return $this->successResponse(
             PayrollResource::collection($payrolls),
@@ -204,5 +209,28 @@ class PayrollController extends Controller
         }
 
         return Storage::download($payroll->slip_path);
+    }
+
+    public function export(Request $request)
+    {
+        $this->authorize('export', Payroll::class);
+
+        $validated = $request->validate([
+            'month' => ['required', 'date_format:Y-m'],
+        ]);
+
+        $date = Carbon::parse($validated['month']);
+        $start = $date->copy()->startOfMonth();
+        $end = $date->copy()->endOfMonth();
+
+        $fileName = 'payroll_report_' . $start->format('Y-m') . '.xlsx';
+
+        return Excel::download(
+            new PayrollExport([
+                'start_date' => $start->toDateString(),
+                'end_date' => $end->toDateString(),
+            ]),
+            $fileName
+        );
     }
 }

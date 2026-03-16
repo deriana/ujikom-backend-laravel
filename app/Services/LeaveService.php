@@ -47,7 +47,7 @@ class LeaveService
      * @param \App\Models\User $user Objek pengguna yang sedang login.
      * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection Koleksi data pengajuan cuti.
      */
-    public function index($user)
+    public function index($user, array $filters = [])
     {
         // 1. Initialize query with necessary relationships
         $query = Leave::with(['employee.user', 'leaveType', 'approvals.approver.user']);
@@ -76,6 +76,16 @@ class LeaveService
         // 4. Employee -> Can only see their own requests
         else {
             $query->where('employee_id', $user->employee->id);
+        }
+
+        // --- FILTER RENTANG TANGGAL ---
+        if (! empty($filters['start_date']) && ! empty($filters['end_date'])) {
+            $query->whereBetween('date_start', [
+                Carbon::parse($filters['start_date'])->startOfDay(),
+                Carbon::parse($filters['end_date'])->endOfDay(),
+            ]);
+        } else {
+            $query->whereDate('date_start', Carbon::today());
         }
 
         return LeaveResource::collection($query->latest()->get());

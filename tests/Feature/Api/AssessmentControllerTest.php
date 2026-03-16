@@ -16,35 +16,32 @@ class AssessmentControllerTest extends TestCase
 
     protected User $admin;
     protected User $employeeUser;
-    protected User $hr;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        // 1. Create Roles (Ensure guard is 'api')
-        $adminRole = Role::findOrCreate('admin', 'api');
-        $employeeRole = Role::findOrCreate('employee', 'api');
-        $hrRole = Role::findOrCreate('hr', 'api');
+        // 1. Setup Roles
+        Role::findOrCreate('admin', 'api');
+        Role::findOrCreate('employee', 'api');
+        Role::findOrCreate('hr', 'api');
 
-        // 2. Create Users
+        // 2. Create Admin User (Tanpa profil Employee untuk simulasi case real)
         $this->admin = User::factory()->create();
+        $this->admin->assignRole('admin');
+
+        // 3. Create Target Employee (Yang akan dinilai)
         $this->employeeUser = User::factory()->create();
-        $this->hr = User::factory()->create();
+        $this->employeeUser->assignRole('employee');
+        Employee::factory()->create(['user_id' => $this->employeeUser->id]);
 
-        // 3. Assign Roles
-        $this->admin->assignRole($adminRole);
-        $this->employeeUser->assignRole($employeeRole);
-        $this->hr->assignRole($hrRole);
-
-        // 4. Clear Spatie permission cache
         $this->app->make(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
     }
 
     /** @test */
     public function it_can_list_assessments_as_admin()
     {
-        Assessment::factory()->count(3)->create();
+        Assessment::factory()->count(3)->create(['period' => '2025-01-01']);
 
         Sanctum::actingAs($this->admin, ['*']);
 
@@ -55,40 +52,39 @@ class AssessmentControllerTest extends TestCase
     }
 
     /** @test */
-    public function it_can_create_a_new_assessment()
+    public function it_can_create_a_new_assessment_even_if_admin_has_no_employee_profile()
     {
         Sanctum::actingAs($this->admin, ['*']);
 
-        // Kita buat data dummy tapi tidak disimpan ke DB (make)
-        $assessment = Assessment::factory()->make();
+        // Employee yang dinilai
+        $evaluatee = Employee::factory()->create();
 
-        // Sesuaikan payload dengan key yang diharapkan Controller (menggunakan NIK)
         $payload = [
-            'evaluator_nik' => Employee::find($assessment->evaluator_id)->nik,
-            'evaluatee_nik' => Employee::find($assessment->evaluatee_id)->nik,
-            'period'        => $assessment->period,
-            'note'          => $assessment->note,
+            'evaluatee_nik' => $evaluatee->nik,
+            'period'        => '2025-04', // Kirim YYYY-MM, biarkan Service yang urus -01
+            'note'          => 'Performance is stable.',
         ];
 
         $response = $this->postJson('/api/assessments', $payload);
 
-        $response->assertStatus(201)
-            ->assertJsonPath('data.period', $payload['period']);
+        $response->assertStatus(201);
 
+        // Pastikan tersimpan dengan evaluator_id NULL (karena admin tidak punya profil employee)
         $this->assertDatabaseHas('assessments', [
-            'period' => $payload['period'] . '-01',
-            'note'   => $payload['note'],
+            'evaluator_id' => null,
+            'evaluatee_id' => $evaluatee->id,
+            'period'       => '2025-04-01',
+            'note'         => 'Performance is stable.',
         ]);
     }
 
     /** @test */
     public function it_can_show_specific_assessment_details()
     {
-        $assessment = Assessment::factory()->create();
+        $assessment = Assessment::factory()->create(['period' => '2025-01-01']);
 
         Sanctum::actingAs($this->admin, ['*']);
 
-        // MENGGUNAKAN uuid karena getRouteKeyName() di model adalah uuid
         $response = $this->getJson("/api/assessments/{$assessment->uuid}");
 
         $response->assertStatus(200)
@@ -96,36 +92,36 @@ class AssessmentControllerTest extends TestCase
     }
 
     /** @test */
-    public function it_can_update_an_existing_assessment()
+    public function it_can_update_assessment_note_and_period()
     {
-        $assessment = Assessment::factory()->create();
+        $assessment = Assessment::factory()->create(['period' => '2025-01-01']);
 
         Sanctum::actingAs($this->admin, ['*']);
 
         $newData = [
-            'note' => 'Updated feedback note',
-            'period' => '2026-12'
+            'note'   => 'Updated feedback note',
+            'period' => '2026-12-01' // Menguji apakah update period bekerja
         ];
 
-        // MENGGUNAKAN uuid
         $response = $this->putJson("/api/assessments/{$assessment->uuid}", $newData);
 
         $response->assertStatus(200);
 
+        // Verifikasi database untuk memastikan period BERUBAH
         $this->assertDatabaseHas('assessments', [
-            'uuid' => $assessment->uuid,
-            'note' => 'Updated feedback note'
+            'uuid'   => $assessment->uuid,
+            'note'   => 'Updated feedback note',
+            'period' => '2026-12-01'
         ]);
     }
 
     /** @test */
     public function it_can_delete_an_assessment()
     {
-        $assessment = Assessment::factory()->create();
+        $assessment = Assessment::factory()->create(['period' => '2025-01-01']);
 
         Sanctum::actingAs($this->admin, ['*']);
 
-        // MENGGUNAKAN uuid
         $response = $this->deleteJson("/api/assessments/{$assessment->uuid}");
 
         $response->assertStatus(200);

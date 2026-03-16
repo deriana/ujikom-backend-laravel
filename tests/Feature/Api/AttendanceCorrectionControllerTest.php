@@ -52,7 +52,10 @@ class AttendanceCorrectionControllerTest extends TestCase
     {
         Sanctum::actingAs($this->adminUser, ['*']);
 
-        $attendance = \App\Models\Attendance::factory()->create();
+        // Pastikan attendance dibuat untuk employee yang sama dengan yang login
+        $attendance = \App\Models\Attendance::factory()->create([
+            'employee_id' => $this->adminEmployee->id
+        ]);
 
         $payload = [
             'attendance_id' => $attendance->id,

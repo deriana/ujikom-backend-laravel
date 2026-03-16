@@ -379,7 +379,7 @@ class PermissionSeeder extends Seeder
                     'export' => 'attendance-correction.export',
                 ],
                 'roles' => [
-                    UserRole::ADMIN->value => ['index', 'show', 'edit', 'destroy', 'approve', 'export'],
+                    UserRole::ADMIN->value => ['index', 'show', 'create', 'edit', 'destroy', 'approve', 'export'],
                     UserRole::HR->value => ['index', 'show', 'create', 'edit', 'destroy', 'approve', 'export'],
                     UserRole::MANAGER->value => ['index', 'show', 'create', 'edit', 'destroy', 'approve'],
                     UserRole::EMPLOYEE->value => ['index', 'show', 'create', 'edit', 'destroy'],

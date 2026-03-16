@@ -29,7 +29,7 @@ class EarlyLeaveService
      * @param \App\Models\User $user Objek pengguna yang sedang login.
      * @return \Illuminate\Database\Eloquent\Collection Koleksi data pengajuan pulang awal.
      */
-    public function index($user)
+    public function index($user, ?array $filters = null)
     {
         // 1. Initialize query with necessary relationships
         $query = EarlyLeave::with([
@@ -62,6 +62,19 @@ class EarlyLeaveService
         // 4. Employee -> Can only see their own requests
         else {
             $query->where('employee_id', $user->employee->id);
+        }
+
+        if (!empty($filters['start_date']) && !empty($filters['end_date'])) {
+            $query->whereHas('attendance', function ($q) use ($filters) {
+                $q->whereBetween('date', [
+                    Carbon::parse($filters['start_date'])->toDateString(),
+                    Carbon::parse($filters['end_date'])->toDateString(),
+                ]);
+            });
+        } else {
+            $query->whereHas('attendance', function ($q) {
+                $q->whereDate('date', Carbon::today());
+            });
         }
 
         return $query->latest()->get();
