@@ -226,6 +226,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     });
 
     Route::prefix('notifications')->group(function () {
+        Route::post('/subscribe', [NotificationController::class, 'storeSubscription']);
         Route::delete('/delete-all', [NotificationController::class, 'deleteAll']);
         Route::get('/', [NotificationController::class, 'getNotifications']);
         Route::get('/unread', [NotificationController::class, 'getUnreadNotifications']);

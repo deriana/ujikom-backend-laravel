@@ -69,6 +69,7 @@ class GeneratePayrollSlipJob implements ShouldQueue
             $pdf = Pdf::loadView('pdf.payroll-slip', [
                 'data' => $data,
                 'company' => $general,
+                'setting' => $setting
             ]);
 
             $fileName = "slips/{$this->payroll->uuid}.pdf";

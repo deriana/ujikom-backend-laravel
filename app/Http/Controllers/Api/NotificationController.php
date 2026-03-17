@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 /**
@@ -91,5 +92,29 @@ class NotificationController extends Controller
         Auth::user()->notifications()->delete();
 
         return response()->json(['message' => 'All notifications deleted']);
+    }
+
+    /**
+     * Menyimpan atau memperbarui langganan Web Push (PWA) untuk pengguna.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function storeSubscription(Request $request)
+    {
+        $request->validate([
+            'endpoint'    => 'required',
+            'keys.auth'   => 'required',
+            'keys.p256dh' => 'required'
+        ]);
+
+        // Simpan atau update subscription user yang sedang login
+        $request->user()->updatePushSubscription(
+            $request->endpoint,
+            $request->keys['p256dh'],
+            $request->keys['auth']
+        );
+
+        return response()->json(['message' => 'Subscription linked to PWA!']);
     }
 }

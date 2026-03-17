@@ -5,6 +5,8 @@ namespace App\Notifications;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
+use NotificationChannels\WebPush\WebPushMessage;
+use NotificationChannels\WebPush\WebPushChannel;
 
 /**
  * Class CrudActivityNotification
@@ -49,7 +51,23 @@ class CrudActivityNotification extends Notification implements ShouldQueue
      */
     public function via($notifiable)
     {
-        return ['database'];
+        return ['database', WebPushChannel::class];
+    }
+
+    /**
+     * Mendefinisikan representasi Web Push untuk notifikasi.
+     *  
+     * @param mixed $notifiable
+     * @param mixed $notification
+     * @return \NotificationChannels\WebPush\WebPushMessage
+     */
+    public function toWebPush($notifiable, $notification)
+    {
+        return (new WebPushMessage)
+            ->title($this->title)
+            ->icon('/notification-icon.png')
+            ->body($this->message)
+            ->data(['url' => $this->url]);
     }
 
     /**

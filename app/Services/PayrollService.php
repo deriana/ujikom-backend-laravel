@@ -243,6 +243,13 @@ class PayrollService
             // 2. Update status to finalized
             $payroll->finalize();
 
+            // 3. Send notification to the specific employee
+            $payroll->notifyCustom(
+                title: 'Payslip Available',
+                message: "Your payslip for period {$payroll->period_start->format('M Y')} has been finalized and is now available for download.",
+                customUsers: collect([$payroll->employee->user])
+            );
+
             // 3. Send notification
             $payroll->notifyCustom(
                 title: 'Payroll Finalized',
