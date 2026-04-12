@@ -8,6 +8,7 @@ use App\Models\AttendanceCorrection;
 use App\Models\Employee;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 
 class AttendanceCorrectionSeeder extends Seeder
 {
@@ -34,6 +35,7 @@ class AttendanceCorrectionSeeder extends Seeder
             if ($attendance) {
                 // 1. Contoh Data Pending
                 AttendanceCorrection::create([
+                    'uuid' => Str::uuid(),
                     'attendance_id'       => $attendance->id,
                     'employee_id'         => $employee->id,
                     'clock_in_requested'  => Carbon::now()->setHour(8)->setMinute(0),
@@ -45,6 +47,7 @@ class AttendanceCorrectionSeeder extends Seeder
 
                 // 2. Contoh Data Approved
                 AttendanceCorrection::create([
+                    'uuid' => Str::uuid(),
                     'attendance_id'       => $attendance->id,
                     'employee_id'         => $employee->id,
                     'clock_in_requested'  => Carbon::now()->subDay()->setHour(8)->setMinute(15),
