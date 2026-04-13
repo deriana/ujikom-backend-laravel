@@ -133,7 +133,7 @@
             <tr>
                 <td width="50%">
                     @php
-                        $logoMedia = $setting->getFirstMedia('logo');
+                        $logoMedia = isset($setting) ? $setting->getFirstMedia('logo') : null;
                     @endphp
 
                     @if ($logoMedia)
