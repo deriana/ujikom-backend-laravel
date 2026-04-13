@@ -42,7 +42,8 @@ class DatabaseSeeder extends Seeder
             PayrollSeeder::class,
             AssessmentCategorySeeder::class,
             AssessmentSeeder::class,
-            AttendanceCorrectionSeeder::class
+            AttendanceCorrectionSeeder::class,
+            PointSystemSeeder::class,
         ]);
     }
 }
