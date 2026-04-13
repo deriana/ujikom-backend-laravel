@@ -66,8 +66,15 @@ class MarkAbsentEmployees extends Command
                     \App\Enums\UserRole::DIRECTOR->value
                 ]);
             })
-            ->whereDoesntHave('attendances', function ($q) use ($today) {
-                $q->whereDate('date', $today);
+            ->where(function ($query) use ($today) {
+                // Case 1: No attendance record at all
+                $query->whereDoesntHave('attendances', function ($q) use ($today) {
+                    $q->whereDate('date', $today);
+                })
+                // Case 2: Has attendance but forgot to clock out (illegal/missing clock out)
+                ->orWhereHas('attendances', function ($q) use ($today) {
+                    $q->whereDate('date', $today)->whereNull('clock_out');
+                });
             })
             ->whereDoesntHave('leaves', function ($q) use ($today) {
                 $q->where('approval_status', ApprovalStatus::APPROVED->value)
@@ -77,12 +84,12 @@ class MarkAbsentEmployees extends Command
             ->get();
 
         foreach ($employees as $employee) {
-            Attendance::create([
+            Attendance::updateOrCreate([
                 'employee_id' => $employee->id,
-                'date' => $today,
+                'date'        => $today,
+            ], [
                 'status' => 'absent',
-                // Generate UUID for the attendance record
-                'uuid' => (string) \Illuminate\Support\Str::uuid(),
+                'uuid'   => (string) \Illuminate\Support\Str::uuid(),
             ]);
         }
 
