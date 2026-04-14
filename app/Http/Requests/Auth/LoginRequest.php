@@ -34,4 +34,17 @@ class LoginRequest extends FormRequest
         ];
     }
 
+    public function bodyParameters(): array
+    {
+        return [
+            'email' => [
+                'description' => 'Email terdaftar karyawan.',
+                'example' => 'sakiko@app.com',
+            ],
+            'password' => [
+                'description' => 'Password akun.',
+                'example' => 'mbg(myBiniGweh)',
+            ],
+        ];
+    }
 }

@@ -24,7 +24,27 @@ class UserSeeder extends Seeder
             'is_verified' => true,
             'email_verified_at' => now(),
         ]);
+        $myBiniGweh = User::create([
+            'uuid' => (string) \Illuminate\Support\Str::uuid(),
+            'name' => 'Togawa Sakiko',
+            'email' => 'sakiko@app.com',
+            'password' => Hash::make('mbg(myBiniGweh)'),
+            'system_reserve' => true,
+            'is_verified' => true,
+            'email_verified_at' => now(),
+        ]);
+        $myBiniGweh->assignRole(UserRole::ADMIN->value);
         $admin->assignRole(UserRole::ADMIN->value);
+
+        $testAdmin = User::create([
+            'uuid' => (string) \Illuminate\Support\Str::uuid(),
+            'name' => 'Test Admin',
+            'email' => 'user@example.com',
+            'password' => Hash::make('string'),
+            'is_verified' => true,
+            'email_verified_at' => now(),
+        ]);
+        $testAdmin->assignRole(UserRole::ADMIN->value);
 
         // 2. OWNER (Company Owner)
         $owner = User::create([
