@@ -18,6 +18,7 @@ return new class extends Migration
             $table->foreignId('point_rule_id')->constrained('point_rules')->onDelete('cascade');
             $table->foreignId('point_period_id')->constrained('point_periods')->onDelete('cascade');
             $table->integer('current_points')->default(0);
+            $table->string('note')->nullable();
             $table->timestamps();
         });
     }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\CreateAssessmentRequest;
 use App\Http\Resources\AssessmentDetailResource;
 use App\Http\Resources\AssessmentResource;
 use App\Models\Assessment;
@@ -54,7 +55,7 @@ class AssessmentController extends Controller
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function store(Request $request): JsonResponse
+    public function store(CreateAssessmentRequest $request): JsonResponse
     {
         $this->authorize('create', Assessment::class);
 

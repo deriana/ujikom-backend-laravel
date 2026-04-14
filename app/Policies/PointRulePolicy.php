@@ -2,16 +2,16 @@
 
 namespace App\Policies;
 
-use App\Models\PointTransaction;
+use App\Models\PointRule;
 use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 /**
- * Class PointPolicy
+ * Class PointRulePolicy
  *
- * Menangani logika otorisasi untuk operasi pada model Point (PointTransaction).
+ * Menangani logika otorisasi untuk operasi pada model Point (PointRule).
  */
-class PointPolicy
+class PointRulePolicy
 {
     use HandlesAuthorization;
 
@@ -23,19 +23,19 @@ class PointPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('point.index');
+        return $user->can('point-rule.index');
     }
 
     /**
      * Menentukan apakah pengguna dapat melihat detail transaksi poin tertentu.
      *
      * @param User $user
-     * @param PointTransaction $pointTransaction
+     * @param PointRule $pointRule
      * @return bool
      */
-    public function view(User $user, PointTransaction $pointTransaction): bool
+    public function view(User $user, PointRule $pointRule): bool
     {
-        return $user->can('point.show');
+        return $user->can('point-rule.show');
     }
 
     /**
@@ -46,35 +46,35 @@ class PointPolicy
      */
     public function create(User $user): bool
     {
-        return $user->can('point.create');
+        return $user->can('point-rule.create');
     }
 
     /**
      * Menentukan apakah pengguna dapat mengubah data transaksi poin.
      *
      * @param User $user
-     * @param PointTransaction $pointTransaction
+     * @param PointRule $pointRule
      * @return bool
      */
-    public function update(User $user, PointTransaction $pointTransaction): bool
+    public function update(User $user, PointRule $pointRule): bool
     {
-        return $user->can('point.edit');
+        return $user->can('point-rule.edit');
     }
 
     /**
      * Menentukan apakah pengguna dapat menghapus data transaksi poin.
      *
      * @param User $user
-     * @param PointTransaction $pointTransaction
+     * @param PointRule $pointRule
      * @return bool
      */
-    public function delete(User $user, PointTransaction $pointTransaction): bool
+    public function delete(User $user, PointRule $pointRule): bool
     {
-        return $user->can('point.destroy');
+        return $user->can('point-rule.destroy');
     }
 
     public function export(User $user): bool
     {
-        return $user->can('point.export');
+        return $user->can('point-rule.export');
     }
 }

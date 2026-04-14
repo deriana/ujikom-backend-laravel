@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\ApprovalStatus;
+use App\Enums\PointRuleEnum;
 use App\Exceptions\Attendance\AttendanceException;
 use App\Models\Attendance;
 use App\Models\AttendanceCorrection;
@@ -17,7 +18,7 @@ use Exception;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
+// use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 /**
@@ -44,7 +45,8 @@ class AttendanceService
         protected TimeValidator $timeValidator, /**< Validator untuk pengecekan jadwal dan waktu */
         protected AttendanceUploader $uploader, /**< Layanan untuk mengunggah foto bukti kehadiran */
         protected AttendanceLogger $logger, /**< Layanan untuk mencatat log aktivitas */
-        protected OvertimeService $overtimeService /**< Layanan untuk sinkronisasi data lembur */
+        protected OvertimeService $overtimeService, /**< Layanan untuk sinkronisasi data lembur */
+        protected PointHandlerService $pointHandler /**< Layanan untuk menangani pemberian poin kehadiran */
     ) {}
 
     /**
@@ -100,13 +102,21 @@ class AttendanceService
             'clock_in_photo' => $photoPath,
         ]);
 
-        // 2. Prepare the notification message based on punctuality
+        // 2. Trigger point system based on punctuality
+        $isLate = $timeValidation['late_minutes'] > 0;
+
+        $event = $isLate ? PointRuleEnum::LATE->value : PointRuleEnum::PRESENT->value;
+        $note = $isLate ? "Late {$timeValidation['late_minutes']} minutes" : "On Time";
+
+        $this->pointHandler->trigger($attendance->employee_id, $event, $note);
+
+        // 3. Prepare the notification message based on punctuality
         $roundedLate = round($timeValidation['late_minutes']);
         $lateMsg = $roundedLate > 0
             ? " (Late by {$roundedLate} minutes)"
             : ' (On time)';
 
-        // 3. Send a custom notification to the employee
+        // 4. Send a custom notification to the employee
         $attendance->notifyCustom(
             title: 'Clock-In Successful',
             message: "Hello {$attendance->employee->user->name}, you have successfully clocked in at {$now->format('H:i')}{$lateMsg}.",
@@ -153,6 +163,22 @@ class AttendanceService
 
         $hours = floor($workMinutes / 60);
         $minutes = $workMinutes % 60;
+
+        if ($timeValidation['early_leave_minutes'] > 0 && !$timeValidation['is_early_leave_approved']) {
+            $this->pointHandler->trigger(
+                $attendance->employee_id,
+                PointRuleEnum::EARLY_LEAVE->value,
+                "Early leave {$timeValidation['early_leave_minutes']} minutes without approval."
+            );
+        }
+
+        if ($timeValidation['overtime_minutes'] >= 60) {
+            $this->pointHandler->trigger(
+                $attendance->employee_id,
+                PointRuleEnum::OVERTIME->value,
+                "Overtime of {$timeValidation['overtime_minutes']} minutes."
+            );
+        }
 
         // 4. Send a custom notification to the employee
         $attendance->notifyCustom(

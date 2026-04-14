@@ -31,6 +31,7 @@ class PointTransaction extends Model
         'point_rule_id', /**< ID aturan poin yang diterapkan */
         'point_period_id', /**< ID periode pengumpulan poin */
         'current_points', /**< Jumlah poin yang didapat pada transaksi ini */
+        'note', /**< Catatan tambahan terkait transaksi poin */
     ];
 
     /** @var array<string, string> Casting tipe data atribut */

@@ -6,6 +6,7 @@ use App\Models\Employee;
 use App\Models\PointPeriode;
 use App\Models\PointRule;
 use App\Models\PointTransaction;
+use App\Enums\PointRuleEnum; // Import Enum
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -13,26 +14,39 @@ class PointSystemSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Buat Aturan Poin (Master Data)
+        // 1. Buat Aturan Poin (Master Data) menggunakan Enum
         $rules = [
             [
-                'event_name' => 'Hadir Tepat Waktu',
+                'event_name' => PointRuleEnum::PRESENT->value,
                 'points' => 2,
                 'description' => 'Diberikan jika melakukan absensi sebelum jam masuk.',
                 'is_active' => true,
             ],
             [
-                'event_name' => 'Terlambat',
+                'event_name' => PointRuleEnum::LATE->value,
                 'points' => -2,
                 'description' => 'Pengurangan poin jika absen melewati batas toleransi.',
                 'is_active' => true,
             ],
             [
-                'event_name' => 'Mangkir (Alpha)',
+                'event_name' => PointRuleEnum::ABSENT->value,
                 'points' => -10,
                 'description' => 'Pelanggaran berat karena tidak hadir tanpa keterangan.',
                 'is_active' => true,
             ],
+            [
+                'event_name' => PointRuleEnum::OVERTIME->value,
+                'points' => 5,
+                'description' => 'Bonus poin jika bekerja melebihi jam kerja resmi (minimal 1 jam).',
+                'is_active' => true,
+            ],
+            [
+                'event_name' => PointRuleEnum::EARLY_LEAVE->value,
+                'points' => -5,
+                'description' => 'Pengurangan poin jika melakukan clock-out sebelum waktunya tanpa izin.',
+                'is_active' => true,
+            ],
+            // Tambahan diluar Enum jika masih dibutuhkan
             [
                 'event_name' => 'Penyelesaian Tugas Cepat',
                 'points' => 5,
@@ -48,33 +62,39 @@ class PointSystemSeeder extends Seeder
         ];
 
         foreach ($rules as $rule) {
-            PointRule::create([
-                'uuid' => (string) Str::uuid(),
-                'event_name' => $rule['event_name'],
-                'points' => $rule['points'],
-                'description' => $rule['description'],
-                'is_active' => $rule['is_active'],
-            ]);
+            PointRule::updateOrCreate(
+                ['event_name' => $rule['event_name']], // Hindari duplikat jika seeder dijalankan ulang
+                [
+                    'uuid' => (string) Str::uuid(),
+                    'points' => $rule['points'],
+                    'description' => $rule['description'],
+                    'is_active' => $rule['is_active'],
+                ]
+            );
         }
 
         // 2. Buat Periode Aktif
-        $period = PointPeriode::create([
-            'uuid' => Str::uuid(),
-            'name' => 'April 2026',
-            'start_date' => '2026-04-01',
-            'end_date' => '2026-04-30',
-            'is_active' => true,
-        ]);
+        $period = PointPeriode::updateOrCreate(
+            ['name' => 'April 2026'],
+            [
+                'uuid' => Str::uuid(),
+                'start_date' => '2026-04-01',
+                'end_date' => '2026-04-30',
+                'is_active' => true,
+            ]
+        );
 
-        // 3. Buat Simulasi Transaksi Poin (Leaderboard Test)
-        // Ambil beberapa employee yang sudah ada
+        // 3. Buat Simulasi Transaksi Poin
         $employees = Employee::limit(5)->get();
-        $ruleHadir = PointRule::where('event_name', 'Hadir Tepat Waktu')->first();
+
+        // Ambil ID Rule dari database
+        $ruleHadir = PointRule::where('event_name', PointRuleEnum::PRESENT->value)->first();
         $ruleBonus = PointRule::where('event_name', 'Bonus Manager')->first();
-        $ruleTelat = PointRule::where('event_name', 'Terlambat')->first();
+        $ruleTelat = PointRule::where('event_name', PointRuleEnum::LATE->value)->first();
+        $ruleLembur = PointRule::where('event_name', PointRuleEnum::OVERTIME->value)->first();
 
         foreach ($employees as $index => $employee) {
-            // Kasih poin hadir 5 kali buat semua
+            // Simulasi: Semua hadir 5 kali
             for ($i = 0; $i < 5; $i++) {
                 PointTransaction::create([
                     'uuid' => Str::uuid(),
@@ -85,7 +105,7 @@ class PointSystemSeeder extends Seeder
                 ]);
             }
 
-            // Kasih bonus gede buat employee pertama (biar jadi juara 1 di leaderboard)
+            // Employee pertama dapet bonus dan lembur (Juara Leaderboard)
             if ($index === 0) {
                 PointTransaction::create([
                     'uuid' => Str::uuid(),
@@ -94,9 +114,17 @@ class PointSystemSeeder extends Seeder
                     'point_period_id' => $period->id,
                     'current_points' => $ruleBonus->points,
                 ]);
+
+                PointTransaction::create([
+                    'uuid' => Str::uuid(),
+                    'employee_id' => $employee->id,
+                    'point_rule_id' => $ruleLembur->id,
+                    'point_period_id' => $period->id,
+                    'current_points' => $ruleLembur->points,
+                ]);
             }
 
-            // Kasih telat buat employee terakhir (biar poinnya rendah)
+            // Employee terakhir sering telat
             if ($index === 4) {
                 PointTransaction::create([
                     'uuid' => Str::uuid(),

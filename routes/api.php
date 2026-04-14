@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\LeaveTypeController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\OvertimeController;
 use App\Http\Controllers\Api\PayrollController;
+use App\Http\Controllers\Api\PointController;
 use App\Http\Controllers\Api\PointRuleController;
 use App\Http\Controllers\Api\PositionController;
 use App\Http\Controllers\Api\RoleController;
@@ -163,7 +164,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::apiResource('leave_types', LeaveTypeController::class);
     Route::put('/assessment_category/{assessment_category:uuid}/toggle-status', [AssessmentCategoryController::class, 'toggleStatus']);
     Route::apiResource('assessment_category', AssessmentCategoryController::class)->except('show');
-    route::get('/assessments/export', [AssessmentController::class, 'export']);
+    Route::get('/assessments/export', [AssessmentController::class, 'export']);
     Route::apiResource('assessments', AssessmentController::class);
 
     Route::prefix('approvals')->group(function () {
@@ -238,6 +239,9 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
 
     Route::put('/point_rules/{point_rules:uuid}/toggle-status', [PointRuleController::class, 'toggleStatus']);
     Route::apiResource('point_rules', PointRuleController::class);
+
+    Route::get('/points/export', [PointController::class, 'export']);
+    Route::apiResource('points', PointController::class);
 
     Route::get('/dashboard/admin', [DashboardController::class, 'getAdminDashboard']);
     Route::get('/dashboard/employee', [DashboardController::class, 'getEmployeeDashboard']);

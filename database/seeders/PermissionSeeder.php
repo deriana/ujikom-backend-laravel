@@ -431,7 +431,27 @@ class PermissionSeeder extends Seeder
                 ],
             ],
 
-            'points' => [
+            'point_rules' => [
+                'actions' => [
+                    'index' => 'point-rule.index',
+                    'show' => 'point-rule.show',
+                    'create' => 'point-rule.create',
+                    'edit' => 'point-rule.edit',
+                    'destroy' => 'point-rule.destroy',
+                    'export' => 'point-rule.export',
+                ],
+                'roles' => [
+                    UserRole::ADMIN->value => ['index', 'show', 'create', 'edit', 'destroy', 'export',],
+                    UserRole::HR->value => ['index', 'show', 'create', 'edit', 'destroy', 'export',],
+                    UserRole::MANAGER->value => ['index', 'show', 'export',],
+                    UserRole::EMPLOYEE->value => ['index', 'show'],
+                    UserRole::DIRECTOR->value => ['index', 'show', 'export'],
+                    UserRole::OWNER->value => ['index', 'show', 'export',],
+                    UserRole::FINANCE->value => ['index', 'show', 'export'],
+                ],
+            ],
+
+            'point' => [
                 'actions' => [
                     'index' => 'point.index',
                     'show' => 'point.show',
@@ -439,15 +459,14 @@ class PermissionSeeder extends Seeder
                     'edit' => 'point.edit',
                     'destroy' => 'point.destroy',
                     'export' => 'point.export',
-                    'addPoints' => 'point.addPoints',
                 ],
                 'roles' => [
-                    UserRole::ADMIN->value => ['index', 'show', 'create', 'edit', 'destroy', 'export', 'addPoints'],
-                    UserRole::HR->value => ['index', 'show', 'create', 'edit', 'destroy', 'export', 'addPoints'],
-                    UserRole::MANAGER->value => ['index', 'show', 'export', 'addPoints'],
+                    UserRole::ADMIN->value => ['index', 'show', 'create', 'edit', 'destroy', 'export',],
+                    UserRole::HR->value => ['index', 'show', 'create', 'edit', 'destroy', 'export',],
+                    UserRole::MANAGER->value => ['index', 'show', 'export',],
                     UserRole::EMPLOYEE->value => ['index', 'show'],
-                    UserRole::DIRECTOR->value => ['index', 'show', 'export', 'addPoints', 'export'],
-                    UserRole::OWNER->value => ['index', 'show', 'export', 'addPoints'],
+                    UserRole::DIRECTOR->value => ['index', 'show', 'export'],
+                    UserRole::OWNER->value => ['index', 'show', 'export',],
                     UserRole::FINANCE->value => ['index', 'show', 'export'],
                 ],
             ],
