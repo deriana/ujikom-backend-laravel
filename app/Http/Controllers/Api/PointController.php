@@ -88,17 +88,17 @@ class PointController extends Controller
      * @param PointTransaction $point
      * @return \Illuminate\Http\JsonResponse
      */
-    public function update(Request $request, PointTransaction $point): JsonResponse
-    {
-        $this->authorize('update', $point);
+    // public function update(Request $request, PointTransaction $point): JsonResponse
+    // {
+    //     $this->authorize('update', $point);
 
-        $updated = $this->pointService->update($point, $request->all());
+    //     $updated = $this->pointService->update($point, $request->all());
 
-        return $this->successResponse(
-            new PointResource($updated),
-            'Point updated successfully'
-        );
-    }
+    //     return $this->successResponse(
+    //         new PointResource($updated),
+    //         'Point updated successfully'
+    //     );
+    // }
 
     /**
      * Menghapus data penilaian dari database.
@@ -106,14 +106,14 @@ class PointController extends Controller
      * @param PointTransaction $point
      * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy(PointTransaction $point): JsonResponse
-    {
-        $this->authorize('delete', $point);
+    // public function destroy(PointTransaction $point): JsonResponse
+    // {
+    //     $this->authorize('delete', $point);
 
-        $this->pointService->delete($point);
+    //     $this->pointService->delete($point);
 
-        return $this->successResponse(null, 'Point deleted successfully');
-    }
+    //     return $this->successResponse(null, 'Point deleted successfully');
+    // }
 
     /**
      * Menampilkan leaderboard poin.

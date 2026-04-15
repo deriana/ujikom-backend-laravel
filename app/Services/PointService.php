@@ -117,22 +117,29 @@ class PointService
         $myRank = null;
         $myPoints = 0;
 
-        $query = PointWallet::with(['employee.user', 'employee.position'])
+        // Ambil semua wallet untuk periode aktif, hitung total poin yang dikumpulkan (incoming)
+        $allWallets = PointWallet::with(['employee.user', 'employee.position'])
             ->where('point_period_id', $activePeriod?->id)
-            ->orderByDesc('current_balance');
-
-        $allWallets = $query->get();
+            ->get()
+            ->map(function ($wallet) use ($activePeriod) {
+                $wallet->total_earned = PointTransaction::where('employee_id', $wallet->employee_id)
+                    ->where('point_period_id', $activePeriod?->id)
+                    ->where('current_points', '>', 0)
+                    ->sum('current_points');
+                return $wallet;
+            })->sortByDesc('total_earned')->values();
 
         if ($user && $user->employee) {
             $myWallet = $allWallets->where('employee_id', $user->employee->id)->first();
             if ($myWallet) {
-                $myPoints = $myWallet->current_balance;
+                $myPoints = $myWallet->total_earned;
                 $myRank = $allWallets->search(fn($w) => $w->employee_id === $user->employee->id) + 1;
             }
         }
 
         $leaderboard = $allWallets->take($limit)->map(function ($item, $key) {
             $item->rank = $key + 1;
+            $item->current_balance = $item->total_earned; // Override balance dengan total yang dikumpulkan
             return $item;
         });
 

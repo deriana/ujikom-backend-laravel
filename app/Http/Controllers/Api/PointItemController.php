@@ -8,6 +8,7 @@ use App\Http\Requests\UpdatePointItemRequest;
 use App\Http\Resources\PointItemResource;
 use App\Http\Resources\PointItemDetailResource;
 use App\Http\Resources\PointInventoryResource;
+use App\Http\Resources\PointMutationResource;
 use App\Models\PointItem;
 use App\Models\EmployeeInventories;
 use App\Services\PointItemService;
@@ -36,7 +37,7 @@ class PointItemController extends Controller
      */
     public function index(): JsonResponse
     {
-        $this->authorize('viewAny', PointItem::class);
+        // $this->authorize('viewAny', PointItem::class);
 
         $items = $this->pointItemService->index();
 
@@ -54,7 +55,7 @@ class PointItemController extends Controller
      */
     public function show(PointItem $point_item): JsonResponse
     {
-        $this->authorize('view', $point_item);
+        // $this->authorize('view', $point_item);
 
         $item = $this->pointItemService->show($point_item);
 
@@ -203,6 +204,33 @@ class PointItemController extends Controller
         return $this->successResponse(
             new PointInventoryResource($updated),
             'Item used successfully'
+        );
+    }
+
+    /**
+     * Mengambil saldo poin saat ini untuk karyawan yang sedang login.
+     *
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
+     */
+    public function wallet(): JsonResponse
+    {
+        $wallet = $this->pointItemService->getWallet(Auth::user()->employee);
+
+        return $this->successResponse($wallet, 'Wallet balance fetched successfully');
+    }
+
+    /**
+     * Mengambil riwayat mutasi poin (masuk & keluar) milik karyawan yang sedang login.
+     *
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
+     */
+    public function mutations(): JsonResponse
+    {
+        $mutations = $this->pointItemService->getMutations(Auth::user()->employee);
+
+        return $this->successResponse(
+            PointMutationResource::collection($mutations),
+            'Point mutations fetched successfully'
         );
     }
 }

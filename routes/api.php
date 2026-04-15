@@ -252,6 +252,8 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::post('/point_items/{point_item:uuid}/redeem', [PointItemController::class, 'redeem']);
     Route::get('/point_items/inventories', [PointItemController::class, 'inventories']);
     Route::put('/point_items/{point_item:uuid}/use', [PointItemController::class, 'useItem']);
+    Route::get('/point_items/wallet', [PointItemController::class, 'wallet']);
+    Route::get('/point_items/mutations', [PointItemController::class, 'mutations']);
     Route::prefix('point_items')->group(function () {
         Route::post('/', [PointItemController::class, 'store']);
         Route::get('/', [PointItemController::class, 'index']);

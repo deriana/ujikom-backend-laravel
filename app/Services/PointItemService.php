@@ -7,6 +7,7 @@ use App\Models\PointItemTransaction;
 use App\Models\EmployeeInventories;
 use App\Models\PointWallet;
 use App\Models\PointPeriode;
+use App\Models\PointTransaction;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -238,6 +239,10 @@ class PointItemService
      */
     public function getInventories($employee)
     {
+        if (! $employee) {
+            return collect();
+        }
+
         return EmployeeInventories::with(['pointItem', 'transaction'])
             ->where('employee_id', $employee->id)
             ->latest()
@@ -269,5 +274,89 @@ class PointItemService
 
             return $inventory;
         });
+    }
+
+    /**
+     * Mengambil saldo poin saat ini untuk karyawan.
+     *
+     * @param \App\Models\Employee $employee
+     * @return array
+     */
+    public function getWallet($employee): array
+    {
+        if (! $employee) {
+            return ['current_balance' => 0, 'period_name' => 'No Active Period'];
+        }
+
+        $period = PointPeriode::where('is_active', true)->first();
+
+        $wallet = PointWallet::where('employee_id', $employee->id)
+            ->where('point_period_id', $period?->id)
+            ->first();
+
+        $totalEarned = PointTransaction::where('employee_id', $employee->id)
+            ->where('point_period_id', $period?->id)
+            ->where('current_points', '>', 0)
+            ->sum('current_points');
+
+        $totalUsed = PointItemTransaction::where('employee_id', $employee->id)
+            ->where('point_period_id', $period?->id)
+            ->sum('total_points');
+
+        return [
+            'current_balance' => $wallet->current_balance ?? 0,
+            'period_name' => $period->name ?? 'No Active Period',
+            'total_earned' => (int) $totalEarned,
+            'total_used' => (int) $totalUsed,
+        ];
+    }
+
+    /**
+     * Mengambil riwayat mutasi poin (masuk & keluar) milik karyawan.
+     *
+     * @param \App\Models\Employee $employee
+     * @return \Illuminate\Support\Collection
+     */
+    public function getMutations($employee)
+    {
+        if (! $employee) {
+            return collect();
+        }
+
+        $period = PointPeriode::where('is_active', true)->first();
+
+        // Mutasi Masuk (Perolehan Poin dari Rule/Aktivitas)
+        $incoming = PointTransaction::with('rule')
+            ->where('employee_id', $employee->id)
+            ->where('point_period_id', $period?->id)
+            ->latest()
+            ->get()
+            ->map(fn($t) => [
+                'uuid' => $t->uuid ?? null,
+                'type' => 'incoming',
+                'amount' => $t->current_points,
+                'description' => $t->rule->event_name ?? $t->note ?? 'Point Reward',
+                'date' => $t->created_at,
+                'date_human' => $t->created_at->diffForHumans(),
+            ]);
+
+        // Mutasi Keluar (Penggunaan Poin untuk Redeem Item)
+        $outgoing = PointItemTransaction::with('pointItem')
+            ->where('employee_id', $employee->id)
+            ->where('point_period_id', $period?->id)
+            ->latest()
+            ->get()
+            ->map(fn($t) => [
+                'uuid' => $t->uuid ?? null,
+                'type' => 'outgoing',
+                'amount' => $t->total_points,
+                'item_uuid' => $t->pointItem->uuid ?? null,
+                'item_name' => $t->pointItem->name ?? 'Item',
+                'description' => 'Redeem: ' . ($t->pointItem->name ?? 'Item') . ' (' . $t->quantity . 'x)',
+                'date' => $t->created_at,
+                'date_human' => $t->created_at->diffForHumans(),
+            ]);
+
+        return $incoming->concat($outgoing)->sortByDesc('date')->values();
     }
 }
