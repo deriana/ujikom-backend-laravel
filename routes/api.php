@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\OvertimeController;
 use App\Http\Controllers\Api\PayrollController;
 use App\Http\Controllers\Api\PointController;
+use App\Http\Controllers\Api\PointItemController;
 use App\Http\Controllers\Api\PointRuleController;
 use App\Http\Controllers\Api\PositionController;
 use App\Http\Controllers\Api\RoleController;
@@ -244,6 +245,20 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::get('/points/leaderboard', [PointController::class, 'leaderboard']);
     Route::get('/points/leaderboard/{nik}', [PointController::class, 'leaderboardDetail']);
     Route::apiResource('points', PointController::class);
+
+    Route::get('/point_items/export', [PointItemController::class, 'export']);
+    Route::put('/point_items/{point_item:uuid}/toggle-status', [PointItemController::class, 'toggleStatus']);
+    Route::put('/point_items/{point_item:uuid}/adjust-stock', [PointItemController::class, 'adjustStock']);
+    Route::post('/point_items/{point_item:uuid}/redeem', [PointItemController::class, 'redeem']);
+    Route::get('/point_items/inventories', [PointItemController::class, 'inventories']);
+    Route::put('/point_items/{point_item:uuid}/use', [PointItemController::class, 'useItem']);
+    Route::prefix('point_items')->group(function () {
+        Route::post('/', [PointItemController::class, 'store']);
+        Route::get('/', [PointItemController::class, 'index']);
+        Route::get('/{point_item:uuid}', [PointItemController::class, 'show']);
+        Route::post('/{point_item:uuid}', [PointItemController::class, 'update']);
+        Route::delete('/{point_item:uuid}', [PointItemController::class, 'destroy']);
+    });
 
     Route::get('/dashboard/admin', [DashboardController::class, 'getAdminDashboard']);
     Route::get('/dashboard/employee', [DashboardController::class, 'getEmployeeDashboard']);

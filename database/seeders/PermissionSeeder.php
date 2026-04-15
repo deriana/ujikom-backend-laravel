@@ -471,6 +471,26 @@ class PermissionSeeder extends Seeder
                 ],
             ],
 
+            'point_items' => [
+                'actions' => [
+                    'index' => 'point-item.index',
+                    'show' => 'point-item.show',
+                    'create' => 'point-item.create',
+                    'edit' => 'point-item.edit',
+                    'destroy' => 'point-item.destroy',
+                    'export' => 'point-item.export',
+                ],
+                'roles' => [
+                    UserRole::ADMIN->value => ['index', 'show', 'create', 'edit', 'destroy', 'export',],
+                    UserRole::HR->value => ['index', 'show', 'create', 'edit', 'destroy', 'export',],
+                    UserRole::MANAGER->value => ['index', 'show', 'export',],
+                    UserRole::EMPLOYEE->value => ['index', 'show'],
+                    UserRole::DIRECTOR->value => ['index', 'show', 'export'],
+                    UserRole::OWNER->value => ['index', 'show', 'export',],
+                    UserRole::FINANCE->value => ['index', 'show', 'export'],
+                ],
+            ],
+
             'dashboards' => [
                 'actions' => [
                     'admin' => 'dashboard.admin',

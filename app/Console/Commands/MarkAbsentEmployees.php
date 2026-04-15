@@ -88,21 +88,39 @@ class MarkAbsentEmployees extends Command
             ->get();
 
         foreach ($employees as $employee) {
+            $inventory = \App\Models\EmployeeInventories::where('employee_id', $employee->id)
+                ->where('is_used', false)
+                ->whereHas('pointItem', function ($q) {
+                    $q->where('power_up_type', \App\Enums\PowerUpTypeEnum::ABSENT_PROTECT);
+                })
+                ->first();
+
+            $status = 'absent';
+            $finalValue = 480; // Default Alpha value for points
+            $note = 'Sistem otomatis: Tidak ada absen hingga jam pulang berakhir.';
+
+            if ($inventory) {
+                $inventory->update(['is_used' => true]);
+                $status = 'present'; // Mark as present to avoid salary deduction
+                $finalValue = 0;     // Override point penalty
+                $note = "Protected by Power-Up: " . $inventory->pointItem->name;
+            }
+
             Attendance::updateOrCreate([
                 'employee_id' => $employee->id,
                 'date' => $today,
             ], [
-                'status' => 'absent',
+                'status' => $status,
                 'uuid' => (string) \Illuminate\Support\Str::uuid(),
             ]);
-        }
 
-        $pointHandler->trigger(
-            $employee->id,
-            \App\Enums\PointCategoryEnum::ATTENDANCE, // Parameter 1: Kategori
-            480,                                  // Parameter 2: Nilai (480 menit = 8 jam/Alpha)
-            'Sistem otomatis: Tidak ada absen hingga jam pulang berakhir.' // Parameter 3: Catatan
-        );
+            $pointHandler->trigger(
+                $employee->id,
+                \App\Enums\PointCategoryEnum::ATTENDANCE,
+                $finalValue,
+                $note
+            );
+        }
 
         $this->info("Inserted {$employees->count()} absent records (Skipped Owner & Director).");
 

@@ -3,9 +3,13 @@
 namespace Database\Seeders;
 
 use App\Enums\PointCategoryEnum;
+use App\Enums\PowerUpTypeEnum;
 use App\Models\Employee;
+use App\Models\EmployeeInventories;
 use App\Models\PointPeriode;
+use App\Models\PointItem;
 use App\Models\PointRule;
+use App\Models\PointItemTransaction;
 use App\Models\PointTransaction;
 use App\Models\PointWallet; // Gunakan Enum Kategori yang baru
 use Illuminate\Database\Seeder;
@@ -107,8 +111,94 @@ class PointSystemSeeder extends Seeder
             ]
         );
 
+        // 2.5 Buat Master Item (Reward)
+        $items = [
+            [
+                'name' => 'Voucher Kopi Rp 50.000',
+                'required_points' => 50,
+                'stock' => 20,
+                'category' => 'VOUCHER',
+                'description' => 'Berlaku di semua outlet Kopi Kenangan.',
+            ],
+            [
+                'name' => 'Saldo E-Wallet Rp 100.000',
+                'required_points' => 100,
+                'stock' => 10,
+                'category' => 'VOUCHER',
+                'description' => 'Gopay/OVO/Dana.',
+            ],
+            [
+                'name' => 'Tumblr Exclusive Company',
+                'required_points' => 200,
+                'stock' => 5,
+                'category' => 'GOODS',
+                'description' => 'Tumblr stainless steel dengan logo perusahaan.',
+            ],
+            [
+                'name' => 'Kartu Izin WFH (1 Hari)',
+                'required_points' => 150,
+                'stock' => 5,
+                'category' => 'SERVICE',
+                'power_up_type' => null,
+                'description' => 'Gunakan kartu ini untuk bekerja dari rumah meskipun jadwal WFO.',
+            ],
+            [
+                'name' => 'Kartu Anti-Telat (Satu Kali)',
+                'required_points' => 75,
+                'stock' => 15,
+                'category' => 'SERVICE',
+                'power_up_type' => PowerUpTypeEnum::ANTI_LATE_LIGHT,
+                'description' => 'Menghapus potongan poin akibat keterlambatan ringan.',
+                'system_reserve' => true, // Item ini dibuat oleh sistem untuk keperluan power-up, jadi kita tandai sebagai system reserve
+            ],
+            [
+                'name' => 'Kartu Anti-Telat Berat',
+                'required_points' => 150,
+                'stock' => 10,
+                'category' => 'SERVICE',
+                'power_up_type' => PowerUpTypeEnum::ANTI_LATE_HARD,
+                'description' => 'Menghapus potongan poin akibat keterlambatan parah.',
+                'system_reserve' => true,
+            ],
+            [
+                'name' => 'Perisai Mangkir',
+                'required_points' => 300,
+                'stock' => 5,
+                'category' => 'SERVICE',
+                'power_up_type' => PowerUpTypeEnum::ABSENT_PROTECT,
+                'description' => 'Melindungi dari potongan poin akibat tidak hadir (Alpha).',
+                'system_reserve' => true,
+            ],
+            [
+                'name' => 'Double Point Booster',
+                'required_points' => 250,
+                'stock' => 8,
+                'category' => 'SERVICE',
+                'power_up_type' => PowerUpTypeEnum::POINT_BOOSTER,
+                'description' => 'Mendapatkan poin ganda untuk aktivitas kehadiran selama 1 minggu.',
+                'system_reserve' => true,
+            ],
+        ];
+
+        foreach ($items as $item) {
+            PointItem::updateOrCreate(
+                ['name' => $item['name']],
+                [
+                    'uuid' => Str::uuid(),
+                    'slug' => Str::slug($item['name']) . '-' . Str::random(5),
+                    'required_points' => $item['required_points'],
+                    'stock' => $item['stock'],
+                    'category' => $item['category'],
+                    'power_up_type' => $item['power_up_type'] ?? null,
+                    'description' => $item['description'],
+                    'is_active' => true,
+                    'system_reserve' => $item['system_reserve'] ?? false,
+                ]
+            );
+        }
+
         // 3. Simulasi Transaksi Poin
-        $employees = Employee::limit(5)->get();
+        $employees = Employee::all();
 
         // Ambil Rule secara dinamis untuk simulasi
         $ruleHadir = PointRule::where('event_name', 'Hadir Tepat Waktu / Dalam Toleransi')->first();
@@ -123,6 +213,16 @@ class PointSystemSeeder extends Seeder
                     'point_period_id' => $period->id,
                 ],
             );
+
+            // Berikan saldo awal minimal 100 poin untuk semua karyawan agar leaderboard terlihat ramai
+            PointTransaction::create([
+                'uuid' => Str::uuid(),
+                'employee_id' => $employee->id,
+                'point_rule_id' => $ruleBonus->id, // Menggunakan rule bonus sebagai base
+                'point_period_id' => $period->id,
+                'current_points' => 100,
+                'note' => 'Initial balance for simulation',
+            ]);
 
             // Simulasi hadir tepat waktu 5 kali
             for ($i = 0; $i < 5; $i++) {
@@ -156,6 +256,34 @@ class PointSystemSeeder extends Seeder
                     'current_points' => $ruleTelat->points,
                 ]);
             }
+        }
+
+        // 4. Simulasi Penukaran Item (PointItemTransaction)
+        // Ambil employee pertama yang punya saldo cukup (Tesla biasanya punya bonus di seeder ini)
+        $luckyEmployee = $employees->first();
+        $itemToRedeem = PointItem::where('name', 'Voucher Kopi Rp 50.000')->first();
+
+        if ($luckyEmployee && $itemToRedeem) {
+            $transaction = PointItemTransaction::create([
+                'uuid' => Str::uuid(),
+                'employee_id' => $luckyEmployee->id,
+                'point_item_id' => $itemToRedeem->id,
+                'point_period_id' => $period->id,
+                'quantity' => 1,
+                'total_points' => $itemToRedeem->required_points,
+                'status' => 1, // Approved/Success
+                'note' => 'Penukaran poin otomatis dari seeder',
+            ]);
+
+            // 5. Tambahkan ke Inventaris Karyawan
+            EmployeeInventories::create([
+                'uuid' => Str::uuid(),
+                'employee_id' => $luckyEmployee->id,
+                'point_item_id' => $itemToRedeem->id,
+                'point_item_transaction_id' => $transaction->id,
+                'is_used' => false,
+                'expired_at' => now()->addMonths(3),
+            ]);
         }
 
         // Tambahkan di baris paling bawah Seeder setelah loop selesai

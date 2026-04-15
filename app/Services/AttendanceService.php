@@ -92,35 +92,64 @@ class AttendanceService
     {
         // 1. Validate the clock-in time window and calculate late minutes
         $timeValidation = $this->timeValidator->validateClockInWindow($attendance->employee, $now);
+        $lateMinutes = (int) ($timeValidation['late_minutes'] ?? 0);
 
         $attendance->update([
             'clock_in' => $now,
-            'late_minutes' => $timeValidation['late_minutes'], // TimeValidator returns 0 if within tolerance
+            'late_minutes' => $lateMinutes, // TimeValidator returns 0 if within tolerance
             'latitude_in' => $data['latitude'] ?? null,
             'longitude_in' => $data['longitude'] ?? null,
             'clock_in_photo' => $photoPath,
         ]);
 
-        // 2. Trigger point system based on punctuality
-        $lateMinutes = $timeValidation['late_minutes'] ?? 0;
+        // --- LOGIC POWER-UP START ---
+        $finalLateMinutes = $lateMinutes;
+        $pointNote = $lateMinutes > 0 ? "Late {$lateMinutes} minutes" : 'On time';
 
+        if ($lateMinutes > 0) {
+            // Tentukan kartu mana yang harus dicari berdasarkan durasi telat
+            $targetPowerUp = $lateMinutes <= 30
+                ? \App\Enums\PowerUpTypeEnum::ANTI_LATE_LIGHT
+                : \App\Enums\PowerUpTypeEnum::ANTI_LATE_HARD;
+
+            // Cek apakah punya kartunya di inventory
+            $inventory = \App\Models\EmployeeInventories::where('employee_id', $attendance->employee_id)
+                ->where('is_used', false)
+                ->whereHas('pointItem', function ($q) use ($targetPowerUp) {
+                    $q->where('power_up_type', $targetPowerUp);
+                })
+                ->first();
+
+            if ($inventory) {
+                // PAKAI KARTUNYA!
+                $inventory->update([
+                    'is_used' => true,
+                ]);
+
+                // Override nilai telat jadi 0 supaya tidak kena sanksi poin
+                $finalLateMinutes = 0;
+                $pointNote = "Late {$lateMinutes} minutes (Protected by Power-Up: " . $inventory->pointItem->name . ")";
+            }
+        }
+        // --- LOGIC POWER-UP END ---
+
+        // 2. Trigger point system based on punctuality (with power-up override)
         $this->pointHandler->trigger(
             $attendance->employee_id,
             \App\Enums\PointCategoryEnum::ATTENDANCE,
-            $lateMinutes,
-            $lateMinutes > 0 ? "Late {$lateMinutes} minutes" : 'On time'
+            $finalLateMinutes,
+            $pointNote
         );
 
         // 3. Prepare the notification message based on punctuality
-        $roundedLate = round($timeValidation['late_minutes']);
-        $lateMsg = $roundedLate > 0
-            ? " (Late by {$roundedLate} minutes)"
-            : ' (On time)';
+        $roundedLate = round($lateMinutes);
+        $lateMsg = $roundedLate > 0 ? " (Late by {$roundedLate} minutes)" : ' (On time)';
+        $powerUpMsg = $finalLateMinutes === 0 && $lateMinutes > 0 ? " (Power-up Applied! Point Safe ✅)" : "";
 
         // 4. Send a custom notification to the employee
         $attendance->notifyCustom(
             title: 'Clock-In Successful',
-            message: "Hello {$attendance->employee->user->name}, you have successfully clocked in at {$now->format('H:i')}{$lateMsg}.",
+            message: "Hello {$attendance->employee->user->name}, you have successfully clocked in at {$now->format('H:i')}{$lateMsg}.{$powerUpMsg}",
             customUsers: collect([$attendance->employee->user])
         );
     }
