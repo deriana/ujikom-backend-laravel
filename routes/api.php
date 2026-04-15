@@ -241,6 +241,8 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::apiResource('point_rules', PointRuleController::class);
 
     Route::get('/points/export', [PointController::class, 'export']);
+    Route::get('/points/leaderboard', [PointController::class, 'leaderboard']);
+    Route::get('/points/leaderboard/{nik}', [PointController::class, 'leaderboardDetail']);
     Route::apiResource('points', PointController::class);
 
     Route::get('/dashboard/admin', [DashboardController::class, 'getAdminDashboard']);

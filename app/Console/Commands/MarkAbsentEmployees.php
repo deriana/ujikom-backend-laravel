@@ -3,7 +3,6 @@
 namespace App\Console\Commands;
 
 use App\Enums\ApprovalStatus;
-use App\Enums\PointRuleEnum;
 use App\Models\Attendance;
 use App\Models\Employee;
 use App\Models\Setting;
@@ -100,8 +99,9 @@ class MarkAbsentEmployees extends Command
 
         $pointHandler->trigger(
             $employee->id,
-            PointRuleEnum::ABSENT->value,
-            'System generated absent record due to no attendance after work hours.'
+            \App\Enums\PointCategoryEnum::ATTENDANCE, // Parameter 1: Kategori
+            480,                                  // Parameter 2: Nilai (480 menit = 8 jam/Alpha)
+            'Sistem otomatis: Tidak ada absen hingga jam pulang berakhir.' // Parameter 3: Catatan
         );
 
         $this->info("Inserted {$employees->count()} absent records (Skipped Owner & Director).");

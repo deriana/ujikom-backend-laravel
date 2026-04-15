@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CreatePointRequest;
+use App\Http\Resources\PointLeaderboardDetailResource;
+use App\Http\Resources\PointLeaderboardResource;
 use App\Http\Resources\PointResource;
 use App\Models\PointTransaction;
 use App\Services\PointService;
@@ -111,5 +113,31 @@ class PointController extends Controller
         $this->pointService->delete($point);
 
         return $this->successResponse(null, 'Point deleted successfully');
+    }
+
+    /**
+     * Menampilkan leaderboard poin.
+     */
+    public function leaderboard(Request $request): JsonResponse
+    {
+        $limit = $request->query('limit', 10);
+        $leaderboard = $this->pointService->getLeaderboard((int) $limit);
+
+        return $this->successResponse(
+            new PointLeaderboardResource($leaderboard),
+            'Leaderboard fetched successfully'
+        );
+    }
+
+    /**
+     * Menampilkan detail poin karyawan di leaderboard.
+     */
+    public function leaderboardDetail(string $nik): JsonResponse
+    {
+        $detail = $this->pointService->getLeaderboardDetail($nik);
+        return $this->successResponse(
+            new PointLeaderboardDetailResource($detail),
+            'Leaderboard detail fetched successfully'
+        );
     }
 }

@@ -5,52 +5,68 @@ namespace App\Services;
 use App\Models\PointPeriode;
 use App\Models\PointRule;
 use App\Models\PointTransaction;
+use App\Enums\PointCategoryEnum;
 use Exception;
 use Illuminate\Support\Facades\Log;
 
 class PointHandlerService
 {
-    /**
-     * Trigger pemberian poin berdasarkan nama event.
-     * Dapat dipanggil dari Controller, Command, atau Observer.
-     * * @param int $employeeId
-     * @param string $eventName (Contoh: 'Hadir Tepat Waktu', 'Terlambat')
-     * @param string|null $note Catatan tambahan
-     */
-    public function trigger(int $employeeId, string $eventName, ?string $note = null)
+    public function trigger(int $employeeId, PointCategoryEnum $category, int $value, ?string $note = null)
     {
         try {
-            // 1. Cari Rule yang aktif berdasarkan nama event
-            $rule = PointRule::where('event_name', $eventName)
-                ->where('is_active', true)
-                ->first();
-
-            if (!$rule) {
-                Log::warning("Point Rule '{$eventName}' not found or inactive.");
+            // 1. Cari Periode aktif
+            $period = PointPeriode::where('is_active', true)->first();
+            if (!$period) {
+                Log::error("Sistem Poin: Tidak ada periode aktif.");
                 return null;
             }
 
-            // 2. Cari Periode yang sedang aktif
-            $period = PointPeriode::where('is_active', true)->first();
-            if (!$period) {
-                Log::error("Failed to add points: No active period found.");
+            // 2. Cari Rule yang cocok menggunakan Engine Logic
+            $rule = $this->findMatchingRule($category, $value);
+
+            if (!$rule) {
+                Log::warning("Sistem Poin: Tidak ada rule yang cocok untuk kategori {$category->value} dengan nilai {$value}.");
                 return null;
             }
 
             // 3. Catat Transaksi
-            $transaction = PointTransaction::create([
-                'employee_id' => $employeeId,
-                'point_rule_id' => $rule->id,
+            return PointTransaction::create([
+                'employee_id'     => $employeeId,
+                'point_rule_id'   => $rule->id,
                 'point_period_id' => $period->id,
-                'current_points' => $rule->points,
-                'note' => $note,
+                'current_points'  => $rule->points, // Mengambil poin dari rule yang cocok
+                'note'            => $note,
             ]);
 
-            return $transaction;
-
         } catch (Exception $e) {
-            Log::error("Point System Error: " . $e->getMessage());
+            Log::error("Sistem Poin Error: " . $e->getMessage());
             return null;
         }
+    }
+
+    /**
+     * Logic inti untuk mencari rule berdasarkan operator
+     */
+    private function findMatchingRule(PointCategoryEnum $category, int $value)
+    {
+        $rules = PointRule::where('category', $category)
+            ->where('is_active', true)
+            ->get();
+
+        foreach ($rules as $rule) {
+            $isMatch = match ($rule->operator) {
+                '<'       => $value < $rule->min_value,
+                '<='      => $value <= $rule->min_value,
+                '>'       => $value > $rule->min_value,
+                '>='      => $value >= $rule->min_value,
+                '=='      => $value == $rule->min_value,
+                'BETWEEN' => ($value >= $rule->min_value && $value <= $rule->max_value),
+                default   => false,
+            };
+
+            if ($isMatch) return $rule;
+        }
+
+        return null;
     }
 }

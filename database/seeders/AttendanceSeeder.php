@@ -25,7 +25,7 @@ class AttendanceSeeder extends Seeder
             return;
         }
 
-        $totalDesiredRecords = 10000;
+        $totalDesiredRecords = 1000;
         $batchSize = 500;
         $data = [];
         $count = 0;

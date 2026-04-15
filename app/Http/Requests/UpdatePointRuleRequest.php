@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\PointCategoryEnum;
+use Illuminate\Validation\Rules\Enum;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdatePointRuleRequest extends FormRequest
@@ -22,8 +24,12 @@ class UpdatePointRuleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'event_name' => 'required|string|max:255',
+            'category' => ['sometimes', new Enum(PointCategoryEnum::class)],
+            'event_name' => 'required|string|max:255|unique:point_rules,event_name,' . $this->route('point_rule')->id,
             'points' => 'required|integer|between:-1000,1000',
+            'operator' => 'sometimes|in:<,<=,>,>=,==,BETWEEN',
+            'min_value' => 'sometimes|integer',
+            'max_value' => 'required_if:operator,BETWEEN|nullable|integer|gt:min_value',
             'description' => 'nullable|string|max:500',
             'is_active' => 'sometimes|boolean',
         ];

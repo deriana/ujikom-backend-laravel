@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Enums\ApprovalStatus;
-use App\Enums\PointRuleEnum;
 use App\Exceptions\Attendance\AttendanceException;
 use App\Models\Attendance;
 use App\Models\AttendanceCorrection;
@@ -103,12 +102,14 @@ class AttendanceService
         ]);
 
         // 2. Trigger point system based on punctuality
-        $isLate = $timeValidation['late_minutes'] > 0;
+        $lateMinutes = $timeValidation['late_minutes'] ?? 0;
 
-        $event = $isLate ? PointRuleEnum::LATE->value : PointRuleEnum::PRESENT->value;
-        $note = $isLate ? "Late {$timeValidation['late_minutes']} minutes" : "On Time";
-
-        $this->pointHandler->trigger($attendance->employee_id, $event, $note);
+        $this->pointHandler->trigger(
+            $attendance->employee_id,
+            \App\Enums\PointCategoryEnum::ATTENDANCE,
+            $lateMinutes,
+            $lateMinutes > 0 ? "Late {$lateMinutes} minutes" : 'On time'
+        );
 
         // 3. Prepare the notification message based on punctuality
         $roundedLate = round($timeValidation['late_minutes']);
@@ -164,19 +165,22 @@ class AttendanceService
         $hours = floor($workMinutes / 60);
         $minutes = $workMinutes % 60;
 
-        if ($timeValidation['early_leave_minutes'] > 0 && !$timeValidation['is_early_leave_approved']) {
+    if ($timeValidation['early_leave_minutes'] > 0 && !$timeValidation['is_early_leave_approved']) {
             $this->pointHandler->trigger(
                 $attendance->employee_id,
-                PointRuleEnum::EARLY_LEAVE->value,
+                \App\Enums\PointCategoryEnum::ATTENDANCE,
+                (int) $timeValidation['early_leave_minutes'],
                 "Early leave {$timeValidation['early_leave_minutes']} minutes without approval."
             );
         }
 
+        // 2. TRIGGER POIN: LEMBUR
         if ($timeValidation['overtime_minutes'] >= 60) {
             $this->pointHandler->trigger(
                 $attendance->employee_id,
-                PointRuleEnum::OVERTIME->value,
-                "Overtime of {$timeValidation['overtime_minutes']} minutes."
+                \App\Enums\PointCategoryEnum::ATTENDANCE,
+                (int) $timeValidation['overtime_minutes'],
+                "Overtime for {$timeValidation['overtime_minutes']} minutes."
             );
         }
 

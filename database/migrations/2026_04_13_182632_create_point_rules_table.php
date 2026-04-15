@@ -14,10 +14,15 @@ return new class extends Migration
         Schema::create('point_rules', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
-            $table->string('event_name');
-            $table->integer('points')->default(0);
+            $table->string('category'); // Menggunakan Enum (ATTENDANCE, PERFORMANCE, dll)
+            $table->string('event_name'); // Nama aturan (misal: "Telat > 30 Menit")
+            $table->integer('points');
+            $table->enum('operator', ['<', '<=', '>', '>=', '==', 'BETWEEN'])->default('==');
+            $table->integer('min_value')->nullable();
+            $table->integer('max_value')->nullable(); // Digunakan jika operator 'BETWEEN'
             $table->boolean('is_active')->default(true);
-            $table->string('description')->nullable();
+            $table->text('description')->nullable();
+            $table->boolean('system_reserve')->default(false); // Menandai aturan yang dicadangkan untuk sistem internal
             $table->timestamps();
         });
     }

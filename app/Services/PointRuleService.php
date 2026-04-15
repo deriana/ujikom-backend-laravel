@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\PointRule;
 use Illuminate\Support\Facades\DB;
+use DomainException;
 use Illuminate\Support\Str;
 
 /**
@@ -35,10 +36,14 @@ class PointRuleService
         return DB::transaction(function () use ($data) {
             return PointRule::create([
                 'uuid' => (string) Str::uuid(),
+                'category' => $data['category'],
                 'event_name' => $data['event_name'],
                 'points' => $data['points'],
+                'operator' => $data['operator'] ?? '==',
+                'min_value' => $data['min_value'] ?? null,
+                'max_value' => $data['max_value'] ?? null,
                 'description' => $data['description'] ?? null,
-                'is_active' => $data['is_active'] ?? true,
+                'is_active' => isset($data['is_active']) ? $data['is_active'] : true,
             ]);
         });
     }
@@ -53,9 +58,26 @@ class PointRuleService
     public function update(PointRule $pointRule, array $data): PointRule
     {
         return DB::transaction(function () use ($pointRule, $data) {
+            // Jika aturan diproteksi sistem, cegah perubahan pada logika inti
+            if ($pointRule->system_reserve) {
+                $restrictedFields = ['operator', 'min_value', 'max_value', 'category', 'is_active'];
+                $attemptingToChangeRestricted = false;
+                foreach ($restrictedFields as $field) {
+                    if (array_key_exists($field, $data)) $attemptingToChangeRestricted = true;
+                }
+
+                if ($attemptingToChangeRestricted) {
+                    throw new DomainException("Cannot modify core logic (operator, values, or category) of a system reserved rule.");
+                }
+            }
+
             $pointRule->update([
+                'category' => $data['category'] ?? $pointRule->category,
                 'event_name' => $data['event_name'] ?? $pointRule->event_name,
                 'points' => $data['points'] ?? $pointRule->points,
+                'operator' => $data['operator'] ?? $pointRule->operator,
+                'min_value' => array_key_exists('min_value', $data) ? $data['min_value'] : $pointRule->min_value,
+                'max_value' => array_key_exists('max_value', $data) ? $data['max_value'] : $pointRule->max_value,
                 'description' => $data['description'] ?? $pointRule->description,
                 'is_active' => isset($data['is_active']) ? $data['is_active'] : $pointRule->is_active,
             ]);
@@ -72,7 +94,12 @@ class PointRuleService
      */
     public function delete(PointRule $pointRule): bool
     {
-        return DB::transaction(fn () => (bool) $pointRule->delete());
+        return DB::transaction(function () use ($pointRule) {
+            if ($pointRule->system_reserve) {
+                throw new DomainException("System reserved rules cannot be deleted.");
+            }
+            return (bool) $pointRule->delete();
+        });
     }
 
     /**

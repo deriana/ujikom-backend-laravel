@@ -2,11 +2,12 @@
 
 namespace App\Services;
 
+use App\Enums\UserRole;
 use App\Models\Employee;
 use App\Models\PointPeriode;
 use App\Models\PointRule;
 use App\Models\PointTransaction;
-use App\Enums\UserRole;
+use App\Models\PointWallet;
 use Exception;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -39,6 +40,7 @@ class PointService
 
     /**
      * Menyimpan transaksi poin baru (Manual Input dari Manager/Admin).
+     *
      * * @param array $data (employee_nik, rule_uuid, current_points)
      */
     public function store(array $data)
@@ -46,19 +48,19 @@ class PointService
         return DB::transaction(function () use ($data) {
             // 1. Cari Employee berdasarkan NIK
             $employeeId = Employee::where('nik', $data['employee_nik'])->value('id');
-            if (!$employeeId) {
+            if (! $employeeId) {
                 throw new Exception('Employee with the provided NIK not found.');
             }
 
             // 2. Cari Rule berdasarkan UUID
             $rule = PointRule::where('uuid', $data['rule_uuid'])->first();
-            if (!$rule) {
+            if (! $rule) {
                 throw new Exception('Point rule not found.');
             }
 
             // 3. Cari Periode Aktif
             $period = PointPeriode::where('is_active', true)->first();
-            if (!$period) {
+            if (! $period) {
                 throw new Exception('There is no active point period.');
             }
 
@@ -110,32 +112,87 @@ class PointService
      */
     public function getLeaderboard(int $limit = 10)
     {
-        $period = PointPeriode::active()->first();
+        $activePeriod = PointPeriode::active()->first();
+        $user = Auth::user();
+        $myRank = null;
+        $myPoints = 0;
 
-        if (!$period) {
-            return collect([]);
+        $query = PointWallet::with(['employee.user', 'employee.position'])
+            ->where('point_period_id', $activePeriod?->id)
+            ->orderByDesc('current_balance');
+
+        $allWallets = $query->get();
+
+        if ($user && $user->employee) {
+            $myWallet = $allWallets->where('employee_id', $user->employee->id)->first();
+            if ($myWallet) {
+                $myPoints = $myWallet->current_balance;
+                $myRank = $allWallets->search(fn($w) => $w->employee_id === $user->employee->id) + 1;
+            }
         }
 
-        return Employee::query()
-            ->select(
-                'employees.id',
-                'employees.user_id',
-                'users.name as employee_name',
-                DB::raw('SUM(point_transactions.current_points) as total_points')
-            )
-            ->join('users', 'users.id', '=', 'employees.user_id')
-            ->join('point_transactions', 'employees.id', '=', 'point_transactions.employee_id')
-            ->where('point_transactions.point_period_id', $period->id)
-            ->groupBy('employees.id', 'employees.user_id', 'users.name')
-            ->orderByDesc('total_points')
-            ->limit($limit)
-            ->get()
-            ->map(function ($emp) {
-                // Tambahkan URL foto menggunakan Spatie Media Library dari model aslinya
-                $employeeModel = Employee::find($emp->id);
-                $emp->photo_url = $employeeModel->getFirstMediaUrl('profile_photo');
-                return $emp;
-            });
+        $leaderboard = $allWallets->take($limit)->map(function ($item, $key) {
+            $item->rank = $key + 1;
+            return $item;
+        });
+
+        return [
+            'period' => $activePeriod ? $activePeriod->name : 'No Active Period',
+            'my_rank' => $myRank,
+            'my_points' => $myPoints,
+            'leaderboard' => $leaderboard
+        ];
+    }
+
+    /**
+     * Mengambil detail poin satu karyawan berdasarkan NIK untuk periode aktif.
+     */
+    public function getLeaderboardDetail(string $nik)
+    {
+        $period = PointPeriode::active()->first();
+
+        if (! $period) {
+            throw new \Exception('No active point period found.');
+        }
+
+        // Ambil Employee beserta Wallet-nya untuk periode aktif
+        $employee = Employee::where('nik', $nik)
+            ->with(['user', 'position', 'wallets' => function ($q) use ($period) {
+                $q->where('point_period_id', $period->id);
+            }])
+            ->first();
+
+        if (! $employee) {
+            throw new \Exception('Employee not found.');
+        }
+
+        // Ambil history transaksi untuk list di UI
+        $transactions = PointTransaction::with('rule')
+            ->where('employee_id', $employee->id)
+            ->where('point_period_id', $period->id)
+            ->latest()
+            ->get();
+
+        // Ambil saldo dari wallet (fallback ke 0 jika belum ada transaksi)
+        $currentWallet = $employee->wallets->first();
+
+        return [
+            'employee' => [
+                'nik' => $employee->nik,
+                'name' => $employee->user->name,
+                'position' => $employee->position?->name,
+                'photo_url' => $employee->getFirstMediaUrl('profile_photo'),
+                'total_points' => $currentWallet ? $currentWallet->current_balance : 0,
+            ],
+            'transactions' => $transactions->map(function ($transaction) {
+                return [
+                    'event' => $transaction->rule->event_name,
+                    'points' => $transaction->current_points,
+                    'date' => $transaction->created_at->format('Y-m-d H:i'),
+                    'note' => $transaction->note,
+                ];
+            }),
+        ];
     }
 
     /**
@@ -144,7 +201,7 @@ class PointService
     public function getEmployeeHistory(int $employee_nik)
     {
         $employeeId = Employee::where('nik', $employee_nik)->value('id');
-        if (!$employeeId) {
+        if (! $employeeId) {
             throw new \Exception('Employee with the provided NIK not found.');
         }
 

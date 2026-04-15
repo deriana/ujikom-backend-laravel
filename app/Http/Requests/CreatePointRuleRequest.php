@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\PointCategoryEnum;
+use Illuminate\Validation\Rules\Enum;
 use Illuminate\Foundation\Http\FormRequest;
 
 class CreatePointRuleRequest extends FormRequest
@@ -22,8 +24,12 @@ class CreatePointRuleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'event_name' => 'required|string|max:255',
+            'category' => ['required', new Enum(PointCategoryEnum::class)],
+            'event_name' => 'required|string|max:255|unique:point_rules,event_name',
             'points' => 'required|integer|between:-1000,1000',
+            'operator' => 'nullable|in:<,<=,>,>=,==,BETWEEN',
+            'min_value' => 'nullable|integer',
+            'max_value' => 'required_if:operator,BETWEEN|nullable|integer|gt:min_value',
             'description' => 'nullable|string|max:500',
             'is_active' => 'sometimes|boolean',
         ];

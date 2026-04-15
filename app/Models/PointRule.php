@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PointCategoryEnum;
 use App\Traits\Notificationable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -27,16 +28,23 @@ class PointRule extends Model
     /** @var array<int, string> Atribut yang dapat diisi secara massal */
     protected $fillable = [
         'uuid', /**< Identifier unik (UUID) */
+        'category', /**< Kategori poin (Enum PointCategoryEnum) */
         'event_name', /**< Nama aktivitas/kejadian (misal: Tepat Waktu) */
         'points', /**< Jumlah poin yang diberikan */
+        'operator', /**< Operator perbandingan (misal: <, >, BETWEEN) */
+        'min_value', /**< Nilai ambang batas minimal */
+        'max_value', /**< Nilai ambang batas maksimal (untuk BETWEEN) */
         'is_active', /**< Status apakah aturan ini sedang berlaku */
         'description', /**< Penjelasan mengenai aturan poin */
     ];
 
     /** @var array<string, string> Casting tipe data atribut */
     protected $casts = [
+        'category' => PointCategoryEnum::class,
         'points' => 'integer',
         'is_active' => 'boolean',
+        'min_value' => 'integer',
+        'max_value' => 'integer',
     ];
 
     /** @var array<int, string> Atribut yang disembunyikan dari serialisasi JSON */
