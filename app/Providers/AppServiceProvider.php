@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Models\PointTransaction;
 use App\Models\Setting;
+use App\Observers\PointTransactionObserver;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Gate;
@@ -49,6 +51,8 @@ class AppServiceProvider extends ServiceProvider
                 ], 429);
             });
         });
+
+        PointTransaction::observe(PointTransactionObserver::class);
 
         Gate::before(function ($user, $ability) {
             return $user->hasRole('admin') ? true : null;

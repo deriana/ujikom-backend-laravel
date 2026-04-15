@@ -17,4 +17,5 @@ enum StatusEnum: int
     case expired = 6; /**< Status kedaluwarsa */
     case archived = 7; /**< Status diarsipkan */
     case deleted = 8; /**< Status dihapus */
+    case completed = 9; /**< Status selesai atau tuntas */
 }
