@@ -382,6 +382,16 @@ class Employee extends Model implements HasMedia
     }
 
     /**
+     * Relasi ke transaksi poin yang diterima karyawan ini.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function transactions()
+    {
+        return $this->hasMany(PointTransaction::class);
+    }
+
+    /**
      * Mendapatkan nama kolom kunci untuk routing Laravel (menggunakan NIK).
      *
      * @return string
