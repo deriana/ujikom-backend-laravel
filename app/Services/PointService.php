@@ -137,17 +137,25 @@ class PointService
             }
         }
 
-        $leaderboard = $allWallets->take($limit)->map(function ($item, $key) {
+        $highest = $allWallets->take($limit)->map(function ($item, $key) {
             $item->rank = $key + 1;
             $item->current_balance = $item->total_earned; // Override balance dengan total yang dikumpulkan
             return $item;
         });
 
+        $lowest = $allWallets->slice(-$limit)->map(function ($item, $key) use ($allWallets, $limit) {
+            $originalIndex = $allWallets->count() - ($limit - $key);
+            $item->rank = $originalIndex + 1;
+            $item->current_balance = $item->total_earned;
+            return $item;
+        })->values();
+
         return [
             'period' => $activePeriod ? $activePeriod->name : 'No Active Period',
             'my_rank' => $myRank,
             'my_points' => $myPoints,
-            'leaderboard' => $leaderboard
+            'highest' => $highest,
+            'lowest' => $lowest
         ];
     }
 

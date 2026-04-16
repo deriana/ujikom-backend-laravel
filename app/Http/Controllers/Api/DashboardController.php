@@ -505,6 +505,7 @@ class DashboardController extends Controller
             'attendance_status' => [
                 'is_checked_in' => (bool) ($attendance->clock_in ?? false),
                 'is_checked_out' => (bool) ($attendance->clock_out ?? false),
+                'is_absent' => $attendance ? ($attendance->status === 'absent') : false,
                 'clock_in_time' => $attendance?->clock_in?->format('H:i') ?? '--:--',
                 'clock_out_time' => $attendance?->clock_out?->format('H:i') ?? '--:--',
                 'attendance_id' => $attendance?->id,

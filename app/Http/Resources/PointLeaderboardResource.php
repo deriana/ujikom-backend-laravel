@@ -18,16 +18,26 @@ class PointLeaderboardResource extends JsonResource
                 'my_rank' => $this['my_rank'],
                 'my_points' => (int) $this['my_points'],
             ],
-            'list' => $this['leaderboard']->map(function ($wallet) {
-                return [
-                    'nik' => $wallet->employee->nik,
-                    'name' => $wallet->employee->user->name,
-                    'position' => $wallet->employee->position?->name ?? '-',
-                    'total_points' => (int) $wallet->current_balance,
-                    'photo_url' => $wallet->employee->getFirstMediaUrl('profile_photo') ?: null,
-                    'rank' => $wallet->rank,
-                ];
-            }),
+            'highest' => $this['highest']->map(fn($wallet) => $this->formatWallet($wallet)),
+            'lowest' => $this['lowest']->map(fn($wallet) => $this->formatWallet($wallet)),
+        ];
+    }
+
+    /**
+     * Helper to format wallet data.
+     *
+     * @param mixed $wallet
+     * @return array
+     */
+    private function formatWallet($wallet): array
+    {
+        return [
+            'nik' => $wallet->employee->nik,
+            'name' => $wallet->employee->user->name,
+            'position' => $wallet->employee->position?->name ?? '-',
+            'total_points' => (int) $wallet->current_balance,
+            'photo_url' => $wallet->employee->getFirstMediaUrl('profile_photo') ?: null,
+            'rank' => $wallet->rank,
         ];
     }
 }

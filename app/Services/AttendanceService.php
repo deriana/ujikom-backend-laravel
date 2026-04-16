@@ -464,7 +464,7 @@ class AttendanceService
         $attendance = Attendance::where('employee_id', $employee->id)
             ->where('date', Carbon::today())
             ->first();
-        if (! $attendance) {
+        if (! $attendance || $attendance->status === 'absent') {
             return 'absent';
         } elseif ($attendance->clock_in && ! $attendance->clock_out) {
             return 'clocked_in';
