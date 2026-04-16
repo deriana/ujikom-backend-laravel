@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Models\WorkSchedule;
-use Exception;
+use DomainException;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -55,13 +55,13 @@ class WorkScheduleService
      * @param WorkSchedule $schedule Objek jadwal kerja yang akan diperbarui.
      * @param array $data Data pembaruan.
      * @return WorkSchedule
-     * @throws Exception Jika jadwal sudah dihapus.
+     * @throws DomainException Jika jadwal sudah dihapus.
      */
     public function update(WorkSchedule $schedule, array $data)
     {
         // 1. Prevent updating soft-deleted records
         if ($schedule->trashed()) {
-            throw new Exception('Cannot update a deleted work schedule');
+            throw new \DomainException('Cannot update a deleted work schedule');
         }
 
         return DB::transaction(function () use ($schedule, $data) {
@@ -86,19 +86,19 @@ class WorkScheduleService
      *
      * @param WorkSchedule $schedule Objek jadwal kerja yang akan dihapus.
      * @return bool
-     * @throws Exception Jika jadwal sudah dihapus atau masih digunakan oleh karyawan.
+     * @throws DomainException Jika jadwal sudah dihapus atau masih digunakan oleh karyawan.
      */
     public function delete(WorkSchedule $schedule): bool
     {
         // 1. Validate current state
         if ($schedule->trashed()) {
-            throw new Exception('Work schedule already deleted');
+            throw new \DomainException('Work schedule already deleted');
         }
 
         return DB::transaction(function () use ($schedule) {
             // 2. Prevent deletion if the schedule is currently assigned to employees
             if ($schedule->employeeWorkSchedules()->exists()) {
-                throw new Exception('Cannot delete schedule that is assigned to employees');
+                throw new \DomainException('Cannot delete schedule that is assigned to employees');
             }
 
             $schedule->delete();
@@ -112,7 +112,7 @@ class WorkScheduleService
      *
      * @param string $uuid UUID jadwal kerja.
      * @return WorkSchedule
-     * @throws Exception Jika jadwal tidak dalam status terhapus.
+     * @throws DomainException Jika jadwal tidak dalam status terhapus.
      */
     public function restore(string $uuid): WorkSchedule
     {
@@ -124,7 +124,7 @@ class WorkScheduleService
 
             // 2. Ensure it is actually deleted before restoring
             if (! $schedule->trashed()) {
-                throw new Exception('Work schedule is not deleted');
+                throw new \DomainException('Work schedule is not deleted');
             }
 
             // 3. Perform the restoration
@@ -139,7 +139,7 @@ class WorkScheduleService
      *
      * @param string $uuid UUID jadwal kerja.
      * @return bool
-     * @throws Exception Jika jadwal memiliki riwayat penugasan.
+     * @throws DomainException Jika jadwal memiliki riwayat penugasan.
      */
     public function forceDelete(string $uuid): bool
     {
@@ -150,7 +150,7 @@ class WorkScheduleService
                 ->firstOrFail();
 
             if ($schedule->employeeWorkSchedules()->exists()) {
-                throw new Exception('Cannot force delete schedule that has assignment history');
+                throw new \DomainException('Cannot force delete schedule that has assignment history');
             }
 
             // 3. Perform permanent deletion

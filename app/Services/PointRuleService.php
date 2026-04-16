@@ -67,7 +67,7 @@ class PointRuleService
                 }
 
                 if ($attemptingToChangeRestricted) {
-                    throw new DomainException("Cannot modify core logic (operator, values, or category) of a system reserved rule.");
+                    throw new \DomainException("Cannot modify core logic (operator, values, or category) of a system reserved rule.");
                 }
             }
 
@@ -96,7 +96,7 @@ class PointRuleService
     {
         return DB::transaction(function () use ($pointRule) {
             if ($pointRule->system_reserve) {
-                throw new DomainException("System reserved rules cannot be deleted.");
+                throw new \DomainException("System reserved rules cannot be deleted.");
             }
             return (bool) $pointRule->delete();
         });

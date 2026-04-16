@@ -9,7 +9,7 @@ use App\Models\Attendance;
 use App\Models\EarlyLeave;
 use App\Models\Employee;
 use Carbon\Carbon;
-use Exception;
+use DomainException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -156,7 +156,7 @@ class EarlyLeaveService
      *
      * @param array $data Data pengajuan (employee_id, reason, attachment).
      * @return EarlyLeave Objek pengajuan yang berhasil dibuat.
-     * @throws Exception Jika catatan kehadiran hari ini tidak ditemukan atau tidak layak mengajukan.
+     * @throws DomainException Jika catatan kehadiran hari ini tidak ditemukan atau tidak layak mengajukan.
      */
     public function store(array $data): EarlyLeave
     {
@@ -171,7 +171,7 @@ class EarlyLeaveService
                 ->first();
 
             if (! $attendance) {
-                throw new Exception('Attendance record for today not found. You must clock in first.');
+                throw new \DomainException('Attendance record for today not found. You must clock in first.');
             }
 
             // 3. Validate if the employee is eligible to request early leave
@@ -212,7 +212,7 @@ class EarlyLeaveService
      * @param array $data Data pembaruan.
      * @param \App\Models\User $user Objek pengguna yang melakukan aksi.
      * @return EarlyLeave Objek pengajuan setelah diperbarui.
-     * @throws Exception Jika pengajuan sudah diproses atau bukan dilakukan di hari yang sama.
+     * @throws DomainException Jika pengajuan sudah diproses atau bukan dilakukan di hari yang sama.
      */
     public function update(EarlyLeave $earlyLeave, array $data, $user): EarlyLeave
     {
@@ -221,13 +221,13 @@ class EarlyLeaveService
             if (
                 $earlyLeave->status !== ApprovalStatus::PENDING->value && ! $user->hasAnyRole([UserRole::HR, UserRole::ADMIN])
             ) {
-                throw new Exception('Processed early leave requests cannot be modified.');
+                throw new \DomainException('Processed early leave requests cannot be modified.');
             }
 
             // 2. Ensure the request is for the current day
             if ($earlyLeave->attendance?->date->isPast() &&
                 ! $earlyLeave->attendance->date->isToday()) {
-                throw new Exception('Early leave requests can only be modified on the same day.');
+                throw new \DomainException('Early leave requests can only be modified on the same day.');
             }
 
             // 3. Handle attachment update and delete old file
@@ -267,14 +267,14 @@ class EarlyLeaveService
      * @param bool $approve Status persetujuan (true untuk setuju, false untuk tolak).
      * @param string|null $note Catatan dari penyetuju.
      * @return EarlyLeave Objek pengajuan yang telah diperbarui.
-     * @throws Exception Jika pengajuan sudah diproses atau pengguna tidak memiliki izin.
+     * @throws DomainException Jika pengajuan sudah diproses atau pengguna tidak memiliki izin.
      */
     public function approve(EarlyLeave $earlyLeave, $user, bool $approve, ?string $note = null)
     {
         return DB::transaction(function () use ($earlyLeave, $user, $approve, $note) {
             // 1. Ensure the request is still pending
             if ($earlyLeave->status !== ApprovalStatus::PENDING->value) {
-                throw new Exception('Early leave request has already been processed.');
+                throw new \DomainException('Early leave request has already been processed.');
             }
 
             // 2. Permission check: Only direct manager or high-level roles can process
@@ -284,7 +284,7 @@ class EarlyLeaveService
                 ! $isManager &&
                 ! $user->hasAnyRole([UserRole::HR, UserRole::ADMIN, UserRole::DIRECTOR])
             ) {
-                throw new Exception('You do not have permission to process this early leave request.');
+                throw new \DomainException('You do not have permission to process this early leave request.');
             }
 
             // 3. Send notification to the employee
@@ -336,23 +336,23 @@ class EarlyLeaveService
      * Memvalidasi apakah karyawan layak untuk mengajukan pulang awal.
      *
      * @param Attendance $attendance Objek kehadiran hari ini.
-     * @throws Exception Jika belum clock-in, sudah clock-out, atau sudah pernah mengajukan hari ini.
+     * @throws DomainException Jika belum clock-in, sudah clock-out, atau sudah pernah mengajukan hari ini.
      */
     private function validateEarlyLeaveEligibility(Attendance $attendance): void
     {
         // 1. Check if the employee has clocked in
         if (! $attendance->clock_in) {
-            throw new Exception('You have not clocked in yet.');
+            throw new \DomainException('You have not clocked in yet.');
         }
 
         // 2. Ensure the employee hasn't already clocked out
         if ($attendance->clock_out) {
-            throw new Exception('Early leave cannot be requested after clocking out.');
+            throw new \DomainException('Early leave cannot be requested after clocking out.');
         }
 
         // 3. Prevent duplicate requests for the same attendance record
         if (EarlyLeave::where('attendance_id', $attendance->id)->exists()) {
-            throw new Exception('An early leave request has already been submitted for this attendance.');
+            throw new \DomainException('An early leave request has already been submitted for this attendance.');
         }
     }
 }

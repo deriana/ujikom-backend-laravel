@@ -8,7 +8,7 @@ use App\Models\Attendance;
 use App\Models\Overtime;
 use App\Models\Setting;
 use Carbon\Carbon;
-use Exception;
+use DomainException;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -122,7 +122,7 @@ class OvertimeService
      * @param \App\Models\User $user Objek pengguna yang membuat pengajuan.
      * @param array $data Data pengajuan (attendance_id, employee_id, reason).
      * @return Overtime Objek lembur yang berhasil dibuat.
-     * @throws Exception Jika karyawan belum layak mengajukan lembur.
+     * @throws DomainException Jika karyawan belum layak mengajukan lembur.
      */
     public function store($user, array $data): Overtime
     {
@@ -156,7 +156,7 @@ class OvertimeService
      * @param array $data Data pembaruan.
      * @param \App\Models\User $user Objek pengguna yang melakukan aksi.
      * @return Overtime Objek lembur setelah diperbarui.
-     * @throws Exception Jika pengajuan sudah diproses dan pengguna bukan HR/Admin.
+     * @throws DomainException Jika pengajuan sudah diproses dan pengguna bukan HR/Admin.
      */
     public function update(Overtime $overtime, array $data, $user): Overtime
     {
@@ -164,7 +164,7 @@ class OvertimeService
             // 1. Validate if the request can still be modified
             if ($overtime->status !== ApprovalStatus::PENDING->value &&
                 ! $user->hasAnyRole([UserRole::HR, UserRole::ADMIN])) {
-                throw new Exception('Processed overtime cannot be modified.');
+                throw new \DomainException('Processed overtime cannot be modified.');
             }
 
             // 2. Update the record
@@ -190,20 +190,20 @@ class OvertimeService
      * @param bool $approve Status persetujuan (true untuk setuju, false untuk tolak).
      * @param string|null $note Catatan dari penyetuju.
      * @return Overtime Objek lembur yang telah diperbarui.
-     * @throws Exception Jika pengajuan sudah diproses atau pengguna tidak memiliki izin.
+     * @throws DomainException Jika pengajuan sudah diproses atau pengguna tidak memiliki izin.
      */
     public function approve(Overtime $overtime, $user, bool $approve, ?string $note = null)
     {
         return DB::transaction(function () use ($overtime, $user, $approve, $note) {
             // 1. Ensure the request is still pending
             if ($overtime->status !== ApprovalStatus::PENDING->value) {
-                throw new Exception('Overtime has already been processed.');
+                throw new \DomainException('Overtime has already been processed.');
             }
 
             // 2. Permission check: Only direct manager or high-level roles can process
             $isManager = $overtime->employee?->manager_id === optional($user->employee)->id;
             if (! $isManager && ! $user->hasAnyRole([UserRole::HR, UserRole::ADMIN, UserRole::DIRECTOR, UserRole::OWNER])) {
-                throw new Exception('You do not have permission to approve this overtime.');
+                throw new \DomainException('You do not have permission to approve this overtime.');
             }
 
             // 3. Update the request status and approval details
@@ -231,7 +231,7 @@ class OvertimeService
      *
      * @param Attendance $attendance Objek kehadiran yang baru saja di-update clock-out-nya.
      * @return void
-     * @throws Exception Jika pengaturan kehadiran default tidak ditemukan.
+     * @throws DomainException Jika pengaturan kehadiran default tidak ditemukan.
      */
     public function updateDurationAfterClockOut(Attendance $attendance)
     {
@@ -260,7 +260,7 @@ class OvertimeService
             $attendanceSetting = Setting::where('key', 'attendance')->first();
 
             if (! $attendanceSetting || ! isset($attendanceSetting->values['work_end_time'])) {
-                throw new Exception('Default attendance setting not configured.');
+                throw new \DomainException('Default attendance setting not configured.');
             }
 
             $shiftEnd = Carbon::parse($attendance->date)
@@ -319,23 +319,23 @@ class OvertimeService
      * Memvalidasi apakah karyawan layak untuk mengajukan lembur.
      *
      * @param Attendance $attendance Objek kehadiran terkait.
-     * @throws Exception Jika belum clock-in, sudah clock-out, atau sudah pernah mengajukan.
+     * @throws DomainException Jika belum clock-in, sudah clock-out, atau sudah pernah mengajukan.
      */
     private function validateOvertimeEligibility(Attendance $attendance): void
     {
         // 1. Check if the employee has clocked in
         if (! $attendance->clock_in) {
-            throw new Exception('You have not clocked in yet.');
+            throw new \DomainException('You have not clocked in yet.');
         }
 
         // 2. Ensure the employee hasn't already clocked out
         if ($attendance->clock_out) {
-            throw new Exception('Cannot request overtime after clocking out.');
+            throw new \DomainException('Cannot request overtime after clocking out.');
         }
 
         // 3. Prevent duplicate requests for the same attendance record
         if (Overtime::where('attendance_id', $attendance->id)->exists()) {
-            throw new Exception('An overtime request has already been submitted for this attendance.');
+            throw new \DomainException('An overtime request has already been submitted for this attendance.');
         }
     }
 }

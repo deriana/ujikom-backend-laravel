@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Models\Division;
-use Exception;
+use DomainException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -72,15 +72,15 @@ class DivisionService
      * @param array $data Data pembaruan.
      * @param int $userId ID pengguna yang melakukan aksi.
      * @return Division
-     * @throws Exception Jika divisi adalah cadangan sistem atau sudah dihapus.
+     * @throws DomainException Jika divisi adalah cadangan sistem atau sudah dihapus.
      */
     public function update(Division $division, array $data, int $userId)
     {
         if ($division->system_reserve) {
-            throw new Exception('Cannot update a system reserve division');
+            throw new \DomainException('Cannot update a system reserve division');
         }
         if ($division->trashed()) {
-            throw new Exception('Cannot update a deleted division');
+            throw new \DomainException('Cannot update a deleted division');
         }
 
         return DB::transaction(function () use ($division, $data, $userId) {
@@ -102,15 +102,15 @@ class DivisionService
      *
      * @param Division $division Objek divisi yang akan dihapus.
      * @return bool
-     * @throws Exception Jika divisi adalah cadangan sistem atau sudah dalam status terhapus.
+     * @throws DomainException Jika divisi adalah cadangan sistem atau sudah dalam status terhapus.
      */
     public function delete(Division $division): bool
     {
         if ($division->system_reserve) {
-            throw new Exception('Cannot delete a system reserve division');
+            throw new \DomainException('Cannot delete a system reserve division');
         }
         if ($division->trashed()) {
-            throw new Exception('Cannot delete a deleted division');
+            throw new \DomainException('Cannot delete a deleted division');
         }
 
         return DB::transaction(function () use ($division) {
@@ -126,7 +126,7 @@ class DivisionService
      *
      * @param string $uuid UUID divisi.
      * @return Division
-     * @throws Exception Jika divisi tidak dalam status terhapus.
+     * @throws DomainException Jika divisi tidak dalam status terhapus.
      */
     public function restore(string $uuid): Division
     {
@@ -134,7 +134,7 @@ class DivisionService
             $division = Division::withTrashed()->whereUuid($uuid)->firstOrFail();
 
             if (! $division->trashed()) {
-                throw new Exception('Division is not deleted');
+                throw new \DomainException('Division is not deleted');
             }
 
             $division->restore();
@@ -203,7 +203,7 @@ class DivisionService
             }
 
             if (! empty($teamData['uuid']) && ! isset($existingTeams[$teamData['uuid']])) {
-                throw new Exception("Invalid team UUID {$teamData['uuid']} for this division");
+                throw new \DomainException("Invalid team UUID {$teamData['uuid']} for this division");
             }
 
             $newTeam = $division->teams()->create([

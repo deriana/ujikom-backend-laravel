@@ -76,7 +76,7 @@ class RoleService
     {
         // 1. Prevent modification of system reserved roles
         if($role->system_reserve) {
-            throw new DomainException("This role cannot be updated.");
+            throw new \DomainException("This role cannot be updated.");
         }
 
         return DB::transaction(function () use ($role, $data) {
@@ -104,12 +104,12 @@ class RoleService
     {
         // 1. Security check for system reserved roles
         if ($role->system_reserve) {
-            throw new DomainException("This role cannot be deleted.");
+            throw new \DomainException("This role cannot be deleted.");
         }
 
         // 2. Prevent deletion if the role is still assigned to users
         if ($role->users()->exists()) {
-            throw new DomainException("This role cannot be deleted because it has users.");
+            throw new \DomainException("This role cannot be deleted because it has users.");
         }
 
         // 3. Perform the deletion

@@ -8,7 +8,7 @@ use App\Models\PointPeriode;
 use App\Models\PointRule;
 use App\Models\PointTransaction;
 use App\Models\PointWallet;
-use Exception;
+use DomainException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -49,19 +49,19 @@ class PointService
             // 1. Cari Employee berdasarkan NIK
             $employeeId = Employee::where('nik', $data['employee_nik'])->value('id');
             if (! $employeeId) {
-                throw new Exception('Employee with the provided NIK not found.');
+                throw new \DomainException('Employee with the provided NIK not found.');
             }
 
             // 2. Cari Rule berdasarkan UUID
             $rule = PointRule::where('uuid', $data['rule_uuid'])->first();
             if (! $rule) {
-                throw new Exception('Point rule not found.');
+                throw new \DomainException('Point rule not found.');
             }
 
             // 3. Cari Periode Aktif
             $period = PointPeriode::where('is_active', true)->first();
             if (! $period) {
-                throw new Exception('There is no active point period.');
+                throw new \DomainException('There is no active point period.');
             }
 
             // 4. Create Transaction
@@ -167,7 +167,7 @@ class PointService
         $period = PointPeriode::active()->first();
 
         if (! $period) {
-            throw new \Exception('No active point period found.');
+            throw new \DomainException('No active point period found.');
         }
 
         // Ambil Employee beserta Wallet-nya untuk periode aktif
@@ -178,7 +178,7 @@ class PointService
             ->first();
 
         if (! $employee) {
-            throw new \Exception('Employee not found.');
+            throw new \DomainException('Employee not found.');
         }
 
         // Ambil history transaksi untuk list di UI
@@ -217,7 +217,7 @@ class PointService
     {
         $employeeId = Employee::where('nik', $employee_nik)->value('id');
         if (! $employeeId) {
-            throw new \Exception('Employee with the provided NIK not found.');
+            throw new \DomainException('Employee with the provided NIK not found.');
         }
 
         return PointTransaction::with(['rule', 'period'])

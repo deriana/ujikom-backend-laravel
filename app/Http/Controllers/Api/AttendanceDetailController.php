@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\AttendanceResource;
 use App\Http\Resources\AttendanceDetailResource;
 use App\Http\Resources\AttendanceLogResource;
+use App\Http\Resources\AttendanceSummaryResource;
 use App\Models\Attendance;
 use App\Services\AttendanceDetailService;
 use Illuminate\Http\Request;
@@ -127,7 +128,7 @@ class AttendanceDetailController extends Controller
      */
     public function getLogs(Request $request): JsonResponse
     {
-        // $this->authorize('view', $attendance);
+        $this->authorize('log', Attendance::class);
 
         $filters = $request->only(['date']);
 
@@ -136,6 +137,26 @@ class AttendanceDetailController extends Controller
         return $this->successResponse(
             AttendanceLogResource::collection($logs),
             'Attendance logs fetched successfully',
+            200
+        );
+    }
+
+    /**
+     * Mengambil ringkasan statistik kehadiran karyawan.
+     *
+     * @param Request $request
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
+     */
+    public function getSummary(Request $request): JsonResponse
+    {
+        $this->authorize('recap', Attendance::class);
+
+        $filters = $request->only(['start_date', 'end_date']);
+        $summary = $this->attendanceDetailService->getSummary($filters);
+
+        return $this->successResponse(
+            AttendanceSummaryResource::collection($summary),
+            'Attendance summary fetched successfully',
             200
         );
     }

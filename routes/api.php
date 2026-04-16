@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\EmployeeWorkScheduleController;
 use App\Http\Controllers\Api\HolidayController;
 use App\Http\Controllers\Api\LeaveController;
 use App\Http\Controllers\Api\LeaveTypeController;
+use App\Http\Controllers\Api\LogController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\OvertimeController;
 use App\Http\Controllers\Api\PayrollController;
@@ -145,6 +146,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::get('/attendances/today', [AttendanceController::class, 'attendanceStatusToday']);
     Route::get('/attendances/export', [AttendanceDetailController::class, 'export']);
     Route::get('/attendances/logs', [AttendanceDetailController::class, 'getLogs']);
+    Route::get('/attendances/summary', [AttendanceDetailController::class, 'getSummary']);
     Route::apiResource('attendances', AttendanceDetailController::class)->only('index', 'show');
     Route::apiResource('holidays', HolidayController::class);
     Route::prefix('work_schedules')->group(function () {
@@ -260,6 +262,11 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::get('/{point_item:uuid}', [PointItemController::class, 'show']);
         Route::post('/{point_item:uuid}', [PointItemController::class, 'update']);
         Route::delete('/{point_item:uuid}', [PointItemController::class, 'destroy']);
+    });
+
+    Route::prefix('system')->group(function () {
+        Route::get('/logs', [LogController::class, 'index']);
+        Route::get('/logs/{date}/download', [LogController::class, 'download']);
     });
 
     Route::get('/dashboard/admin', [DashboardController::class, 'getAdminDashboard']);

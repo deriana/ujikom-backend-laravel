@@ -10,7 +10,7 @@ use App\Models\Role;
 use App\Models\Team;
 use App\Models\User;
 use Carbon\Carbon;
-use Exception;
+use DomainException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -147,7 +147,7 @@ use Illuminate\Support\Facades\Mail;
             $token = $verificationService->generateToken($result);
 
             Mail::to($result->email)->queue(new VerifyEmail($result, $token));
-        } catch (\Exception $e) {
+        } catch (\DomainException $e) {
             Log::error('Gagal mengirim email verifikasi: '.$e->getMessage());
         }
 
@@ -199,7 +199,7 @@ use Illuminate\Support\Facades\Mail;
      * @param array $data Data pembaruan.
      * @param int $updaterId ID pengguna yang melakukan pembaruan.
      * @return User Objek pengguna setelah diperbarui.
-     * @throws Exception Jika pengguna adalah cadangan sistem atau profil karyawan tidak ditemukan.
+     * @throws DomainException Jika pengguna adalah cadangan sistem atau profil karyawan tidak ditemukan.
      */
     public function update(User $user, array $data, int $updaterId): User
     {
@@ -207,7 +207,7 @@ use Illuminate\Support\Facades\Mail;
 
             // 1. Prevent modification of system reserved users
             if ($user->system_reserve) {
-                throw new Exception('Cannot update a system reserve user');
+                throw new \DomainException('Cannot update a system reserve user');
             }
 
             // 2. Update user basic information
@@ -231,7 +231,7 @@ use Illuminate\Support\Facades\Mail;
             $employee = $user->employee;
 
             if (! $employee) {
-                throw new \Exception('Employee data not found for this user');
+                throw new \DomainException('Employee data not found for this user');
             }
 
             // 5. Resolve team and position IDs
@@ -292,17 +292,17 @@ use Illuminate\Support\Facades\Mail;
      *
      * @param User $user Objek pengguna yang akan dihapus.
      * @return bool True jika berhasil dihapus.
-     * @throws Exception Jika pengguna adalah cadangan sistem atau sudah dihapus.
+     * @throws DomainException Jika pengguna adalah cadangan sistem atau sudah dihapus.
      */
     public function delete(User $user): bool
     {
         // 1. Security and state validation
         if ($user->system_reserve) {
-            throw new Exception('Cannot delete a system reserve user');
+            throw new \DomainException('Cannot delete a system reserve user');
         }
 
         if ($user->trashed()) {
-            throw new Exception('User is already deleted');
+            throw new \DomainException('User is already deleted');
         }
 
         // 2. Set custom notification data before deletion
@@ -326,7 +326,7 @@ use Illuminate\Support\Facades\Mail;
      *
      * @param string $uuid UUID pengguna.
      * @return User Objek pengguna yang dipulihkan.
-     * @throws Exception Jika pengguna tidak dalam status terhapus.
+     * @throws DomainException Jika pengguna tidak dalam status terhapus.
      */
     public function restore(string $uuid): User
     {
@@ -335,7 +335,7 @@ use Illuminate\Support\Facades\Mail;
             $user = User::withTrashed()->whereUuid($uuid)->firstOrFail();
 
             if (! $user->trashed()) {
-                throw new Exception('User is not deleted');
+                throw new \DomainException('User is not deleted');
             }
 
             // 2. Restore the user and their employee profile
@@ -399,7 +399,7 @@ use Illuminate\Support\Facades\Mail;
      * @param string|null $date Tanggal berhenti.
      * @param int $adminId ID admin yang memproses aksi.
      * @return User Objek pengguna yang telah dinonaktifkan.
-     * @throws Exception Jika profil karyawan tidak ditemukan atau sudah tidak aktif.
+     * @throws DomainException Jika profil karyawan tidak ditemukan atau sudah tidak aktif.
      */
     public function terminateEmployment(string $uuid, string $state, ?string $date, int $adminId): User
     {
@@ -410,11 +410,11 @@ use Illuminate\Support\Facades\Mail;
             $employee = $user->employee;
 
             if (! $employee) {
-                throw new Exception('Employee record not found');
+                throw new \DomainException('Employee record not found');
             }
 
             if ($employee->employment_state !== 'active') {
-                throw new Exception('Employment already ended');
+                throw new \DomainException('Employment already ended');
             }
 
             // 2. Update employee termination details
@@ -445,14 +445,14 @@ use Illuminate\Support\Facades\Mail;
      * @param string $currentPassword Kata sandi saat ini.
      * @param string $newPassword Kata sandi baru.
      * @return void
-     * @throws Exception Jika kata sandi saat ini salah.
+     * @throws DomainException Jika kata sandi saat ini salah.
      */
     public function changePassword(User $user, string $currentPassword, string $newPassword): void
     {
         DB::transaction(function () use ($user, $currentPassword, $newPassword) {
             // 1. Validate current password
             if (! Hash::check($currentPassword, $user->password)) {
-                throw new Exception('The current password you entered is incorrect.');
+                throw new \DomainException('The current password you entered is incorrect.');
             }
 
             // 2. Update password
@@ -496,7 +496,7 @@ use Illuminate\Support\Facades\Mail;
      * @param bool $isActive Status aktif baru.
      * @param int $adminId ID admin yang melakukan aksi.
      * @return User Objek pengguna dengan status terbaru.
-     * @throws Exception Jika mencoba mengaktifkan kembali karyawan yang sudah diterminasi.
+     * @throws DomainException Jika mencoba mengaktifkan kembali karyawan yang sudah diterminasi.
      */
     public function status(string $uuid, bool $isActive, int $adminId): User
     {
@@ -507,7 +507,7 @@ use Illuminate\Support\Facades\Mail;
             $employee = $user->employee;
 
             if ($employee && $employee->employment_state !== 'active' && $isActive) {
-                throw new Exception('Cannot reactivate a terminated employee');
+                throw new \DomainException('Cannot reactivate a terminated employee');
             }
 
             // 2. Update user active status
@@ -557,7 +557,7 @@ use Illuminate\Support\Facades\Mail;
      * @param mixed $photoFile File gambar yang diunggah.
      * @param string $uuid UUID pengguna.
      * @return User Objek pengguna dengan foto profil baru.
-     * @throws Exception Jika profil karyawan tidak ditemukan.
+     * @throws DomainException Jika profil karyawan tidak ditemukan.
      */
     public function uploadProfilePhoto(User $user, $photoFile, $uuid): User
     {
@@ -566,7 +566,7 @@ use Illuminate\Support\Facades\Mail;
         $employee = $user->employee;
 
         if (! $employee) {
-            throw new Exception('Employee record not found for this user');
+            throw new \DomainException('Employee record not found for this user');
         }
 
         // 2. Clear existing photo and add new one to media collection
@@ -658,7 +658,7 @@ use Illuminate\Support\Facades\Mail;
      * @param User $user Objek pengguna.
      * @param array $descriptors Array berisi data vektor fitur wajah.
      * @return void
-     * @throws Exception Jika profil karyawan tidak ditemukan.
+     * @throws DomainException Jika profil karyawan tidak ditemukan.
      */
     public function updateBiometricDescriptors(User $user, array $descriptors): void
     {
@@ -667,7 +667,7 @@ use Illuminate\Support\Facades\Mail;
             $employee = $user->employee;
 
             if (! $employee) {
-                throw new Exception('Employee record not found for this user');
+                throw new \DomainException('Employee record not found for this user');
             }
 
             // 2. Replace existing biometric data with new descriptors

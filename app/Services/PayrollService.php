@@ -65,7 +65,7 @@ class PayrollService
 
         try {
             $date = Carbon::parse($monthFilter);
-        } catch (\Exception $e) {
+        } catch (\DomainException $e) {
             $date = Carbon::now();
         }
 
@@ -101,7 +101,7 @@ class PayrollService
      * @param array $data Data input (month, employee_niks).
      * @param int $userId ID pengguna yang membuat data.
      * @return \Illuminate\Support\Collection Koleksi objek payroll yang berhasil dibuat.
-     * @throws \Exception Jika terjadi kesalahan saat pembuatan.
+     * @throws \DomainException Jika terjadi kesalahan saat pembuatan.
      */
     public function store(array $data, int $userId)
     {
@@ -160,18 +160,18 @@ class PayrollService
      * @param array $data Data pembaruan (manual_adjustment, adjustment_note).
      * @param int $userId ID pengguna yang melakukan pembaruan.
      * @return Payroll Objek payroll setelah diperbarui.
-     * @throws \Exception Jika payroll sudah difinalisasi atau dibatalkan.
+     * @throws \DomainException Jika payroll sudah difinalisasi atau dibatalkan.
      */
     public function update(Payroll $payroll, array $data, int $userId): Payroll
     {
         return DB::transaction(function () use ($payroll, $data, $userId) {
             // 1. Validate payroll status before modification
             if ($payroll->isVoided()) {
-                throw new \Exception('Cannot modify a voided payroll.');
+                throw new \DomainException('Cannot modify a voided payroll.');
             }
 
             if ($payroll->isFinalized()) {
-                throw new \Exception('Finalized payroll cannot be modified.');
+                throw new \DomainException('Finalized payroll cannot be modified.');
             }
 
             // 2. Retrieve adjustment data from input or existing record
@@ -226,18 +226,18 @@ class PayrollService
      *
      * @param Payroll $payroll Objek payroll.
      * @return Payroll Objek payroll yang telah difinalisasi.
-     * @throws \Exception Jika payroll sudah difinalisasi atau dibatalkan.
+     * @throws \DomainException Jika payroll sudah difinalisasi atau dibatalkan.
      */
     public function finalize(Payroll $payroll): Payroll
     {
         DB::transaction(function () use ($payroll) {
             // 1. Validate state
             if ($payroll->isVoided()) {
-                throw new \Exception('Cannot finalize a voided payroll.');
+                throw new \DomainException('Cannot finalize a voided payroll.');
             }
 
             if ($payroll->isFinalized()) {
-                throw new \Exception('Payroll already finalized.');
+                throw new \DomainException('Payroll already finalized.');
             }
 
             // 2. Update status to finalized
@@ -286,7 +286,7 @@ class PayrollService
                 try {
                     $this->finalize($payroll);
                     $results['success']++;
-                } catch (\Exception $e) {
+                } catch (\DomainException $e) {
                     // 3. Track failures without breaking the entire batch
                     $results['failed']++;
                     $results['errors'][] = [
@@ -307,18 +307,18 @@ class PayrollService
      * @param string $note Alasan pembatalan.
      * @param int $userId ID pengguna yang melakukan aksi.
      * @return Payroll Objek payroll yang telah dibatalkan.
-     * @throws \Exception Jika payroll sudah difinalisasi atau sudah dibatalkan sebelumnya.
+     * @throws \DomainException Jika payroll sudah difinalisasi atau sudah dibatalkan sebelumnya.
      */
     public function void(Payroll $payroll, string $note, int $userId): Payroll
     {
         return DB::transaction(function () use ($payroll, $note) {
             // 1. Validate state
             if ($payroll->isFinalized()) {
-                throw new \Exception('Cannot void finalized payroll.');
+                throw new \DomainException('Cannot void finalized payroll.');
             }
 
             if ($payroll->isVoided()) {
-                throw new \Exception('Payroll already voided.');
+                throw new \DomainException('Payroll already voided.');
             }
 
             // 2. Update record
@@ -339,13 +339,13 @@ class PayrollService
      *
      * @param Payroll $payroll Objek payroll.
      * @return Payroll Objek payroll dengan metadata slip yang diperbarui.
-     * @throws \Exception Jika payroll belum difinalisasi.
+     * @throws \DomainException Jika payroll belum difinalisasi.
      */
     public function generateSlip(Payroll $payroll)
     {
         // 1. Ensure payroll is finalized before generating slip
         if (! $payroll->isFinalized()) {
-            throw new \Exception('Payroll must be finalized.');
+            throw new \DomainException('Payroll must be finalized.');
         }
 
         // 2. Load necessary data for the PDF

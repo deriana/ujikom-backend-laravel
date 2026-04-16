@@ -14,10 +14,10 @@ use App\Models\LeaveApproval;
 use App\Models\LeaveType;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
-use Exception;
+use DomainException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
+// use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -176,7 +176,7 @@ class LeaveService
      * @param array $data Data pengajuan (employee_id, leave_type_id, date_start, dll).
      * @param \App\Models\User $user Objek pengguna yang membuat pengajuan.
      * @return Leave Objek cuti yang berhasil dibuat.
-     * @throws Exception Jika hari kerja tidak ditemukan, saldo tidak cukup, atau manager tidak ada.
+     * @throws DomainException Jika hari kerja tidak ditemukan, saldo tidak cukup, atau manager tidak ada.
      */
     public function store(array $data, $user)
     {
@@ -198,7 +198,7 @@ class LeaveService
             );
 
             if ($daysRequested <= 0) {
-                throw new \Exception('There are no working days in the selected date range.');
+                throw new \DomainException('There are no working days in the selected date range.');
             }
 
             // 3. Validate leave balance
@@ -206,7 +206,7 @@ class LeaveService
 
             $employee = Employee::findOrFail($employeeId);
             if ($leaveType->gender !== 'all' && $employee->gender !== $leaveType->gender) {
-                throw new \Exception("This leave type is only available for {$leaveType->gender} employees.");
+                throw new \DomainException("This leave type is only available for {$leaveType->gender} employees.");
             }
 
             if ($leaveType->is_unlimited) {
@@ -219,11 +219,11 @@ class LeaveService
                     ->first();
 
                 if (! $balance) {
-                    throw new \Exception("Leave balance record not found for this leave type in year {$start->year}.");
+                    throw new \DomainException("Leave balance record not found for this leave type in year {$start->year}.");
                 }
 
                 if ($balance->remaining_days < $daysRequested) {
-                    throw new \Exception('Insufficient leave balance. Remaining: '.$balance->remaining_days.' days.');
+                    throw new \DomainException('Insufficient leave balance. Remaining: '.$balance->remaining_days.' days.');
                 }
             }
 
@@ -294,7 +294,7 @@ class LeaveService
             // Scenario C: Regular Staff requests leave (Requires Manager approval)
             else {
                 if (! $employee->manager_id) {
-                    throw new \Exception('Manager not assigned.');
+                    throw new \DomainException('Manager not assigned.');
                 }
 
                 $this->createApproval(
@@ -321,7 +321,7 @@ class LeaveService
      * @param array $data Data pembaruan.
      * @param \App\Models\User $user Objek pengguna yang melakukan aksi.
      * @return Leave Objek cuti setelah diperbarui.
-     * @throws Exception Jika pengajuan sudah diproses atau cuti sudah dimulai/berlalu.
+     * @throws DomainException Jika pengajuan sudah diproses atau cuti sudah dimulai/berlalu.
      */
     public function update(Leave $leave, array $data, $user)
     {
@@ -331,12 +331,12 @@ class LeaveService
                 $leave->approval_status !== ApprovalStatus::PENDING->value &&
                 ! $user->hasAnyRole([UserRole::ADMIN, UserRole::HR])
             ) {
-                throw new Exception('Processed leave requests cannot be modified.');
+                throw new \DomainException('Processed leave requests cannot be modified.');
             }
 
             // 2. Prevent modification of past or ongoing leave
             if (now()->gt($leave->date_start)) {
-                throw new Exception('Leave that has already started or passed cannot be modified.');
+                throw new \DomainException('Leave that has already started or passed cannot be modified.');
             }
 
             $oldDuration = $leave->duration;
@@ -398,14 +398,14 @@ class LeaveService
      * @param bool $approve Status persetujuan (true untuk setuju, false untuk tolak).
      * @param string|null $note Catatan dari penyetuju.
      * @return LeaveApproval Objek persetujuan yang telah diperbarui.
-     * @throws Exception Jika persetujuan sudah diproses sebelumnya.
+     * @throws DomainException Jika persetujuan sudah diproses sebelumnya.
      */
     public function approve(LeaveApproval $approval, $user, bool $approve, ?string $note = null)
     {
         return DB::transaction(function () use ($approval, $user, $approve, $note) {
             // 1. Ensure the approval record is still pending
             if ($approval->status !== ApprovalStatus::PENDING->value) {
-                throw new \Exception('Approval has already been processed.');
+                throw new \DomainException('Approval has already been processed.');
             }
 
             // 2. Update the specific approval record
@@ -516,14 +516,14 @@ class LeaveService
      * @param Leave $leave Objek pengajuan cuti yang akan dihapus.
      * @param \App\Models\User $user Objek pengguna yang melakukan aksi.
      * @return bool True jika berhasil dihapus.
-     * @throws Exception Jika status bukan pending atau pengguna tidak memiliki izin.
+     * @throws DomainException Jika status bukan pending atau pengguna tidak memiliki izin.
      */
     public function delete(Leave $leave, $user): bool
     {
         return DB::transaction(function () use ($leave, $user) {
             // 1. Ensure only pending leave can be deleted
             if ((string) $leave->approval_status !== (string) ApprovalStatus::PENDING->value) {
-                throw new Exception('Only pending leave requests can be deleted.');
+                throw new \DomainException('Only pending leave requests can be deleted.');
             }
 
             // 2. Permission check: Admin/HR or the owner of the request
@@ -532,7 +532,7 @@ class LeaveService
                 ! $user->hasAnyRole([UserRole::ADMIN, UserRole::HR]) &&
                 $leave->employee_id !== $userEmployeeId
             ) {
-                throw new Exception('You do not have permission to delete this leave request.');
+                throw new \DomainException('You do not have permission to delete this leave request.');
             }
 
             // 3. Send notification

@@ -47,8 +47,11 @@ class LeaveSeeder extends Seeder
                 if ($suitableTypes->isEmpty()) continue;
 
                 $type = $suitableTypes->random();
-                $startDate = Carbon::now()->subDays(rand(1, 30));
-                $endDate = (clone $startDate)->addDays(rand(0, 3));
+
+                // Set range to current month
+                $startDate = Carbon::now()->startOfMonth()->addDays(rand(0, Carbon::now()->daysInMonth - 5));
+                $endDate = (clone $startDate)->addDays(rand(0, 2));
+
                 $status = ApprovalStatus::PENDING; // Default pending for simulation
 
                 $leave = Leave::create([

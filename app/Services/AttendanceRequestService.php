@@ -8,7 +8,7 @@ use App\Models\AttendanceRequest;
 use App\Models\Employee;
 use App\Models\ShiftTemplate;
 use App\Models\WorkSchedule;
-use Exception;
+use DomainException;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -161,7 +161,7 @@ class AttendanceRequestService
      *
      * @param array $data Data pengajuan (request_type, start_date, reason, dll).
      * @return AttendanceRequest Objek pengajuan yang berhasil dibuat.
-     * @throws Exception Jika template shift atau jadwal kerja tidak ditemukan.
+     * @throws DomainException Jika template shift atau jadwal kerja tidak ditemukan.
      */
     public function store(array $data): AttendanceRequest
     {
@@ -175,28 +175,28 @@ class AttendanceRequestService
             // 2. Handle SHIFT request type: validate and find template ID
             if ($data['request_type'] === 'SHIFT') {
                 if (empty($data['shift_template_uuid'])) {
-                    throw new \Exception('Shift template is required for SHIFT request type.');
+                    throw new \DomainException('Shift template is required for SHIFT request type.');
                 }
 
                 $shiftTemplateId = ShiftTemplate::where('uuid', $data['shift_template_uuid'])
                     ->value('id');
 
                 if (! $shiftTemplateId) {
-                    throw new \Exception('Shift template not found.');
+                    throw new \DomainException('Shift template not found.');
                 }
             }
 
             // 3. Handle WORK_MODE request type: validate and find schedule ID
             if ($data['request_type'] === 'WORK_MODE') {
                 if (empty($data['work_schedule_uuid'])) {
-                    throw new \Exception('Work schedule is required for WORK_MODE request type.');
+                    throw new \DomainException('Work schedule is required for WORK_MODE request type.');
                 }
 
                 $workScheduleId = WorkSchedule::where('uuid', $data['work_schedule_uuid'])
                     ->value('id');
 
                 if (! $workScheduleId) {
-                    throw new \Exception('Work schedule not found.');
+                    throw new \DomainException('Work schedule not found.');
                 }
             }
 
@@ -229,7 +229,7 @@ class AttendanceRequestService
      * @param array $data Data pembaruan.
      * @param \App\Models\User $user Objek pengguna yang melakukan aksi.
      * @return AttendanceRequest Objek pengajuan setelah diperbarui.
-     * @throws Exception Jika pengajuan sudah diproses dan pengguna bukan HR/Admin.
+     * @throws DomainException Jika pengajuan sudah diproses dan pengguna bukan HR/Admin.
      */
     public function update(AttendanceRequest $attendanceRequest, array $data, $user): AttendanceRequest
     {
@@ -239,7 +239,7 @@ class AttendanceRequestService
                 $attendanceRequest->status !== ApprovalStatus::PENDING->value &&
                 ! $user->hasAnyRole([UserRole::HR, UserRole::ADMIN])
             ) {
-                throw new \Exception('Processed requests cannot be modified.');
+                throw new \DomainException('Processed requests cannot be modified.');
             }
 
             // 2. Determine request type and IDs
@@ -251,7 +251,7 @@ class AttendanceRequestService
                 if (isset($data['shift_template_uuid'])) {
                     $shiftTemplateId = ShiftTemplate::where('uuid', $data['shift_template_uuid'])->value('id');
                     if (! $shiftTemplateId) {
-                        throw new \Exception('Shift template not found.');
+                        throw new \DomainException('Shift template not found.');
                     }
                 }
                 $workScheduleId = null;
@@ -261,7 +261,7 @@ class AttendanceRequestService
                 if (isset($data['work_schedule_uuid'])) {
                     $workScheduleId = WorkSchedule::where('uuid', $data['work_schedule_uuid'])->value('id');
                     if (! $workScheduleId) {
-                        throw new \Exception('Work schedule not found.');
+                        throw new \DomainException('Work schedule not found.');
                     }
                 }
                 $shiftTemplateId = null;
@@ -295,7 +295,7 @@ class AttendanceRequestService
      * @param bool $approve Status persetujuan (true untuk setuju, false untuk tolak).
      * @param string|null $note Catatan dari penyetuju.
      * @return AttendanceRequest Objek pengajuan yang telah diperbarui.
-     * @throws Exception Jika pengajuan sudah diproses atau pengguna tidak memiliki izin.
+     * @throws DomainException Jika pengajuan sudah diproses atau pengguna tidak memiliki izin.
      */
     public function approve(AttendanceRequest $attendanceRequest, $user, bool $approve, ?string $note = null)
     {
@@ -303,13 +303,13 @@ class AttendanceRequestService
 
             // 1. Ensure the request is still pending
             if ($attendanceRequest->status !== ApprovalStatus::PENDING->value) {
-                throw new Exception('Request has already been processed.');
+                throw new \DomainException('Request has already been processed.');
             }
 
             // 2. Role & Manager Check
             $isManager = $attendanceRequest->employee?->manager_id === optional($user->employee)->id;
             if (! $isManager && ! $user->hasAnyRole([UserRole::HR, UserRole::ADMIN, UserRole::DIRECTOR])) {
-                throw new Exception('You do not have permission to process this request.');
+                throw new \DomainException('You do not have permission to process this request.');
             }
 
             // 3. If approved, trigger the related Service for Data Synchronization

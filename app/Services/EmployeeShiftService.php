@@ -46,14 +46,14 @@ class EmployeeShiftService
      *
      * @param array $data Data penugasan (employee_nik, shift_template_uuid, shift_date).
      * @return EmployeeShift Objek shift yang berhasil dibuat atau diperbarui.
-     * @throws \Exception Jika tanggal yang dipilih adalah hari libur atau akhir pekan.
+     * @throws \DomainException Jika tanggal yang dipilih adalah hari libur atau akhir pekan.
      */
     public function store(array $data): EmployeeShift
     {
         return DB::transaction(function () use ($data) {
             // 1. Validate if the date is a valid workday (not a holiday or weekend)
             if (! $this->workdayService->isWorkday(Carbon::parse($data['shift_date']))) {
-                throw new \Exception("Failed: Date {$data['shift_date']} is a holiday or weekend.");
+                throw new \DomainException("Failed: Date {$data['shift_date']} is a holiday or weekend.");
             }
 
             // 2. Retrieve employee and shift template (Select only needed columns)
@@ -92,14 +92,14 @@ class EmployeeShiftService
      * @param EmployeeShift $shift Objek shift yang akan diperbarui.
      * @param array $data Data pembaruan (shift_date, shift_template_uuid).
      * @return EmployeeShift Objek shift setelah diperbarui.
-     * @throws \Exception Jika tanggal baru adalah hari libur atau akhir pekan.
+     * @throws \DomainException Jika tanggal baru adalah hari libur atau akhir pekan.
      */
     public function update(EmployeeShift $shift, array $data): EmployeeShift
     {
         return DB::transaction(function () use ($shift, $data) {
             // 1. Validate the new shift date
             if (! $this->workdayService->isWorkday(Carbon::parse($data['shift_date']))) {
-                throw new \Exception("Failed: Date {$data['shift_date']} is a holiday or weekend.");
+                throw new \DomainException("Failed: Date {$data['shift_date']} is a holiday or weekend.");
             }
 
             // 2. Find the requested shift template

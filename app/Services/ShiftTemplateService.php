@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Models\ShiftTemplate;
-use Exception;
+use DomainException;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -60,13 +60,13 @@ class ShiftTemplateService
      * @param ShiftTemplate $shift Objek template shift yang akan diperbarui.
      * @param array $data Data pembaruan.
      * @return ShiftTemplate
-     * @throws Exception
+     * @throws DomainException
      */
     public function update(ShiftTemplate $shift, array $data): ShiftTemplate
     {
         // 1. Prevent updating soft-deleted records
         if ($shift->trashed()) {
-            throw new Exception('Cannot update a deleted shift template');
+            throw new \DomainException('Cannot update a deleted shift template');
         }
 
         return DB::transaction(function () use ($shift, $data) {
@@ -94,19 +94,19 @@ class ShiftTemplateService
      *
      * @param ShiftTemplate $shift Objek template shift yang akan dihapus.
      * @return bool
-     * @throws Exception
+     * @throws DomainException
      */
     public function delete(ShiftTemplate $shift): bool
     {
         // 1. Validate current state
         if ($shift->trashed()) {
-            throw new Exception('Shift template already deleted');
+            throw new \DomainException('Shift template already deleted');
         }
 
         return DB::transaction(function () use ($shift) {
             // 2. Prevent deletion if the template is currently in use
             if ($shift->employeeShifts()->exists()) {
-                throw new Exception('Cannot delete shift template assigned to employees');
+                throw new \DomainException('Cannot delete shift template assigned to employees');
             }
 
             $shift->delete();
@@ -120,7 +120,7 @@ class ShiftTemplateService
      *
      * @param string $uuid UUID template shift.
      * @return ShiftTemplate
-     * @throws Exception
+     * @throws DomainException
      */
     public function restore(string $uuid): ShiftTemplate
     {
@@ -132,7 +132,7 @@ class ShiftTemplateService
 
             // 2. Ensure it is actually deleted before restoring
             if (! $shift->trashed()) {
-                throw new Exception('Shift template is not deleted');
+                throw new \DomainException('Shift template is not deleted');
             }
 
             $shift->restore();
@@ -146,7 +146,7 @@ class ShiftTemplateService
      *
      * @param string $uuid UUID template shift.
      * @return bool
-     * @throws Exception
+     * @throws DomainException
      */
     public function forceDelete(string $uuid): bool
     {
@@ -158,7 +158,7 @@ class ShiftTemplateService
 
             // 2. Prevent permanent deletion if there is historical assignment data
             if ($shift->employeeShifts()->exists()) {
-                throw new Exception('Cannot force delete shift template with assignment history');
+                throw new \DomainException('Cannot force delete shift template with assignment history');
             }
 
             $shift->forceDelete();

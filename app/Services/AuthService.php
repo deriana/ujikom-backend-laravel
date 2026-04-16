@@ -7,7 +7,7 @@ use App\Models\User;
 use DomainException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
+// use Illuminate\Support\Facades\Log;
 use Laravel\Sanctum\PersonalAccessToken;
 
 /**
@@ -54,12 +54,12 @@ class AuthService
 
         // 2. Validate user existence and password hash
         if (! $user || ! Hash::check($data['password'], $user->password)) {
-            throw new DomainException('The email or password is incorrect.');
+            throw new \DomainException('The email or password is incorrect.');
         }
 
         // 3. Check if the account status is active
         if (! $user->is_active) {
-            throw new DomainException('Your account is inactive. Please contact support.');
+            throw new \DomainException('Your account is inactive. Please contact support.');
         }
 
         // 4. Ensure the user has verified their email address

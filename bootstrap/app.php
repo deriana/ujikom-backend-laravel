@@ -24,6 +24,13 @@ return Application::configure(basePath: dirname(__DIR__))
             };
         };
 
+        // Business Error
+         $exceptions->render(function (DomainException $e, Request $request) use ($makeResponder) {
+            $responder = $makeResponder();
+
+            return $responder->errorResponse($e->getMessage(), 400); // 400 Bad Request for bussiness error
+        });
+
         // Validation errors -> 422
         $exceptions->render(function (\Illuminate\Validation\ValidationException $e, Request $request) use ($makeResponder) {
             $responder = $makeResponder();
@@ -75,11 +82,5 @@ return Application::configure(basePath: dirname(__DIR__))
             $responder = $makeResponder();
 
             return $responder->errorResponse('Server Error', 500);
-        });
-
-        $exceptions->render(function (DomainException $e, Request $request) use ($makeResponder) {
-            $responder = $makeResponder();
-
-            return $responder->errorResponse($e->getMessage(), 400); // 400 Bad Request for bussiness error
         });
     })->create();

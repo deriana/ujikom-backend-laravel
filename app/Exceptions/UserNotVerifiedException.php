@@ -2,7 +2,7 @@
 
 namespace App\Exceptions;
 
-use Exception;
+use DomainException;
 use Illuminate\Http\JsonResponse;
 
 /**
@@ -10,7 +10,7 @@ use Illuminate\Http\JsonResponse;
  *
  * Exception yang dilemparkan ketika pengguna mencoba login namun akunnya belum diverifikasi atau diaktivasi.
  */
-class UserNotVerifiedException extends Exception
+class UserNotVerifiedException extends DomainException
 {
     protected $email; /**< Alamat email pengguna yang belum terverifikasi */
 

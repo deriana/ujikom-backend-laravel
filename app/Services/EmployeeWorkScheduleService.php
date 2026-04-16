@@ -7,7 +7,7 @@ use App\Models\Employee;
 use App\Models\EmployeeWorkSchedule;
 use App\Models\WorkSchedule;
 use Carbon\Carbon;
-use Exception;
+use DomainException;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -36,7 +36,7 @@ class EmployeeWorkScheduleService
      *
      * @param array $data Data penugasan (employee_nik, work_schedule_uuid, start_date, end_date).
      * @return EmployeeWorkSchedule Objek penugasan yang berhasil dibuat.
-     * @throws Exception Jika terjadi konflik jadwal pada tingkat prioritas yang sama.
+     * @throws DomainException Jika terjadi konflik jadwal pada tingkat prioritas yang sama.
      */
     public function store(array $data)
     {
@@ -94,7 +94,7 @@ class EmployeeWorkScheduleService
      * @param EmployeeWorkSchedule $assignment Objek penugasan yang akan diperbarui.
      * @param array $data Data pembaruan.
      * @return EmployeeWorkSchedule Objek penugasan setelah diperbarui.
-     * @throws Exception Jika terjadi konflik jadwal pada tingkat prioritas yang sama.
+     * @throws DomainException Jika terjadi konflik jadwal pada tingkat prioritas yang sama.
      */
     public function update(EmployeeWorkSchedule $assignment, array $data)
     {
@@ -166,7 +166,7 @@ class EmployeeWorkScheduleService
      * @param string|null $endDate Tanggal berakhir jadwal baru.
      * @param int $priority Tingkat prioritas jadwal.
      * @param int|null $ignoreId ID penugasan yang diabaikan (untuk proses update).
-     * @throws Exception Jika ditemukan konflik jadwal.
+     * @throws DomainException Jika ditemukan konflik jadwal.
      */
     private function validateDateConflict(
         int $employeeId,
@@ -197,9 +197,9 @@ class EmployeeWorkScheduleService
             });
         });
 
-        // 3. Throw exception if a conflict is found
+        // 3. Throw domainException if a conflict is found
         if ($query->exists()) {
-            throw new Exception("Schedule conflict detected for Priority Level $priority");
+            throw new \DomainException("Schedule conflict detected for Priority Level $priority");
         }
     }
 }

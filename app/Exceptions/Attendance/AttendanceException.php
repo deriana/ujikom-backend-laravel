@@ -2,14 +2,14 @@
 
 namespace App\Exceptions\Attendance;
 
-use Exception;
+use DomainException;
 
 /**
  * Class AttendanceException
  *
  * Exception dasar untuk menangani kesalahan terkait proses absensi.
  */
-class AttendanceException extends Exception
+class AttendanceException extends DomainException
 {
     protected $context = []; /**< Data tambahan terkait konteks kesalahan */
 

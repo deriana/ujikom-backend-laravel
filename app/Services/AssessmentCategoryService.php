@@ -3,8 +3,8 @@
 namespace App\Services;
 
 use App\Models\AssessmentCategory;
+use DomainException;
 use Illuminate\Support\Facades\DB;
-use Exception;
 
 /**
  * Class AssessmentCategoryService
@@ -71,14 +71,14 @@ class AssessmentCategoryService
      *
      * @param AssessmentCategory $assessmentCategory Objek kategori yang akan dihapus.
      * @return bool True jika berhasil dihapus.
-     * @throws Exception Jika kategori sudah digunakan dalam detail penilaian.
+     * @throws DomainException Jika kategori sudah digunakan dalam detail penilaian.
      */
     public function delete(AssessmentCategory $assessmentCategory): bool
     {
         return DB::transaction(function () use ($assessmentCategory) {
             // Check if category is already used in assessments
             if ($assessmentCategory->assessmentsDetails()->exists()) {
-                throw new Exception('Cannot delete category that is already used in assessments.');
+                throw new \DomainException('Cannot delete category that is already used in assessments.');
             }
 
             // 1. Perform the deletion of the assessment category record

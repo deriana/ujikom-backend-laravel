@@ -4,7 +4,7 @@ namespace App\Services;
 
 use App\Models\Allowance;
 use Illuminate\Support\Facades\DB;
-use Exception;
+use DomainException;
 
 /**
  * Class AllowanceService
@@ -51,12 +51,12 @@ class AllowanceService
      * @param array $data Data pembaruan.
      * @param int $userId ID pengguna yang melakukan aksi.
      * @return Allowance
-     * @throws Exception Jika tunjangan sudah dihapus (soft-deleted).
+     * @throws DomainException Jika tunjangan sudah dihapus (soft-deleted).
      */
     public function update(Allowance $allowance, array $data, int $userId): Allowance
     {
         if ($allowance->trashed()) {
-            throw new Exception('Cannot update a deleted allowance');
+            throw new \DomainException('Cannot update a deleted allowance');
         }
 
         return DB::transaction(function () use ($allowance, $data) {
@@ -75,12 +75,12 @@ class AllowanceService
      *
      * @param Allowance $allowance Objek tunjangan yang akan dihapus.
      * @return bool
-     * @throws Exception Jika tunjangan sudah dalam status terhapus.
+     * @throws DomainException Jika tunjangan sudah dalam status terhapus.
      */
     public function delete(Allowance $allowance): bool
     {
         if ($allowance->trashed()) {
-            throw new Exception('Cannot delete a deleted allowance');
+            throw new \DomainException('Cannot delete a deleted allowance');
         }
 
         return DB::transaction(fn () => $allowance->delete());
@@ -91,7 +91,7 @@ class AllowanceService
      *
      * @param string $uuid UUID tunjangan.
      * @return Allowance
-     * @throws Exception Jika tunjangan tidak dalam status terhapus.
+     * @throws DomainException Jika tunjangan tidak dalam status terhapus.
      */
     public function restore(string $uuid): Allowance
     {
@@ -99,7 +99,7 @@ class AllowanceService
             $allowance = Allowance::withTrashed()->whereUuid($uuid)->firstOrFail();
 
             if (! $allowance->trashed()) {
-                throw new Exception('Allowance is not deleted');
+                throw new \DomainException('Allowance is not deleted');
             }
 
             $allowance->restore();

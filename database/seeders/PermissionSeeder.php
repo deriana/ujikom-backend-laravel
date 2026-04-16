@@ -160,15 +160,17 @@ class PermissionSeeder extends Seeder
                     'show' => 'attendance.show',
                     'export' => 'attendance.export',
                     'sync' => 'attendance.sync',
+                    'recap' => 'attendance.recap',
+                    'log' => 'attendance.log',
                 ],
                 'roles' => [
-                    UserRole::ADMIN->value => ['index', 'show', 'sync'],
-                    UserRole::HR->value => ['index', 'show', 'export', 'sync'],
-                    UserRole::MANAGER->value => ['index', 'show'],
+                    UserRole::ADMIN->value => ['index', 'show', 'sync', 'export', 'recap', 'log'],
+                    UserRole::HR->value => ['index', 'show', 'export', 'sync', 'recap', 'log'],
+                    UserRole::MANAGER->value => ['index', 'show', 'recap'],
                     UserRole::EMPLOYEE->value => ['index', 'show'],
-                    UserRole::DIRECTOR->value => ['index', 'show', 'export'],
-                    UserRole::OWNER->value => ['index', 'show', 'export'],
-                    UserRole::FINANCE->value => ['index', 'show', 'export'],
+                    UserRole::DIRECTOR->value => ['index', 'show', 'export', 'recap', 'log'],
+                    UserRole::OWNER->value => ['index', 'show', 'export', 'recap', 'log'],
+                    UserRole::FINANCE->value => ['index', 'show', 'export', 'recap'],
                 ],
             ],
             'work_schedules' => [
@@ -488,6 +490,16 @@ class PermissionSeeder extends Seeder
                     UserRole::DIRECTOR->value => ['index', 'show', 'export'],
                     UserRole::OWNER->value => ['index', 'show', 'export',],
                     UserRole::FINANCE->value => ['index', 'show', 'export'],
+                ],
+            ],
+
+            'logs' => [
+                'actions' => [
+                    'index' => 'log.index',
+                    'download' => 'log.download',
+                ],
+                'roles' => [
+                    UserRole::ADMIN->value => ['index', 'download'],
                 ],
             ],
 

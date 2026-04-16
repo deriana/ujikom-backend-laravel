@@ -63,6 +63,12 @@ class AssessmentControllerTest extends TestCase
             'evaluatee_nik' => $evaluatee->nik,
             'period'        => '2025-04', // Kirim YYYY-MM, biarkan Service yang urus -01
             'note'          => 'Performance is stable.',
+            'assessment_details' => [
+                [
+                    'assessment_category_uuid' => \App\Models\AssessmentCategory::factory()->create()->uuid,
+                    'score' => 85,
+                ]
+            ]
         ];
 
         $response = $this->postJson('/api/assessments', $payload);

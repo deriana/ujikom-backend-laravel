@@ -51,7 +51,7 @@ class User extends Authenticatable
      * Digunakan untuk mengotomatisasi pengisian UUID saat pembuatan data
      * dan mencegah penghapusan akun dengan peran Owner.
      *
-     * @throws \Exception Jika mencoba menghapus akun Owner
+     * @throws \DomainException Jika mencoba menghapus akun Owner
      */
     protected static function boot()
     {
@@ -62,7 +62,7 @@ class User extends Authenticatable
 
         static::deleting(function ($model) {
             if ($model->hasRole(\App\Enums\UserRole::OWNER->value)) {
-                throw new \Exception('Akun Owner adalah System Reserved dan tidak dapat dihapus.');
+                throw new \DomainException('Akun Owner adalah System Reserved dan tidak dapat dihapus.');
             }
         });
     }

@@ -7,7 +7,7 @@ use App\Models\Assessment;
 use App\Models\AssessmentCategory;
 use App\Models\Employee;
 use Carbon\Carbon;
-use Exception;
+use DomainException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -63,7 +63,7 @@ use Illuminate\Support\Facades\DB;
      *
      * @param array $data Data penilaian (evaluatee_nik, period, note, assessment_details).
      * @return Assessment
-     * @throws Exception Jika penilaian untuk karyawan pada periode tersebut sudah ada atau NIK tidak valid.
+     * @throws DomainException Jika penilaian untuk karyawan pada periode tersebut sudah ada atau NIK tidak valid.
      */
     public function store(array $data)
     {
@@ -75,7 +75,7 @@ use Illuminate\Support\Facades\DB;
             // Evaluatee is required
             $evaluateeId = Employee::where('nik', $data['evaluatee_nik'])->value('id');
             if (! $evaluateeId) {
-                throw new Exception('Evaluatee with the provided NIK not found.');
+                throw new \DomainException('Evaluatee with the provided NIK not found.');
             }
 
             $period = Carbon::parse($data['period'])->startOfMonth()->format('Y-m-d');
@@ -85,7 +85,7 @@ use Illuminate\Support\Facades\DB;
                 ->exists();
 
             if ($exists) {
-                throw new Exception('An assessment for this employee in the selected period already exists.');
+                throw new \DomainException('An assessment for this employee in the selected period already exists.');
             }
 
             $assessment = Assessment::create([

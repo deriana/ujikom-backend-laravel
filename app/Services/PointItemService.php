@@ -80,7 +80,7 @@ class PointItemService
     {
         return DB::transaction(function () use ($pointItem, $data) {
             if ($pointItem->system_reserve) {
-                throw new \Exception('Cannot update a system reserved item.');
+                throw new \DomainException('Cannot update a system reserved item.');
             }
 
             $pointItem->update([
@@ -128,17 +128,17 @@ class PointItemService
      *
      * @param PointItem $pointItem
      * @return bool
-     * @throws \Exception
+     * @throws \DomainException
      */
     public function delete(PointItem $pointItem): bool
     {
         return DB::transaction(function () use ($pointItem) {
             if ($pointItem->system_reserve) {
-                throw new \Exception('Cannot delete a system reserved item.');
+                throw new \DomainException('Cannot delete a system reserved item.');
             }
 
             if ($pointItem->employeeInventories()->exists()) {
-                throw new \Exception('Cannot delete item because it is already owned by employees in their inventory.');
+                throw new \DomainException('Cannot delete item because it is already owned by employees in their inventory.');
             }
 
             return (bool) $pointItem->delete();
@@ -168,7 +168,7 @@ class PointItemService
      * @param PointItem $pointItem
      * @param int $quantity
      * @return PointItemTransaction
-     * @throws \Exception
+     * @throws \DomainException
      */
     public function redeem(array $data): PointItemTransaction
     {
@@ -179,17 +179,17 @@ class PointItemService
 
             // 1. Validasi Status Item dan Stok
             if (!$pointItem->is_active) {
-                throw new \Exception('This item is currently not available for redemption.');
+                throw new \DomainException('This item is currently not available for redemption.');
             }
 
             if ($pointItem->stock < $quantity) {
-                throw new \Exception('Insufficient stock for this item.');
+                throw new \DomainException('Insufficient stock for this item.');
             }
 
             // 2. Cari Periode Poin Aktif
             $period = PointPeriode::where('is_active', true)->first();
             if (!$period) {
-                throw new \Exception('No active point period found.');
+                throw new \DomainException('No active point period found.');
             }
 
             // 3. Cek Saldo Poin Karyawan
@@ -200,7 +200,7 @@ class PointItemService
             $totalRequired = $pointItem->required_points * $quantity;
 
             if (!$wallet || $wallet->current_balance < $totalRequired) {
-                throw new \Exception('Insufficient point balance.');
+                throw new \DomainException('Insufficient point balance.');
             }
 
             // 4. Kurangi Saldo Poin dan Stok Item
@@ -254,17 +254,17 @@ class PointItemService
      *
      * @param EmployeeInventories $inventory
      * @return EmployeeInventories
-     * @throws \Exception
+     * @throws \DomainException
      */
     public function useItem(EmployeeInventories $inventory): EmployeeInventories
     {
         return DB::transaction(function () use ($inventory) {
             if ($inventory->is_used) {
-                throw new \Exception('This item has already been used.');
+                throw new \DomainException('This item has already been used.');
             }
 
             if ($inventory->expired_at && $inventory->expired_at->isPast()) {
-                throw new \Exception('This item has expired.');
+                throw new \DomainException('This item has expired.');
             }
 
             $inventory->update([

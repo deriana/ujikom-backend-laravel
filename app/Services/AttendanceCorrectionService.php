@@ -7,7 +7,7 @@ use App\Enums\UserRole;
 use App\Models\AttendanceCorrection;
 use App\Services\Attendance\Validators\TimeValidator;
 use Carbon\Carbon;
-use Exception;
+use DomainException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -121,7 +121,7 @@ class AttendanceCorrectionService
      *
      * @param  \App\Models\User  $user
      * @param array $data Data pengajuan (attendance_id, employee_id, clock_in_requested, dll).
-     * @throws Exception
+     * @throws DomainException
      */
     public function store($user, array $data): AttendanceCorrection
     {
@@ -130,7 +130,7 @@ class AttendanceCorrectionService
             $clockIn = Carbon::parse($data['clock_in_requested']);
             $clockOut = Carbon::parse($data['clock_out_requested']);
             if ($clockOut->lt($clockIn)) {
-                throw new Exception('The requested clock out time cannot be earlier than the eaclock in time.');
+                throw new \DomainException('The requested clock out time cannot be earlier than the eaclock in time.');
             }
 
             // 0.1 Validasi: Hanya boleh mengajukan koreksi untuk bulan berjalan
@@ -139,11 +139,11 @@ class AttendanceCorrectionService
 
             // Validasi: Kehadiran harus sudah lengkap (clock in & clock out)
             if (!$attendance->clock_in || !$attendance->clock_out) {
-                throw new Exception('Correction requests can only be submitted for completed attendance (both clock-in and clock-out must exist).');
+                throw new \DomainException('Correction requests can only be submitted for completed attendance (both clock-in and clock-out must exist).');
             }
 
             if (!$attendanceDate->isCurrentMonth()) {
-                throw new Exception('Correction requests are only allowed for attendance data in the current month.');
+                throw new \DomainException('Correction requests are only allowed for attendance data in the current month.');
             }
 
             $attachmentPath = null;
@@ -178,7 +178,7 @@ class AttendanceCorrectionService
      *
      * @param  \App\Models\User  $user
      * @param array $data Data pembaruan.
-     * @throws Exception
+     * @throws DomainException
      */
     public function update(AttendanceCorrection $correction, array $data, $user): AttendanceCorrection
     {
@@ -186,14 +186,14 @@ class AttendanceCorrectionService
             // 1. Validasi apakah pengajuan masih bisa diubah
             if ($correction->status !== ApprovalStatus::PENDING->value &&
                 ! $user->hasAnyRole([UserRole::HR, UserRole::ADMIN])) {
-                throw new Exception('Processed corrections cannot be modified.');
+                throw new \DomainException('Processed corrections cannot be modified.');
             }
 
             // 0. Validasi sederhana: Jam pulang tidak boleh sebelum jam masuk
             $clockIn = Carbon::parse($data['clock_in_requested'] ?? $correction->clock_in_requested);
             $clockOut = Carbon::parse($data['clock_out_requested'] ?? $correction->clock_out_requested);
             if ($clockOut->lt($clockIn)) {
-                throw new Exception('The requested clock out time cannot be earlier than the clock in time.');
+                throw new \DomainException('The requested clock out time cannot be earlier than the clock in time.');
             }
 
             if (! empty($data['attachment']) && $data['attachment'] instanceof UploadedFile) {
@@ -231,20 +231,20 @@ class AttendanceCorrectionService
      * @param bool $approve Status persetujuan (true untuk setuju, false untuk tolak).
      * @param string|null $note Catatan dari penyetuju.
      * @return AttendanceCorrection Objek koreksi yang telah diperbarui.
-     * @throws Exception
+     * @throws DomainException
      */
     public function approve(AttendanceCorrection $correction, $user, bool $approve, ?string $note = null)
     {
         return DB::transaction(function () use ($correction, $user, $approve, $note) {
             // 1. Pastikan pengajuan masih dalam status tertunda
             if ($correction->status !== ApprovalStatus::PENDING->value) {
-                throw new Exception('This correction has already been processed.');
+                throw new \DomainException('This correction has already been processed.');
             }
 
             // 2. Cek Izin: Hanya manajer langsung atau peran tingkat tinggi yang bisa memproses
             $isManager = $correction->employee?->manager_id === optional($user->employee)->id;
             if (! $isManager && ! $user->hasAnyRole([UserRole::HR, UserRole::ADMIN, UserRole::DIRECTOR, UserRole::OWNER])) {
-                throw new Exception('You do not have permission to approve this correction.');
+                throw new \DomainException('You do not have permission to approve this correction.');
             }
 
             // 3. Perbarui status pengajuan
