@@ -20,7 +20,7 @@ use App\Services\WorkdayService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
+// use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 /**
@@ -536,8 +536,8 @@ class DashboardController extends Controller
         $employee = $user->employee;
         $month = Carbon::now()->month;
         $year = Carbon::now()->year;
-        Log::info($year);
-        Log::info($month);
+        // Log::info($year);
+        // Log::info($month);
 
         // 1. Personal Stats (Bulan Ini)
         $myAttendance = Attendance::where('employee_id', $employee->id)

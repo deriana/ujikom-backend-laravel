@@ -9,7 +9,7 @@ use App\Http\Resources\UserResource;
 use App\Services\AuthService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
+// use Illuminate\Support\Facades\Log;
 
 /**
  * Class AuthController
@@ -57,7 +57,7 @@ class AuthController extends Controller
     {
         [$user, $token] = $this->authService->login($request->validated());
 
-        Log::info('user data', ['user' => $user->toArray()]);
+        // Log::info('user data', ['user' => $user->toArray()]);
         return $this->successResponse([
             'user'  => new UserResource($user),
             'token' => $token,

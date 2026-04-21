@@ -7,7 +7,7 @@ use App\Models\Attendance;
 use App\Models\AttendanceLog;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
+// use Illuminate\Support\Facades\Log;
 
 /**
  * Class AttendanceDetailService
@@ -174,7 +174,7 @@ class AttendanceDetailService
             ])
             ->get();
 
-        Log::info('Attendance Summary Raw Result:', ['count' => $summary->count(), 'data' => $summary->toArray()]);
+        // Log::info('Attendance Summary Raw Result:', ['count' => $summary->count(), 'data' => $summary->toArray()]);
 
         return $summary->map(function ($item) {
             $item->leave_details = $item->employee->leaves->groupBy('leaveType.name')

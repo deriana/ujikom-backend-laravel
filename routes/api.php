@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\ActivityLogController;
 use App\Http\Controllers\Api\AllowanceController;
 use App\Http\Controllers\Api\AssessmentCategoryController;
 use App\Http\Controllers\Api\AssessmentController;
@@ -267,6 +268,10 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::prefix('system')->group(function () {
         Route::get('/logs', [LogController::class, 'index']);
         Route::get('/logs/{date}/download', [LogController::class, 'download']);
+    });
+
+    Route::prefix('activity-logs')->group(function () {
+        Route::get('/', [ActivityLogController::class, 'index']);
     });
 
     Route::get('/dashboard/admin', [DashboardController::class, 'getAdminDashboard']);

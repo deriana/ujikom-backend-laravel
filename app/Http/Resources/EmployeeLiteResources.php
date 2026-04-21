@@ -23,6 +23,7 @@ class EmployeeLiteResources extends JsonResource
         return [
             'nik' => $this->nik, /**< Nomor Induk Karyawan */
             'name' => $this->user?->name, /**< Nama lengkap karyawan dari relasi user */
+            'profile_photo' => $this->getFirstMediaUrl('profile_photo') ?: null, /**< URL foto profil karyawan */
         ];
     }
 }

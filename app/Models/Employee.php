@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Notifications\Notifiable;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
+use App\Traits\LogsActivity;
 
 /**
  * Class Employee
@@ -20,7 +21,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
  */
 class Employee extends Model implements HasMedia
 {
-    use Blameable, InteractsWithMedia, Notifiable, Notificationable, SoftDeletes, HasFactory;
+    use Blameable, InteractsWithMedia, Notifiable, Notificationable, SoftDeletes, HasFactory, LogsActivity;
 
     /** @var array<int, string> Atribut yang dapat diisi secara massal */
     protected $fillable = [

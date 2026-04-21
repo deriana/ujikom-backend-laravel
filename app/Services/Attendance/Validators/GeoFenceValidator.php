@@ -4,7 +4,7 @@ namespace App\Services\Attendance\Validators;
 
 use App\Exceptions\Attendance\GeoLocationException;
 use App\Models\Setting;
-use Illuminate\Support\Facades\Log;
+// use Illuminate\Support\Facades\Log;
 
 /**
  * Class GeoFenceValidator
@@ -24,7 +24,7 @@ class GeoFenceValidator
      */
     public function validate(float $lat, float $lon, bool $isRequired = true): void
     {
-        Log::info('Geo-fencing validation started', ['latitude' => $lat, 'longitude' => $lon, 'is_required' => $isRequired]);
+        // Log::info('Geo-fencing validation started', ['latitude' => $lat, 'longitude' => $lon, 'is_required' => $isRequired]);
 
         if (! $isRequired) {
             return;

@@ -3,6 +3,8 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+
+use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -21,7 +23,7 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasApiTokens, HasFactory, HasRoles, Notifiable, SoftDeletes, HasPushSubscriptions;
+    use HasApiTokens, HasFactory, HasRoles, Notifiable, SoftDeletes, HasPushSubscriptions, LogsActivity;
 
     /** @var array<int, string> Atribut yang dapat diisi secara massal */
     protected $fillable = [
@@ -102,6 +104,17 @@ class User extends Authenticatable
             'id',
             'team_id'
         );
+    }
+
+    /**
+     * Relasi ke model ActivityLog.
+     * Mendapatkan semua log aktivitas yang dilakukan oleh user ini.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function activityLogs()
+    {
+        return $this->hasMany(ActivityLog::class);
     }
 
     /**

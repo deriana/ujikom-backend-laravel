@@ -503,6 +503,18 @@ class PermissionSeeder extends Seeder
                 ],
             ],
 
+            'activity_logs' => [
+                'actions' => [
+                    'index' => 'activity-log.index',
+                ],
+                'roles' => [
+                    UserRole::ADMIN->value => ['index'],
+                    UserRole::HR->value => ['index'],
+                    UserRole::OWNER->value => ['index'],
+                    UserRole::DIRECTOR->value => ['index'],
+                ],
+            ],
+
             'dashboards' => [
                 'actions' => [
                     'admin' => 'dashboard.admin',
