@@ -265,6 +265,18 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::delete('/{point_item:uuid}', [PointItemController::class, 'destroy']);
     });
 
+    Route::prefix('ticketing')->group(function () {
+        Route::get('/dashboard', [App\Http\Controllers\Api\TicketController::class, 'dashboard']);
+        Route::get('/', [App\Http\Controllers\Api\TicketController::class, 'index']);
+        Route::post('/', [App\Http\Controllers\Api\TicketController::class, 'store']);
+        Route::get('/{ticket:uuid}', [App\Http\Controllers\Api\TicketController::class, 'show']);
+        Route::put('/{ticket:uuid}', [App\Http\Controllers\Api\TicketController::class, 'update']);
+        Route::delete('/{ticket:uuid}', [App\Http\Controllers\Api\TicketController::class, 'destroy']);
+        Route::post('/{ticket:uuid}/reply', [App\Http\Controllers\Api\TicketController::class, 'reply']);
+        Route::post('/{ticket:uuid}/rate', [App\Http\Controllers\Api\TicketController::class, 'rate']);
+        Route::put('/{ticket:uuid}/status', [App\Http\Controllers\Api\TicketController::class, 'updateStatus']);
+    });
+
     Route::prefix('system')->group(function () {
         Route::get('/logs', [LogController::class, 'index']);
         Route::get('/logs/{date}/download', [LogController::class, 'download']);

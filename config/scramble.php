@@ -136,4 +136,8 @@ return [
             'scheme' => 'bearer',
         ],
     ],
+
+    'security' => [
+        ['BearerAuth' => []],
+    ],
 ];

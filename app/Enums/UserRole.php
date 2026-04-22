@@ -16,4 +16,7 @@ enum UserRole: string
     case HR = 'hr'; /**< Peran Human Resources untuk manajemen SDM dan payroll */
     case FINANCE = 'finance'; /**< Peran Keuangan untuk pengelolaan transaksi dan gaji */
     case EMPLOYEE = 'employee'; /**< Peran Karyawan standar untuk akses fitur mandiri */
+
+    // UJIKOM CASe
+    case HELPDESK = 'helpdesk'; /**< Peran Helpdesk untuk manajemen tiket dan dukungan teknis */
 }

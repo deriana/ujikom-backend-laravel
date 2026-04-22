@@ -515,6 +515,37 @@ class PermissionSeeder extends Seeder
                 ],
             ],
 
+          'ticketing' => [
+            'actions' => [
+                'index'   => 'ticketing.index',
+                'show'    => 'ticketing.show',
+                'create'  => 'ticketing.create', 
+                'edit'    => 'ticketing.edit',  
+                'destroy' => 'ticketing.destroy',
+                'export'  => 'ticketing.export',
+                'reply'   => 'ticketing.reply',  
+                'status'  => 'ticketing.status',  
+                'assign'  => 'ticketing.assign',  
+                'rate'    => 'ticketing.rate',    
+                'dashboard' => 'ticketing.dashboard'
+            ],
+            'roles' => [
+                UserRole::ADMIN->value => [
+                    'index', 'show', 'create', 'edit', 'destroy', 'export', 'reply', 'status', 'assign', 'dashboard'
+                ],
+                UserRole::HELPDESK->value => [
+                    'index', 'show', 'reply', 'status', 'assign', 'dashboard'
+                ],
+                UserRole::EMPLOYEE->value => [
+                    'index', 'show', 'edit','destroy', 'create', 'reply', 'rate'
+                ],
+                UserRole::MANAGER->value => ['index', 'show', 'create', 'reply', 'rate'],
+                UserRole::DIRECTOR->value => ['index', 'show','dashboard'],
+                UserRole::OWNER->value => ['index', 'show', 'dashboard'],
+                UserRole::FINANCE->value => ['index', 'show', 'create', 'reply', 'rate'],
+            ],
+        ],
+
             'dashboards' => [
                 'actions' => [
                     'admin' => 'dashboard.admin',

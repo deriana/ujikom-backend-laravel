@@ -22,6 +22,7 @@ class MeResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
+            'id' => $this->id,
             'uuid' => $this->uuid, /**< Identifier unik user */
             'name' => $this->name, /**< Nama lengkap user */
             'email' => $this->email, /**< Alamat email user */

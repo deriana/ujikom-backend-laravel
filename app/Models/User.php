@@ -42,7 +42,7 @@ class User extends Authenticatable
     protected $hidden = [
         'password', /**< Kata sandi */
         'remember_token', /**< Token remember me */
-        'id', /**< Identifier internal database */
+        // 'id', /**< Identifier internal database */
     ];
 
     /** @var string Nama guard yang digunakan untuk otorisasi Spatie */

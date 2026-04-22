@@ -113,7 +113,18 @@ class UserSeeder extends Seeder
         ]);
         $manager2->assignRole(UserRole::MANAGER->value);
 
-        // 7. EMPLOYEE (Regular Staff)
+        // 7. HELPDESK (Technical Support)
+        $helpdesk = User::create([
+            'uuid' => (string) \Illuminate\Support\Str::uuid(),
+            'name' => 'Support Helpdesk',
+            'email' => 'helpdesk@app.com',
+            'password' => Hash::make('password'),
+            'is_verified' => true,
+            'email_verified_at' => now(),
+        ]);
+        $helpdesk->assignRole(UserRole::HELPDESK->value);
+
+        // 8. EMPLOYEE (Regular Staff)
         $employee = User::create([
             'uuid' => (string) \Illuminate\Support\Str::uuid(),
             'name' => 'Nikola Tesla',

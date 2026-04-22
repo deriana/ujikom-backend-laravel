@@ -57,5 +57,9 @@ class AppServiceProvider extends ServiceProvider
         Gate::before(function ($user, $ability) {
             return $user->hasRole('admin') ? true : null;
         });
+
+        Gate::define('viewApiDocs', function ($user = null) {
+            return true;
+        });
     }
 }

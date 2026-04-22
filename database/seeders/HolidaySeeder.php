@@ -9,7 +9,6 @@ use Illuminate\Support\Str;
 
 class HolidaySeeder extends Seeder
 {
-    // FIX IS_RECURRING TO BE TRUE LATER
     public function run(): void
     {
         $year = now()->year;

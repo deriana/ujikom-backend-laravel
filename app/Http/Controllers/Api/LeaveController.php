@@ -98,6 +98,9 @@ class LeaveController extends Controller
      */
     public function store(CreateLeaveRequest $request): JsonResponse
     {
+        Log::info("INI LOG PERTAMA");
+        Log::info('Data Request Masuk:', $request->all());
+
         $leave = $this->leaveService->store(
             $request->all(),
             Auth::user()
