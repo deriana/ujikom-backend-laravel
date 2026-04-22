@@ -22,7 +22,7 @@ class UpdateTicketStatusRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status' => 'required|string|in:open,in progress,closed',
+            'status' => 'required|string|in:in progress,closed',
         ];
     }
 }

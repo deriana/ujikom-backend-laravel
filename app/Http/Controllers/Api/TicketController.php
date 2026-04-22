@@ -7,6 +7,7 @@ use App\Http\Requests\StoreTicketRequest;
 use App\Http\Requests\UpdateTicketRequest;
 use App\Http\Requests\ReplyTicketRequest;
 use App\Http\Requests\RateTicketRequest;
+use App\Http\Requests\UpdateTicketStatusRequest;
 use App\Http\Resources\TicketResource;
 use App\Http\Resources\TicketDetailResource;
 use App\Models\Ticket;
@@ -174,7 +175,7 @@ class TicketController extends Controller
      * @param Ticket $ticket
      * @return \Illuminate\Http\JsonResponse
      */
-    public function updateStatus(\App\Http\Requests\UpdateTicketStatusRequest $request, Ticket $ticket): JsonResponse
+    public function updateStatus(UpdateTicketStatusRequest $request, Ticket $ticket): JsonResponse
     {
         $this->authorize('status', $ticket);
 

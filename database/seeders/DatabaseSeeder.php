@@ -17,7 +17,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             PermissionSeeder::class,
             UserSeeder::class,
-            HolidaySeeder::class,
+            // HolidaySeeder::class,
             SettingSeeder::class,
             DivisionSeeder::class,
             PositionAllowanceSeeder::class,
@@ -44,6 +44,7 @@ class DatabaseSeeder extends Seeder
             AssessmentSeeder::class,
             AttendanceCorrectionSeeder::class,
             PointSystemSeeder::class,
+            TicketSeeder::class
         ]);
     }
 }
